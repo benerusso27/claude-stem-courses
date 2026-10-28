@@ -1,0 +1,40 @@
+{
+  "steel_1018HR": {
+    "label": "AISI 1018 hot-rolled steel",
+    "d0_readings_mm": [
+      10.0,
+      10.01,
+      10.0,
+      10.01,
+      10.0,
+      10.01
+    ],
+    "L0_mm": 50.01,
+    "Lf_mm": 66.95,
+    "df_readings_mm": [
+      6.33,
+      6.33
+    ],
+    "extensometer_gage_mm": 50.0,
+    "reduced_section_mm": 60.0
+  },
+  "al_6061T6": {
+    "label": "6061-T6 aluminum",
+    "d0_readings_mm": [
+      10.0,
+      9.99,
+      10.0,
+      9.99,
+      10.0,
+      9.99
+    ],
+    "L0_mm": 49.99,
+    "Lf_mm": 56.18,
+    "df_readings_mm": [
+      7.6,
+      7.61
+    ],
+    "extensometer_gage_mm": 50.0,
+    "reduced_section_mm": 60.0
+  }
+}

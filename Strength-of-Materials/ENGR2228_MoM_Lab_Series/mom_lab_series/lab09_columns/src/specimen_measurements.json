@@ -1,0 +1,63 @@
+{
+ "bar": {
+  "b_mm": [
+   25.41,
+   25.43,
+   25.42,
+   25.42
+  ],
+  "t_mm": [
+   6.35,
+   6.36,
+   6.34,
+   6.35
+  ],
+  "stock": "6061-T6, 25.4 x 6.35 mm (the Lab 2 bar stock)"
+ },
+ "lengths_mm": {
+  "A300": 300.0,
+  "A450": 450.0,
+  "A600": 600.5,
+  "Bff": 600.5,
+  "Bfp": 640.0,
+  "D": 90.0
+ },
+ "bow_mm": {
+  "A300": 0.26,
+  "A450": 0.46,
+  "A600": 0.62,
+  "B": 0.5,
+  "D": 0.03
+ },
+ "offsets_mm": {
+  "C1": 1.0,
+  "C2": 2.0,
+  "tolerance": 0.02
+ },
+ "clamp_grip_mm": 40.0,
+ "bar_B_length_mm": 680.0,
+ "gage": {
+  "GF": 2.1,
+  "GF_tol_pct": 0.5,
+  "location": "mid-length, centered on both wide faces (front = convex side)"
+ },
+ "micrometer_accuracy_mm": 0.003,
+ "rule_accuracy_mm": 0.5,
+ "dial_division_mm": 0.01,
+ "dial_accuracy_mm": 0.01,
+ "loadcell_capacity_N": 5000,
+ "loadcell_accuracy_pct": 0.5,
+ "utm_accuracy_pct": 0.5,
+ "strain_resolution_ue": 1.0,
+ "reference": {
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "nu_al": 0.3296,
+  "u_nu_al": 0.0029,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0,
+  "m_RO": 17,
+  "E_al_lab1_GPa": 68.75,
+  "u_E_al_lab1_GPa": 0.38
+ }
+}

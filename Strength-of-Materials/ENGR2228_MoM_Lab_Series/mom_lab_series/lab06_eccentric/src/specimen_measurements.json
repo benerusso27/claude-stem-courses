@@ -1,0 +1,100 @@
+{
+ "bar": {
+  "h_mm": [
+   50.84,
+   50.82,
+   50.83
+  ],
+  "b_mm": [
+   12.681,
+   12.678,
+   12.684
+  ],
+  "L_mm": 250.0,
+  "a_mm": 25.0,
+  "yP_mm": {
+   "e0": 0.04,
+   "e1": 8.49,
+   "e2": 16.95,
+   "ez": 0.04
+  },
+  "zP_mm": {
+   "e0": 0.0,
+   "e1": 0.0,
+   "e2": 0.0,
+   "ez": 6.4
+  },
+  "y_front_mm": [
+   -20.1,
+   -10.0,
+   0.1,
+   10.1,
+   20.0
+  ],
+  "y_back_mm": [
+   -20.0,
+   -10.1,
+   0.0,
+   9.9,
+   20.1
+  ],
+  "x_end_mm": 40.0
+ },
+ "angle": {
+  "bV_mm": [
+   50.86,
+   50.84,
+   50.85
+  ],
+  "bH_mm": [
+   50.75,
+   50.77,
+   50.76
+  ],
+  "t_mm": [
+   6.331,
+   6.334,
+   6.328,
+   6.331
+  ],
+  "r_mm": 4.8,
+  "L_mm": 300.0,
+  "a_mm": 25.0,
+  "load_z_mm": -28.58,
+  "load_y_mm": -4.76,
+  "gages_mm": {
+   "G1": {
+    "z": 0.0,
+    "y": 44.0
+   },
+   "G2": {
+    "z": 0.0,
+    "y": 12.0
+   },
+   "G3": {
+    "z": -12.0,
+    "y": 0.0
+   },
+   "G4": {
+    "z": -44.0,
+    "y": 0.0
+   }
+  }
+ },
+ "caliper_accuracy_mm": 0.02,
+ "micrometer_accuracy_mm": 0.003,
+ "rule_accuracy_mm": 0.5,
+ "hole_position_accuracy_mm": 0.05,
+ "gage_position_accuracy_mm": 0.2,
+ "radius_gage_accuracy_mm": 0.4,
+ "gage_factor_tolerance_pct": 1.0,
+ "load_cell_accuracy_pct": 0.5,
+ "lvdt_accuracy_pct": 0.5,
+ "lvdt_resolution_mm": 0.001,
+ "reference": {
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0
+ }
+}

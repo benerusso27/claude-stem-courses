@@ -1,0 +1,1600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Column Buckling Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 9: columns (Beer 10.1-10.4). Euler buckling with any end condition including rotational springs, imperfect and eccentric columns with Southwell plots, the elastica past the critical load, and short columns with tangent-modulus and fiber-model analyses.">
+<style>
+/* SimCore styles — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   Layout concept: an instrument console — control rack on the left, live chart wall on the right;
+   one column on phones. Colors follow style_guide.md section 4 (Okabe-Ito semantic roles). */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel-2: #eef2f5;
+  --ink: #161b20;
+  --muted: #56616c;
+  --line: #d3dae1;
+  --grid: #e4e9ee;
+  --accent: #0072b2;
+  --accent-ink: #ffffff;
+  --theory: #0072b2;
+  --numeric: #d55e00;
+  --measured: #1a1a1a;
+  --third: #b8478f;
+  --fourth: #00845f;
+  --mutedline: #8c8c8c;
+  --fail: #e69f00;
+  --fail-ink: #8a5300;
+  --ok: #1d7a4b;
+  --ok-bg: #e3f3ea;
+  --warn-bg: #fff1d6;
+  --bad: #b3261e;
+  --bad-bg: #fbe4e2;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-num: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+    --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+    --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+    --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+    --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+  --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+  --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+  --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+  --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui);
+  font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(1.25rem, 1.05rem + 1vw, 1.7rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 700; }
+h3 { font-size: 0.95rem; font-weight: 650; }
+p { margin: 0; }
+sub, sup { font-size: 0.72em; line-height: 0; }
+a { color: var(--accent); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+
+/* ---- header ---------------------------------------------------------------------------- */
+.top { max-width: 1440px; margin: 0 auto; padding-block: 18px 12px; display: grid; gap: 8px; }
+.top-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 16px; }
+.eyebrow { font-size: 0.75rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.signconv { font-size: 0.85rem; color: var(--muted); max-width: 95ch; }
+.signconv b { color: var(--ink); font-weight: 650; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 0.85rem; padding: 6px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+.seg button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ---- layout ---------------------------------------------------------------------------- */
+.console { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .console { grid-template-columns: minmax(0, 1fr); } }
+.rack { display: grid; gap: 12px; position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding-block: 4px 12px; }
+@media (max-width: 860px) { .rack { position: static; max-height: none; overflow: visible; } }
+.wall { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.panel-note { font-size: 0.85rem; color: var(--muted); max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- controls ---------------------------------------------------------------------------- */
+.group { display: grid; gap: 10px; }
+.group-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.ctl { display: grid; gap: 3px; }
+.ctl label { font-size: 0.85rem; display: flex; gap: 6px; align-items: baseline; }
+.ctl .sym { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 0.95rem; min-width: 2.2em; }
+.ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) 6.2em 3.6em; gap: 8px; align-items: center; }
+.ctl-row input[type="number"] {
+  width: 100%; font: inherit; font-family: var(--font-num); font-size: 0.85rem; padding: 3px 5px;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); color: var(--ink); text-align: right;
+}
+.ctl-row .unit { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.ctl .help { font-size: 0.78rem; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; min-height: 24px; }
+select { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--ink); width: 100%; }
+.btn {
+  font: inherit; font-size: 0.85rem; padding: 7px 12px; border-radius: var(--r); cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ---- status chips ------------------------------------------------------------------------ */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 650; padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.warn { color: var(--fail-ink); background: var(--warn-bg); }
+.chip.bad { color: var(--bad); background: var(--bad-bg); }
+.chip.info { color: var(--accent); background: var(--panel-2); }
+.chip.ok::before { border-radius: 2px; }
+.chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.chip.bad::before { clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); border-radius: 0; }
+
+/* ---- plots --------------------------------------------------------------------------------- */
+.plot { position: relative; width: 100%; min-width: 0; }
+.plot svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.plot .tip {
+  position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 7px; font-size: 0.78rem; font-family: var(--font-num); white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.12); z-index: 2;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 26px; height: 10px; flex: none; }
+.plot-caption { font-size: 0.8rem; color: var(--muted); }
+
+/* ---- readout table ------------------------------------------------------------------------- */
+.table-wrap { overflow-x: auto; }
+table.readout { width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 640px; }
+table.readout th, table.readout td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.readout th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+table.readout td.v { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+table.readout td.why { color: var(--muted); font-size: 0.8rem; min-width: 18em; }
+table.readout tr.break td { background: var(--warn-bg); }
+
+/* ---- cards ---------------------------------------------------------------------------------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: grid; gap: 6px; align-content: start; background: var(--panel); }
+.card .eq { font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; }
+.card .eq i { font-style: italic; }
+.card .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card p { font-size: 0.83rem; color: var(--muted); }
+.card .live { font-family: var(--font-num); font-size: 0.8rem; color: var(--ink); }
+
+/* ---- misc ----------------------------------------------------------------------------------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.stat { border-left: 3px solid var(--line); padding: 2px 8px; }
+.stat .k { font-size: 0.78rem; color: var(--muted); }
+.stat .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 0.98rem; }
+.export-panel textarea { width: 100%; min-height: 140px; font-family: var(--font-num); font-size: 0.75rem; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; }
+.error-box { border: 1px solid var(--bad); background: var(--bad-bg); color: var(--bad); padding: 8px 10px; border-radius: var(--r); font-size: 0.88rem; }
+details > summary { cursor: pointer; font-weight: 650; }
+.foot { max-width: 1440px; margin: 20px auto 0; font-size: 0.8rem; color: var(--muted); display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 9 · Beer 8e §10.1–10.4</div>
+      <h1>Columns: Euler buckling, end conditions, imperfections, the secant formula and short columns</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> as in §10.1–10.2, P is the compressive load, reported as a positive magnitude. x runs along the column from end A (the top) and y is the lateral deflection (Fig. 10.7); EI y″ = M with M = −P y for a centric load (Eq. 10.4) and M = −P (y + e) for a load at distance e from the axis (Eq. 10.22). The column bows away from the load line, so the lever arm at mid-length is e + y<sub>max</sub> (Fig. 10.23). The initial bow δ<sub>0</sub> is measured in the same direction, and deflections are the change from the no-load reading. Strains: tension positive; the front face is the convex one. <b>Blue solid</b> = closed form; <b>vermillion dashed or markers</b> = independent numerical method; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="euler450">Euler column: pinned, 450 mm</option>
+          <option value="endsFF">Fixed–fixed, 600 mm (ideal clamps)</option>
+          <option value="springsB">Fixed–fixed with the measured clamp stiffness</option>
+          <option value="flagpole">Free–fixed (flagpole), 1 m tube</option>
+          <option value="partA300">Lab Part A: pinned, 300 mm</option>
+          <option value="partA450">Lab Part A: pinned, 450 mm</option>
+          <option value="partA600">Lab Part A: pinned, 600 mm</option>
+          <option value="partBff">Lab Part B: clamped, 600 mm</option>
+          <option value="partBfp">Lab Part B: clamped–pinned, 640 mm</option>
+          <option value="partC1">Lab Part C: eccentric, e = 1 mm</option>
+          <option value="partC2">Lab Part C: eccentric, e = 2 mm</option>
+          <option value="partD">Lab Part D: short column, 90 mm</option>
+          <option value="elastica">Loaded past P_cr (elastica)</option>
+          <option value="steel">Steel column curve (E 200 GPa, σY 250 MPa)</option>
+          <option value="design">D1: strut, 63.5 × 1.65 mm tube, pinned</option>
+          <option value="designTrap">D1 trap: 44.45 × 1.65 mm tube, ends assumed fixed</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-col">
+        <div class="group-title">Column and end conditions</div>
+        <div><label class="small" for="ends">Ends (top A, bottom B)</label>
+          <select id="ends">
+            <option value="pinned">Pinned–pinned (K = 1)</option>
+            <option value="fixed-pinned">Pinned top, fixed bottom (K = 0.699)</option>
+            <option value="fixed-fixed">Fixed–fixed (K = 0.5)</option>
+            <option value="free-fixed">Free top, fixed bottom (K = 2)</option>
+            <option value="springs">Rotational springs k at both ends</option>
+            <option value="spring-pin">Pinned top, rotational spring k at the bottom</option>
+          </select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-sec">
+        <div class="group-title">Cross section</div>
+        <div><label class="small" for="sec">Shape</label>
+          <select id="sec"><option value="rect">Rectangle b × t (buckles across t)</option><option value="tube">Round tube</option><option value="round">Solid round</option></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-mat">
+        <div class="group-title">Material</div>
+        <div><label class="small" for="mat">Material (sets E, σ<sub>Y</sub>, the stress–strain curve and the design formula)</label><select id="mat"></select></div>
+      </div>
+    </section>
+    <section class="panel" id="panel-imp">
+      <div class="group" id="grp-imp"><div class="group-title">Imperfections and load</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical methods</div></div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay"><option value="auto">Matching part of sample_data.csv</option><option value="none">No sample data</option></select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">The column</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <p class="plot-caption" id="cap-diag"></p>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: Euler buckling with effective lengths (Beer §10.1, Eqs. 10.11, 10.13, Fig. 10.18) and with rotational-spring ends (characteristic equations derived in the handout's Appendix D), the imperfect and eccentric pinned column (§10.2, Eqs. 10.26–10.36, plus a half-sine initial bow), the Southwell plot, the elastica of a pinned column (elliptic integrals), and short columns: tangent- and reduced-modulus loads from a Ramberg–Osgood curve, an imperfect inelastic fiber model, and the design formulas of §10.3 (Eqs. 10.38–10.45). Independent numerical methods: Hermite finite elements with inverse iteration for the buckling load, the same elements loaded with an initial bow and end eccentricities, a second-order finite-difference beam-column, RK4 shooting for the elastica, and fiber integration of the section. Verified by <span class="num">tests/test_lab09_model.js</span> and <span class="num">tests/test_lab09_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 9 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 9 physics — pure functions, SI base units (N, m, Pa, rad). Loaded unchanged by the Node tests. */
+const Lab9Model = (() => {
+  'use strict';
+  const PI = Math.PI, Z_FP = 4.493409457909064;           // root of tan z = z (Beer Eq. 10.20)
+  const MATERIALS = {
+    al: { name: '6061-T6 aluminum', E: 68.9e9, sY: 273.7e6, m: 17, rho: 2700, design: 'aa' },
+    steel: { name: '1018 HR steel', E: 205e9, sY: 296.2e6, m: 60, rho: 7850, design: 'aisc' },
+    a36: { name: 'Structural steel, E 200 GPa, σY 250 MPa', E: 200e9, sY: 250e6, m: 60, rho: 7850, design: 'aisc' },
+  };
+  const K_IDEAL = { pinned: 1, 'fixed-pinned': PI / Z_FP, 'fixed-fixed': 0.5, 'free-fixed': 2 };
+
+  function section(p) {
+    if (p.sec === 'tube') { const Di = p.Do - 2 * p.tw, A = PI * (p.Do ** 2 - Di ** 2) / 4, I = PI * (p.Do ** 4 - Di ** 4) / 64; return { A, I, r: Math.sqrt(I / A), c: p.Do / 2, Di }; }
+    if (p.sec === 'round') { const A = PI * p.d ** 2 / 4, I = PI * p.d ** 4 / 64; return { A, I, r: p.d / 4, c: p.d / 2 }; }
+    const A = p.b * p.t, I = p.b * p.t ** 3 / 12;
+    return { A, I, r: Math.sqrt(I / A), c: p.t / 2 };
+  }
+  const euler = (E, I, Le) => PI * PI * E * I / (Le * Le);            // Eq. 10.11b
+  const sigmaCr = (E, sl) => PI * PI * E / (sl * sl);                // Eq. 10.13b
+
+  function bisect(f, a, b, tol = 1e-15, maxit = 300) {
+    let fa = f(a);
+    const fb = f(b);
+    if (fa === 0) return a;
+    if (fb === 0) return b;
+    if (fa * fb > 0) return NaN;
+    for (let i = 0; i < maxit; i++) {
+      const m = 0.5 * (a + b), fm = f(m);
+      if (fm === 0 || (b - a) / 2 <= tol * Math.max(1e-300, Math.abs(m))) return m;
+      if (fa * fm < 0) b = m; else { a = m; fa = fm; }
+    }
+    return 0.5 * (a + b);
+  }
+
+  function illinois(f, a, b, tol = 1e-13, maxit = 100) {   // modified regula falsi (bracketing, superlinear)
+    let fa = f(a), fb = f(b), side = 0;
+    if (fa * fb > 0) return NaN;
+    for (let i = 0; i < maxit; i++) {
+      const c = (a * fb - b * fa) / (fb - fa), fc = f(c);
+      if (fc === 0 || Math.abs(b - a) <= tol * Math.max(1, Math.abs(c))) return c;
+      if (fc * fb > 0) { b = c; fb = fc; if (side === -1) fa /= 2; side = -1; } else { a = c; fa = fc; if (side === 1) fb /= 2; side = 1; }
+      if (Math.abs(b - a) <= tol) return c;
+    }
+    return (a * fb - b * fa) / (fb - fa);
+  }
+
+  // ---------------- end conditions ----------------
+  function endsOf(p) {                           // [top end A at x = 0, bottom end B at x = L]: v = laterally held, k = rotational stiffness
+    switch (p.ends) {
+      case 'fixed-fixed': return [{ v: true, k: Infinity }, { v: true, k: Infinity }];
+      case 'fixed-pinned': return [{ v: true, k: 0 }, { v: true, k: Infinity }];
+      case 'free-fixed': return [{ v: false, k: 0 }, { v: true, k: Infinity }];
+      case 'springs': return [{ v: true, k: p.k }, { v: true, k: p.k }];
+      case 'spring-pin': return [{ v: true, k: 0 }, { v: true, k: p.k }];
+      default: return [{ v: true, k: 0 }, { v: true, k: 0 }];
+    }
+  }
+  /* Both ends laterally held, each a rotational spring k (symmetric mode): tan x = -2 x EI/(k L), x = pL/2 in (pi/2, pi). */
+  function springBoth(EI, L, k) {
+    if (!(k > 0)) return { P: PI * PI * EI / (L * L), K: 1, x: PI / 2 };
+    if (!Number.isFinite(k)) return { P: 4 * PI * PI * EI / (L * L), K: 0.5, x: PI };
+    const g = 2 * EI / (k * L), x = bisect((x_) => Math.sin(x_) + g * x_ * Math.cos(x_), PI / 2, PI);
+    return { P: 4 * x * x * EI / (L * L), K: PI / (2 * x), x };
+  }
+  /* Spring k at one end, pin at the other, both laterally held: tan z = z / (1 + z^2 EI/(k L)), z = pL in (pi, 4.4934). */
+  function springPin(EI, L, k) {
+    if (!(k > 0)) return { P: PI * PI * EI / (L * L), K: 1, z: PI };
+    if (!Number.isFinite(k)) return { P: Z_FP * Z_FP * EI / (L * L), K: PI / Z_FP, z: Z_FP };
+    const g = EI / (k * L), z = bisect((z_) => Math.sin(z_) * (1 + z_ * z_ * g) - z_ * Math.cos(z_), PI * (1 + 1e-12), Z_FP);
+    return { P: z * z * EI / (L * L), K: PI / z, z };
+  }
+  function kFromSym(EI, L, P) { const x = L / 2 * Math.sqrt(P / EI); return -2 * x * EI / (L * Math.tan(x)); }
+  function closedPcr(p, E, I) {
+    const EI = E * I;
+    if (p.ends === 'springs') return springBoth(EI, p.L, p.k);
+    if (p.ends === 'spring-pin') return springPin(EI, p.L, p.k);
+    const K = K_IDEAL[p.ends];
+    return { P: euler(E, I, K * p.L), K };
+  }
+  /* Closed-form first mode shape y(x) (x from the top end A), scaled so the largest |y| is 1. */
+  function modeShape(p, E, I, x) {
+    const L = p.L, cp = closedPcr(p, E, I), pp = Math.sqrt(cp.P / (E * I));
+    let f;
+    switch (p.ends) {
+      case 'fixed-fixed': f = (s) => 1 - Math.cos(2 * PI * s / L); break;
+      case 'free-fixed': f = (s) => 1 - Math.sin(PI * s / (2 * L)); break;
+      case 'fixed-pinned': f = (s) => Math.sin(pp * s) - Math.sin(pp * L) * s / L; break;     // Beer Eq. 10.16 with B = 0
+      case 'springs': { const tn = Math.tan(pp * L / 2); f = (s) => 1 - Math.cos(pp * s) - tn * Math.sin(pp * s); break; }
+      case 'spring-pin': { const ct = 1 / Math.tan(pp * L); f = (s) => { const xi = L - s; return ct * Math.sin(pp * xi) - Math.cos(pp * xi) + 1 - xi / L; }; break; }
+      default: f = (s) => Math.sin(PI * s / L);
+    }
+    let mx = 0;                                   // normalize on a fine grid, so any set of points (even one) is scaled alike
+    for (let i = 0; i <= 400; i++) { const v = f(L * i / 400); if (Math.abs(v) > Math.abs(mx)) mx = v; }
+    return x.map((s) => f(s) / (mx || 1));
+  }
+
+  // ---------------- Hermite finite elements, band storage (half-bandwidth 3) ----------------
+  const HB = 3, WB = 2 * HB + 1;
+  function feSystem(EI, L, n, ends) {
+    const h = L / n, N = 2 * (n + 1), c = EI / h ** 3, g = 1 / (30 * h);
+    const ke = [[12, 6 * h, -12, 6 * h], [6 * h, 4 * h * h, -6 * h, 2 * h * h], [-12, -6 * h, 12, -6 * h], [6 * h, 2 * h * h, -6 * h, 4 * h * h]];
+    const ge = [[36, 3 * h, -36, 3 * h], [3 * h, 4 * h * h, -3 * h, -h * h], [-36, -3 * h, 36, -3 * h], [3 * h, -h * h, -3 * h, 4 * h * h]];
+    const K = Array.from({ length: N }, () => new Float64Array(WB)), G = Array.from({ length: N }, () => new Float64Array(WB));
+    for (let e = 0; e < n; e++) for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) {
+      const i = 2 * e + a, j = 2 * e + b;
+      K[i][j - i + HB] += c * ke[a][b]; G[i][j - i + HB] += g * ge[a][b];
+    }
+    const fixed = new Set();
+    [[0, ends[0]], [n, ends[1]]].forEach(([node, end]) => {
+      if (end.v) fixed.add(2 * node);
+      if (!Number.isFinite(end.k)) fixed.add(2 * node + 1); else if (end.k > 0) K[2 * node + 1][HB] += end.k;
+    });
+    const free = [];
+    for (let i = 0; i < N; i++) if (!fixed.has(i)) free.push(i);
+    return { K, G, free, N, n, h };
+  }
+  function reduceBand(B, free) {
+    const m = free.length, pos = new Map(free.map((d, i) => [d, i])), R = Array.from({ length: m }, () => new Float64Array(WB));
+    for (let a = 0; a < m; a++) {
+      const i = free[a];
+      for (let j = Math.max(0, i - HB); j <= Math.min(B.length - 1, i + HB); j++) {
+        if (!pos.has(j)) continue;
+        const b = pos.get(j);
+        if (Math.abs(b - a) <= HB) R[a][b - a + HB] = B[i][j - i + HB];
+      }
+    }
+    return R;
+  }
+  function bandMul(A, x) {
+    const n = A.length, y = new Float64Array(n);
+    for (let i = 0; i < n; i++) { let s = 0; for (let j = Math.max(0, i - HB); j <= Math.min(n - 1, i + HB); j++) s += A[i][j - i + HB] * x[j]; y[i] = s; }
+    return y;
+  }
+  const bandCombo = (A, B, s) => A.map((r, i) => r.map((v, k) => v - s * B[i][k]));
+  function bandLU(A0) {                           // no pivoting: the matrices are symmetric positive definite below P_cr
+    const n = A0.length, A = A0.map((r) => Float64Array.from(r));
+    for (let i = 0; i < n; i++) {
+      const piv = A[i][HB];
+      if (!(Math.abs(piv) > 0)) throw new Error('singular stiffness matrix');
+      for (let r = i + 1; r <= Math.min(n - 1, i + HB); r++) {
+        const f = A[r][i - r + HB] / piv;
+        if (f === 0) continue;
+        A[r][i - r + HB] = f;
+        for (let c = i + 1; c <= Math.min(n - 1, i + HB); c++) A[r][c - r + HB] -= f * A[i][c - i + HB];
+      }
+    }
+    return A;
+  }
+  function bandSolve(F, b) {
+    const n = F.length, x = Float64Array.from(b);
+    for (let i = 0; i < n; i++) for (let r = i + 1; r <= Math.min(n - 1, i + HB); r++) x[r] -= F[r][i - r + HB] * x[i];
+    for (let i = n - 1; i >= 0; i--) { let s = x[i]; for (let c = i + 1; c <= Math.min(n - 1, i + HB); c++) s -= F[i][c - i + HB] * x[c]; x[i] = s / F[i][HB]; }
+    return x;
+  }
+  const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+  /* Smallest buckling load of (K - P G) v = 0 by inverse iteration with a Rayleigh quotient. */
+  function feBuckle(EI, L, n, ends) {
+    const S = feSystem(EI, L, n, ends);
+    if (!S.free.length) return { P: NaN, v: new Float64Array(S.N), iters: 0, n };     // e.g. one fixed-fixed element: nothing can move
+    const Kf = reduceBand(S.K, S.free), Gf = reduceBand(S.G, S.free), F = bandLU(Kf);
+    let x = new Float64Array(S.free.length);
+    S.free.forEach((d, i) => { x[i] = 1.3 + Math.sin(0.7 + 1.913 * d); });          // no symmetry, so every mode is present
+    let P = NaN, it = 0, calm = 0;
+    for (; it < 400; it++) {
+      const y = bandMul(Gf, x), z = bandSolve(F, y);
+      const Pn = dot(x, y) / dot(z, y);              // x'Gx / x'Gz: avoids the cancellation in x'Kx at large N
+      const nz = Math.sqrt(dot(z, z));
+      for (let i = 0; i < z.length; i++) z[i] /= nz;
+      x = z;
+      calm = Math.abs(Pn - P) <= 1e-12 * Pn ? calm + 1 : 0;
+      P = Pn;
+      if (calm >= 2) break;
+    }
+    const v = new Float64Array(S.N);
+    S.free.forEach((d, i) => { v[d] = x[i]; });
+    return { P, v, iters: it + 1, n };
+  }
+  /* Load-deflection by the same elements: stress-free shape w0 = d0 sin(pi x/L) + sum a_j sin(j pi x/L); load lines at eA, eB
+     on the -y side of the ends (end moments +P eA at A, -P eB at B). Unknown: the change u = v - w0, which is zero wherever
+     the end is held (a clamp grips the bar at its initial slope; a spring resists the change of slope). Equilibrium
+     K u = P G (u + w0) + f, i.e. (K - P G) u = P G w0 + f. */
+  function feImperfect(EI, L, n, ends, P, d0 = 0, eA = 0, eB = 0, harm = []) {
+    const S = feSystem(EI, L, n, ends), w0 = new Float64Array(S.N), f = new Float64Array(S.N);
+    for (let i = 0; i <= n; i++) {
+      const x = i * L / n;
+      w0[2 * i] = d0 * Math.sin(PI * x / L); w0[2 * i + 1] = d0 * PI / L * Math.cos(PI * x / L);
+      for (const [a, j] of harm) { w0[2 * i] += a * Math.sin(j * PI * x / L); w0[2 * i + 1] += a * j * PI / L * Math.cos(j * PI * x / L); }
+    }
+    f[1] += P * eA; f[S.N - 1] -= P * eB;
+    const Gw = bandMul(S.G, w0), A = reduceBand(bandCombo(S.K, S.G, P), S.free);
+    const rhs = S.free.map((d) => P * Gw[d] + f[d]);
+    const sol = bandSolve(bandLU(A), rhs), v = Float64Array.from(w0);
+    S.free.forEach((d, i) => { v[d] += sol[i]; });
+    return { v, w0, n, h: L / n };
+  }
+  function feCurvMid(r) {                         // curvature change (v - w0)'' at mid-length (n even: average of the two elements)
+    const { v, w0, n, h } = r, d = (i) => v[i] - w0[i];
+    if (n % 2 === 0) {
+      const e = n / 2 - 1, j = 2 * e;
+      const kl = (6 * d(j) + 2 * h * d(j + 1) - 6 * d(j + 2) + 4 * h * d(j + 3)) / (h * h);
+      const kr = (-6 * d(j + 2) - 4 * h * d(j + 3) + 6 * d(j + 4) - 2 * h * d(j + 5)) / (h * h);
+      return 0.5 * (kl + kr);
+    }
+    const j = 2 * ((n - 1) / 2);                 // odd n: mid-length is the middle of an element, where y'' = (theta2 - theta1)/h
+    return (d(j + 3) - d(j + 1)) / h;
+  }
+  function feMidDefl(r) {                         // deflection change at mid-length by Hermite interpolation
+    const { v, w0, n, h } = r, d = (i) => v[i] - w0[i];
+    if (n % 2 === 0) return d(n);
+    const j = 2 * ((n - 1) / 2);
+    return 0.5 * d(j) + h / 8 * d(j + 1) + 0.5 * d(j + 2) - h / 8 * d(j + 3);
+  }
+
+  // ---------------- imperfect / eccentric pinned column ----------------
+  function pinnedResponse(P, Pcr, L, x, d0 = 0, e = 0) {       // change of deflection, Eq. 10.26 plus the amplified bow
+    const a = P / Pcr, pL = PI * Math.sqrt(a), p = pL / L, tn = Math.tan(pL / 2);
+    return x.map((s) => d0 * a / (1 - a) * Math.sin(PI * s / L) + e * (tn * Math.sin(p * s) + Math.cos(p * s) - 1));
+  }
+  /* Second-order finite differences: EI w'' + P w = -P (y0 + e), w(0) = w(L) = 0, Thomas algorithm. */
+  function fdPinned(EI, L, P, n, d0 = 0, e = 0) {
+    const h = L / n, m = n - 1, a = EI / (h * h), diag = -2 * a + P;
+    const c = new Float64Array(m), d = new Float64Array(m), w = new Float64Array(n + 1);
+    for (let i = 0; i < m; i++) {
+      const x = (i + 1) * h, rhs = -P * (d0 * Math.sin(PI * x / L) + e);
+      const den = diag - (i > 0 ? a * c[i - 1] : 0);
+      c[i] = a / den; d[i] = (rhs - (i > 0 ? a * d[i - 1] : 0)) / den;
+    }
+    for (let i = m - 1; i >= 0; i--) w[i + 1] = d[i] - (i < m - 1 ? c[i] * w[i + 2] : 0);
+    return w;
+  }
+  const ymaxSecant = (e, P, Pcr) => e * (1 / Math.cos(PI / 2 * Math.sqrt(P / Pcr)) - 1);                 // Eq. 10.31
+  const sigmaxSecant = (P, A, e, c, r, Pcr) => P / A * (1 + e * c / (r * r) / Math.cos(PI / 2 * Math.sqrt(P / Pcr)));   // Eq. 10.35
+  function secantPY(sY, A, e, c, r, E, Le) {      // Eq. 10.36 with sigma_max = sigma_Y, solved for P
+    const Pe = PI * PI * E * A * r * r / (Le * Le);
+    const f = (P) => P / A * (1 + e * c / (r * r) / Math.cos(0.5 * Math.sqrt(P / (E * A)) * Le / r)) - sY;
+    return bisect(f, 1e-9, Math.min(Pe * (1 - 1e-12), sY * A), 1e-13);
+  }
+  function secantPYnum(E, I, A, c, L, sY, e, n, d0 = 0) {  // the same load from the finite-difference column (bisection on P)
+    const h = L / n, Pe = 4 * E * I / (h * h) * Math.sin(PI * h / (2 * L)) ** 2;   // the difference equations' own critical load
+    const f = (P) => { const w = fdPinned(E * I, L, P, n, d0, e); const mid = n % 2 === 0 ? w[n / 2] : 0.5 * (w[(n - 1) / 2] + w[(n + 1) / 2]); return P / A + P * (e + d0 + mid) * c / I - sY; };
+    return bisect(f, 1e-9, Math.min(Pe * (1 - 1e-9), sY * A), 1e-12);
+  }
+  function southwell(d, P) {                      // delta/P = delta/Pcr + delta0/Pcr, least squares
+    const n = d.length, y = d.map((v, i) => v / P[i]);
+    const mx = d.reduce((a, b) => a + b, 0) / n, my = y.reduce((a, b) => a + b, 0) / n;
+    let sxx = 0, sxy = 0;
+    for (let i = 0; i < n; i++) { sxx += (d[i] - mx) ** 2; sxy += (d[i] - mx) * (y[i] - my); }
+    const s = sxy / sxx, b = my - s * mx;
+    let rr = 0;
+    for (let i = 0; i < n; i++) rr += (y[i] - (s * d[i] + b)) ** 2;
+    const s2 = rr / Math.max(n - 2, 1), us = Math.sqrt(s2 / sxx);
+    return { Pcr: 1 / s, d0: b / s, uPcr: us / (s * s), slope: s, icpt: b, rms: Math.sqrt(s2) };
+  }
+
+  // ---------------- elastica of a pinned column ----------------
+  function RF(x, y, z) {                          // Carlson's symmetric integral R_F, duplication algorithm
+    for (let i = 0; i < 100; i++) {
+      const sx = Math.sqrt(x), sy = Math.sqrt(y), sz = Math.sqrt(z), lam = sx * sy + sy * sz + sz * sx;
+      x = (x + lam) / 4; y = (y + lam) / 4; z = (z + lam) / 4;
+      const mu = (x + y + z) / 3, dx = 1 - x / mu, dy = 1 - y / mu, dz = 1 - z / mu;
+      if (Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) < 1e-4) {
+        const e2 = dx * dy - dz * dz, e3 = dx * dy * dz;
+        return (1 - e2 / 10 + e3 / 14 + e2 * e2 / 24 - 3 * e2 * e3 / 44) / Math.sqrt(mu);
+      }
+    }
+    return NaN;
+  }
+  const ellK = (m) => RF(0, 1 - m, 1);
+  /* P/Pcr = (2 K(k)/pi)^2, delta/L = k/K(k), k = sin(alpha/2), alpha = slope at the pins. */
+  function elasticaClosed(PoPcr) {
+    if (!(PoPcr > 1)) return { k: 0, dL: 0, alpha: 0 };
+    const target = PI / 2 * Math.sqrt(PoPcr), k = bisect((k_) => ellK(k_ * k_) - target, 1e-14, 1 - 1e-14, 1e-15);
+    return { k, dL: k / ellK(k * k), alpha: 2 * Math.asin(k) };
+  }
+  function elasticaShoot(PoPcr, N = 200) {        // RK4: theta'' = -lam sin(theta), theta'(0) = 0, theta(1/2) = 0; y' = sin(theta)
+    const lam = PI * PI * PoPcr;
+    if (!(PoPcr > 1)) return { alpha: 0, dL: 0 };
+    const run = (al) => {
+      let th = al, om = 0, y = 0;
+      const h = 0.5 / N, f = (T, O) => [O, -lam * Math.sin(T), Math.sin(T)];
+      for (let i = 0; i < N; i++) {
+        const k1 = f(th, om), k2 = f(th + h / 2 * k1[0], om + h / 2 * k1[1]), k3 = f(th + h / 2 * k2[0], om + h / 2 * k2[1]), k4 = f(th + h * k3[0], om + h * k3[1]);
+        th += h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]); om += h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]); y += h / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+      }
+      return { th, y };
+    };
+    const al = bisect((a) => run(a).th, 1e-9, PI - 1e-6, 1e-14);
+    return { alpha: al, dL: run(al).y };
+  }
+
+  // ---------------- material and short columns ----------------
+  const roStrain = (s, E, s02, m) => s / E + 0.002 * (s / s02) ** m;          // Lab 1 fit (Ramberg-Osgood)
+  function roStress(eps, E, s02, m) {
+    const ea = Math.abs(eps);
+    if (ea === 0) return 0;
+    let s = Math.min(E * ea, s02 * (ea / 0.002) ** (1 / m));
+    for (let i = 0; i < 80; i++) {
+      const f = s / E + 0.002 * (s / s02) ** m - ea, df = 1 / E + 0.002 * m * (s / s02) ** (m - 1) / s02, ds = f / df;
+      s = Math.max(s - ds, 0.5 * s);
+      if (Math.abs(ds) <= 1e-13 * s) break;
+    }
+    return s;
+  }
+  const tangentModulus = (s, E, s02, m) => 1 / (1 / E + 0.002 * m * (s / s02) ** (m - 1) / s02);   // ratio form: no overflow for large m
+  const reducedModRect = (E, Et) => 4 * E * Et / (Math.sqrt(E) + Math.sqrt(Et)) ** 2;
+  /* Critical stress at slenderness sl from sigma = pi^2 E_t(sigma)/sl^2 (Engesser), or with the reduced modulus of a rectangle. */
+  function tangentCurve(sl, E, s02, m, reduced = false) {
+    const f = (s) => { const Et = tangentModulus(s, E, s02, m); return s - PI * PI * (reduced ? reducedModRect(E, Et) : Et) / (sl * sl); };
+    const hi = s02 * 1.6;
+    if (f(hi) < 0) return hi;
+    return bisect(f, 1e-3, hi, 1e-14);
+  }
+  const tangentSlender = (s, E, s02, m) => PI * Math.sqrt(tangentModulus(s, E, s02, m) / s);   // closed form: the Le/r at which s is critical
+  /* Imperfect inelastic pinned column: half-sine shape, fiber section at mid-length, elastic unloading. */
+  function fiberPath(o) {
+    const nf = o.nf, z = new Float64Array(nf), dA = o.b * o.t / nf;
+    for (let i = 0; i < nf; i++) z[i] = (i + 0.5) / nf * o.t - o.t / 2;
+    const emin = new Float64Array(nf), smin = new Float64Array(nf), s = new Float64Array(nf);
+    const stress = (e0, kap, commit) => {
+      for (let i = 0; i < nf; i++) {
+        const ep = e0 + kap * z[i];
+        let v;
+        if (ep <= emin[i]) { v = -roStress(ep, o.E, o.s02, o.m); if (commit) { emin[i] = ep; smin[i] = v; } } else {
+          v = smin[i] + o.E * (ep - emin[i]);
+          if (ep > 0) v = Math.min(v, roStress(ep, o.E, o.s02, o.m));
+        }
+        s[i] = v;
+      }
+    };
+    const ds = [], Ps = [];
+    let Pmax = 0, dmax = 0;
+    for (let k = 1; k <= o.nstep; k++) {
+      const d = o.dmax * k / o.nstep, Y = o.d0 + d, kap = PI * PI / (o.L * o.L) * d;
+      const res = (e0) => { stress(e0, kap, false); let N = 0, Mz = 0; for (let i = 0; i < nf; i++) { N += s[i]; Mz += s[i] * z[i]; } const P = -N * dA; return Mz * dA - P * (Y + o.e); };
+      const e0 = illinois(res, -0.08, 0, 1e-15);
+      stress(e0, kap, true);
+      let N = 0;
+      for (let i = 0; i < nf; i++) N += s[i];
+      const P = -N * dA;
+      ds.push(d); Ps.push(P);
+      if (P > Pmax) { Pmax = P; dmax = d; }
+    }
+    return { d: ds, P: Ps, Pmax, dAtMax: dmax };
+  }
+  const fiberI = (b, t, nf) => { let s = 0; const dA = b * t / nf; for (let i = 0; i < nf; i++) { const z = (i + 0.5) / nf * t - t / 2; s += dA * z * z; } return s; };
+  function aa6061(sl) {                          // Aluminum Association, 6061-T6, as in Beer Eqs. 10.43b-10.45b (allowable, Pa)
+    if (sl <= 17.8) return 146.3e6;
+    if (sl < 66) return (173.9 - 1.602 * sl + 0.00323 * sl * sl) * 1e6;
+    return 356e3 / (sl * sl) * 1e6;
+  }
+  function aisc(sl, E, sY) {                     // Beer Eqs. 10.38-10.42
+    const se = PI * PI * E / (sl * sl), scr = sl <= 4.71 * Math.sqrt(E / sY) ? 0.658 ** (sY / se) * sY : 0.877 * se;
+    return { scr, sall: scr / 1.67 };
+  }
+
+  // ---------------- convergence ----------------
+  function feConvergence(EI, L, ends, Pexact, Ns = [1, 2, 4, 8, 16, 32, 64, 128]) {
+    return Ns.map((N) => ({ N, err: Math.abs(feBuckle(EI, L, N, ends).P / Pexact - 1) }));
+  }
+  function fdConvergence(EI, L, P, Pcr, d0, e, Ns = [4, 8, 16, 32, 64, 128, 256, 512, 1024]) {
+    const exact = pinnedResponse(P, Pcr, L, [L / 2], d0, e)[0], ends = [{ v: true, k: 0 }, { v: true, k: 0 }];
+    return Ns.map((N) => {
+      const w = fdPinned(EI, L, P, N, d0, e), fe = feImperfect(EI, L, Math.min(N, 256), ends, P, d0, e, e);
+      return { N, err: Math.abs(w[N / 2] / exact - 1), errM: Math.abs(feMidDefl(fe) / exact - 1) };
+    });
+  }
+
+  const BASE = { mode: 'buckle', ends: 'pinned', k: 2800, L: 0.45, sec: 'rect', b: 25.42e-3, t: 6.35e-3, Do: 63.5e-3, tw: 1.65e-3, d: 12.7e-3,
+                 mat: 'al', E: 68.9e9, sY: 273.7e6, m: 17, d0: 0.46e-3, e: 0, PoPcr: 0.9, Ne: 32, Nfd: 400, nf: 80, data: null, Pabs: null };
+  const P_ = (o) => Object.assign({}, BASE, o);
+  const PRESETS = {
+    euler450: P_({}),
+    endsFF: P_({ ends: 'fixed-fixed', L: 0.6005 }),
+    springsB: P_({ ends: 'springs', L: 0.6005, k: 2800, data: 'Bff' }),
+    flagpole: P_({ ends: 'free-fixed', L: 1.0, sec: 'tube', Do: 50.8e-3, tw: 3.18e-3 }),
+    partA300: P_({ mode: 'imperfect', L: 0.300, d0: 0.26e-3, PoPcr: 0.93, data: 'A300' }),
+    partA450: P_({ mode: 'imperfect', L: 0.450, d0: 0.46e-3, PoPcr: 0.93, data: 'A450' }),
+    partA600: P_({ mode: 'imperfect', L: 0.6005, d0: 0.62e-3, PoPcr: 0.93, data: 'A600' }),
+    partBff: P_({ mode: 'imperfect', ends: 'fixed-fixed', L: 0.6005, d0: 0.50e-3, PoPcr: 0.93, data: 'Bff' }),
+    partBfp: P_({ mode: 'imperfect', ends: 'fixed-pinned', L: 0.640, d0: 0.50e-3, PoPcr: 0.93, data: 'Bfp' }),
+    partC1: P_({ mode: 'imperfect', L: 0.450, d0: 0.46e-3, e: 1e-3, PoPcr: 0.8, data: 'C1' }),
+    partC2: P_({ mode: 'imperfect', L: 0.450, d0: 0.46e-3, e: 2e-3, PoPcr: 0.72, data: 'C2' }),
+    partD: P_({ mode: 'inelastic', L: 0.090, d0: 0.03e-3, e: 0, data: 'D' }),
+    elastica: P_({ mode: 'imperfect', L: 0.450, d0: 0, e: 0, PoPcr: 1.02 }),
+    steel: P_({ mode: 'inelastic', mat: 'a36', E: 200e9, sY: 250e6, m: 60, L: 0.15, d0: 0.05e-3 }),
+    design: P_({ mode: 'imperfect', L: 2.0, sec: 'tube', Do: 63.5e-3, tw: 1.65e-3, d0: 0, e: 2e-3, Pabs: 12e3 }),
+    designTrap: P_({ mode: 'buckle', ends: 'fixed-fixed', L: 2.0, sec: 'tube', Do: 44.45e-3, tw: 1.65e-3 }),
+  };
+
+  return { MATERIALS, K_IDEAL, PRESETS, BASE, Z_FP, section, euler, sigmaCr, bisect, illinois, endsOf, springBoth, springPin, kFromSym, closedPcr, modeShape,
+           feSystem, reduceBand, bandMul, bandLU, bandSolve, feBuckle, feImperfect, feCurvMid, feMidDefl, pinnedResponse, fdPinned, ymaxSecant,
+           sigmaxSecant, secantPY, secantPYnum, southwell, RF, ellK, elasticaClosed, elasticaShoot, roStrain, roStress, tangentModulus,
+           reducedModRect, tangentCurve, tangentSlender, fiberPath, fiberI, aa6061, aisc, feConvergence, fdConvergence };
+})();
+if (typeof module !== 'undefined') module.exports = Lab9Model;
+</script>
+
+<script id="sample-data" type="application/json">{"tests":{"A300":{"P":[0.0,250.0,500.0,750.0,1000.0,1250.0,1500.0,1750.0,2000.0,2250.0,2500.0,2750.0,3000.0,3275.0,3449.0,3562.0,3642.0,3702.0,3748.0,3784.0,3814.0],"d":[0.0,3e-05,5e-05,9e-05,0.00012,0.00017,0.00022,0.00028,0.00036,0.00046,0.00059,0.00077,0.00104,0.0015,0.002,0.0025,0.003,0.0035,0.004,0.0045,0.005],"ef":[-1e-06,-1.6e-05,-2.7e-05,-4.1e-05,-5.2e-05,-6e-05,-6.5e-05,-6.5e-05,-6.3e-05,-5.1e-05,-2.7e-05,9e-06,7.7e-05,0.000216,0.000376,0.000539,0.000703,0.000871,0.001046,0.001214,0.001384],"eb":[-1e-06,-3e-05,-6e-05,-9.6e-05,-0.000128,-0.000164,-0.000204,-0.000246,-0.000297,-0.00035,-0.000418,-0.000501,-0.00061,-0.000801,-0.000989,-0.001171,-0.001349,-0.00153,-0.001707,-0.001883,-0.002061],"PS":4103.33054582574,"Pmin":2250.0},"A450":{"P":[0.0,100.0,200.0,300.0,400.0,500.0,600.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1350.0,1479.0,1553.0,1601.0,1635.0,1660.0,1680.0,1695.0,1707.0],"d":[0.0,3e-05,7e-05,0.00011,0.00015,0.0002,0.00026,0.00033,0.00042,0.00052,0.00064,0.00081,0.00102,0.00131,0.0015,0.00225,0.003,0.00375,0.00449,0.00525,0.006,0.00674,0.0075],"ef":[-1e-06,-6e-06,-8e-06,-1e-05,-1.4e-05,-1.7e-05,-1.4e-05,-1.1e-05,-5e-06,1e-06,1.1e-05,2.7e-05,5.4e-05,8.9e-05,0.000114,0.000221,0.000329,0.000444,0.000556,0.00067,0.000785,0.0009,0.001015],"eb":[0.0,-1.5e-05,-2.8e-05,-4.3e-05,-6e-05,-7.5e-05,-9.5e-05,-0.000114,-0.000137,-0.00016,-0.000189,-0.000221,-0.000267,-0.000321,-0.000356,-0.000484,-0.000605,-0.000723,-0.000843,-0.000966,-0.001079,-0.001198,-0.001314],"PS":1828.8060583278107,"Pmin":1000.0},"A600":{"P":[0.0,50.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0,550.0,600.0,650.0,700.0,750.0,819.0,863.0,891.0,911.0,926.0,937.0,947.0,954.0],"d":[0.0,4e-05,9e-05,0.00013,0.00018,0.00025,0.00032,0.00039,0.00049,0.00059,0.00072,0.00087,0.00107,0.00131,0.00162,0.00205,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01],"ef":[0.0,-4e-06,-1e-06,-2e-06,-5e-06,-2e-06,-3e-06,1e-06,3e-06,1e-05,1.3e-05,2.5e-05,3.6e-05,5.4e-05,7.4e-05,0.000108,0.000184,0.000265,0.000349,0.000435,0.000525,0.00061,0.000696,0.000781],"eb":[0.0,-7e-06,-1.4e-05,-2.3e-05,-3.4e-05,-4.2e-05,-4.8e-05,-6.4e-05,-7.7e-05,-8.9e-05,-0.000106,-0.00012,-0.000144,-0.000169,-0.000199,-0.00024,-0.00033,-0.000419,-0.000509,-0.000596,-0.000683,-0.00077,-0.000858,-0.000949],"PS":1026.1353796147328,"Pmin":550.0},"Bff":{"P":[0.0,250.0,500.0,750.0,1000.0,1250.0,1500.0,1750.0,2000.0,2250.0,2500.0,2750.0,3000.0,3038.0,3238.0,3348.0,3418.0,3467.0,3502.0,3529.0,3550.0,3567.0],"d":[0.0,3e-05,7e-05,0.00011,0.00017,0.00023,0.00031,0.00041,0.00053,0.00069,0.00093,0.00128,0.00188,0.00201,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01],"ef":[1e-06,-2.1e-05,-3.9e-05,-5.5e-05,-6.9e-05,-8.2e-05,-9.1e-05,-0.000103,-0.000106,-0.000105,-9e-05,-5.9e-05,1.3e-05,3e-05,0.000169,0.00032,0.000471,0.000626,0.000782,0.000938,0.001098,0.001254],"eb":[-2e-06,-2.4e-05,-5.4e-05,-8.2e-05,-0.000112,-0.000143,-0.000175,-0.000212,-0.000252,-0.000301,-0.000356,-0.000435,-0.00055,-0.000572,-0.000749,-0.000914,-0.00108,-0.001244,-0.001405,-0.001566,-0.001724,-0.001885],"PS":3730.073675051459,"Pmin":2250.0},"Bfp":{"P":[0.0,100.0,200.0,300.0,400.0,500.0,600.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1446.0,1539.0,1590.0,1622.0,1644.0,1660.0,1672.0,1682.0,1690.0],"d":[0.0,3e-05,6e-05,0.0001,0.00014,0.00019,0.00024,0.00031,0.0004,0.00049,0.00062,0.00079,0.00101,0.00133,0.00214,0.00321,0.00428,0.00535,0.00642,0.00748,0.00856,0.00963,0.0107],"ef":[-2e-06,-4e-06,-1.1e-05,-2e-05,-2.4e-05,-2.6e-05,-3e-05,-3.7e-05,-3.6e-05,-3.2e-05,-3.5e-05,-2.7e-05,-1.5e-05,3e-06,6.8e-05,0.000161,0.000261,0.000357,0.000457,0.000556,0.000657,0.000756,0.000858],"eb":[0.0,-1.1e-05,-2.6e-05,-3.6e-05,-5e-05,-6.2e-05,-7.4e-05,-9e-05,-0.000107,-0.000127,-0.000146,-0.000168,-0.000199,-0.000239,-0.000326,-0.000435,-0.000541,-0.000644,-0.000749,-0.00085,-0.000954,-0.001052,-0.001156],"PS":1765.0465040135057,"Pmin":1000.0},"C1":{"P":[0.0,100.0,200.0,300.0,400.0,500.0,600.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1305.0,1360.0,1405.0,1442.0,1473.0],"d":[0.0,0.0001,0.00022,0.00035,0.00051,0.00067,0.00087,0.00111,0.0014,0.00174,0.00218,0.00272,0.00344,0.00444,0.0045,0.00525,0.006,0.00675,0.0075],"ef":[1e-06,4e-06,1.3e-05,2e-05,3.5e-05,5e-05,7.1e-05,9.6e-05,0.000129,0.000171,0.000227,0.000303,0.000403,0.000547,0.000554,0.000664,0.000776,0.000889,0.001004],"eb":[2e-06,-2.4e-05,-4.8e-05,-7.6e-05,-0.000105,-0.000138,-0.000177,-0.000219,-0.000271,-0.00033,-0.000408,-0.000496,-0.000613,-0.000778,-0.000786,-0.000906,-0.001025,-0.00114,-0.00126]},"C2":{"P":[0.0,100.0,200.0,300.0,400.0,500.0,600.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1303.0],"d":[0.0,0.00018,0.00037,0.00058,0.00084,0.00113,0.00146,0.00187,0.00233,0.00292,0.00364,0.00456,0.00577,0.00745,0.0075],"ef":[-1e-06,1.8e-05,3.3e-05,5.2e-05,7.8e-05,0.00011,0.000149,0.000198,0.000258,0.000334,0.000434,0.000564,0.00074,0.000987,0.000994],"eb":[1e-06,-3.1e-05,-6.7e-05,-0.000104,-0.000148,-0.0002,-0.000257,-0.000323,-0.000402,-0.000494,-0.000613,-0.000758,-0.00095,-0.001213,-0.001221]},"D":{"P":[0.0,4000.0,8000.0,12000.0,16000.0,20000.0,24000.0,28000.0,28888.0,30355.0,30884.0,31029.0,30987.0,30842.0,30636.0,30393.0,30127.0,29847.0,29559.0,29266.0,28972.0,28679.0,28387.0,28098.0,27812.0,27531.0,27253.0,26981.0,26713.0,26450.0,26192.0],"d":[0.0,1e-05,1e-05,3e-05,4e-05,6e-05,9e-05,0.00013,0.00015,0.0002,0.00026,0.0003,0.00035,0.0004,0.00045,0.0005,0.00055,0.0006,0.00065,0.0007,0.00075,0.0008,0.00085,0.0009,0.00095,0.001,0.00105,0.0011,0.00115,0.0012,0.00125],"ef":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"eb":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}},"curve":{"A":[[163.6583440222561,25.42068397892254],[245.48751603338417,11.329699215868281],[327.589451951216,6.357046529267256]],"B":[[170.99533047922642,23.10830752059237],[248.57925362859004,10.934700211337748]],"D":[[49.09750320667683,192.2288234820372]]},"Dmax":31029.0,"b":0.02542,"t":0.00635,"E2":68460000000.0,"sY":273700000.0,"k":2796.7673924238015}</script>
+<script>
+/* SimCore — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   No dependencies; works offline. Provides: unit system (SI primary, US toggle), number
+   formatting, slider controls, an SVG plotter with hover readout, CSV export with a
+   copy-to-clipboard fallback. Physics never lives here: each lab keeps its model in a
+   <script id="model"> block of pure functions so the Node tests load exactly what runs. */
+const SimCore = (() => {
+  'use strict';
+  const KSI = 6.894757293168e6, IN = 0.0254, LBF = 4.4482216152605;
+  // quantity -> [factor from SI base, label] per unit system
+  const Q = {
+    stress:     { SI: [1e-6, 'MPa'],   US: [1 / KSI, 'ksi'] },
+    modulus:    { SI: [1e-9, 'GPa'],   US: [1 / KSI, 'ksi'] },
+    length:     { SI: [1e3, 'mm'],     US: [1 / IN, 'in'] },
+    longlength: { SI: [1, 'm'],        US: [1 / (12 * IN), 'ft'] },
+    force:      { SI: [1e-3, 'kN'],    US: [1 / (1000 * LBF), 'kip'] },
+    compliance: { SI: [1e6, 'mm/kN'],  US: [1000 * LBF / IN, 'in/kip'] },
+    energy:     { SI: [1e-6, 'MJ/m³'], US: [1000 / KSI, 'in·lb/in³'] },
+    area:       { SI: [1e6, 'mm²'],    US: [1 / (IN * IN), 'in²'] },
+    moment:     { SI: [1, 'N·m'],      US: [1 / (LBF * IN), 'lb·in'] },
+    angle:      { SI: [180 / Math.PI, '°'], US: [180 / Math.PI, '°'] },
+    twistrate:  { SI: [180 / Math.PI, '°/m'], US: [180 / Math.PI / 3.280839895, '°/ft'] },
+    inertia:    { SI: [1e12, 'mm⁴'],   US: [1 / IN ** 4, 'in⁴'] },
+    volume3:    { SI: [1e9, 'mm³'],    US: [1 / IN ** 3, 'in³'] },
+    power:      { SI: [1e-3, 'kW'],    US: [1 / 745.69987, 'hp'] },
+    temperature:{ SI: [1, '°C'],       US: [1.8, '°F'] },
+    percent:    { SI: [100, '%'],      US: [100, '%'] },
+    shearflow:  { SI: [1e-3, 'N/mm'],  US: [IN / LBF, 'lb/in'] },
+    stiffness:  { SI: [1e-6, 'kN/mm'], US: [IN / (1000 * LBF), 'kip/in'] },
+    rigidity:   { SI: [1, 'N·m²'],     US: [1 / (LBF * IN * IN), 'lb·in²'] },
+    forceN:     { SI: [1, 'N'],        US: [1 / LBF, 'lbf'] },
+    rotstiff:   { SI: [1, 'N·m/rad'],  US: [1 / (LBF * IN), 'lb·in/rad'] },
+    lineload:   { SI: [1e-3, 'kN/m'],  US: [0.3048 / (1000 * LBF), 'kip/ft'] },
+    microstrain:{ SI: [1e6, 'µε'],     US: [1e6, 'µε'] },
+    pressure:   { SI: [1e-6, 'MPa'],   US: [1 / 6894.757293168, 'psi'] },
+    none:       { SI: [1, ''],         US: [1, ''] },
+  };
+  let system = 'SI';
+  const listeners = [];
+  const setSystem = (s) => { system = s; listeners.forEach((f) => f(s)); };
+  const onSystem = (f) => listeners.push(f);
+  const getSystem = () => system;
+  const conv = (q, v) => v * Q[q][system][0];
+  const unconv = (q, v) => v / Q[q][system][0];
+  const unit = (q) => Q[q][system][1];
+  const csvUnit = (q) => unit(q).replace('µε', 'ue').replace('²', '2').replace('³', '3').replace('⁴', '4').replace('·', '').replace('°', 'deg').replace('/', '_per_').replace('%', 'pct');
+
+  const SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+  function fmt(v, sig = 4) {
+    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+    if (v === 0) return '0';
+    const a = Math.abs(v);
+    if (a >= 1e6 || a < 1e-4) {
+      const [m, e] = v.toExponential(sig - 1).split('e');
+      return m.replace('-', '−') + '×10' + String(parseInt(e, 10)).split('').map((c) => SUP[c] || c).join('');
+    }
+    const digits = Math.floor(Math.log10(a)) + 1;
+    const dec = Math.max(0, sig - digits);
+    let s = (Math.round(v * 10 ** dec) / 10 ** dec).toFixed(dec);
+    const [ip, fp] = s.replace('-', '').split('.');
+    const ipg = ip.length > 4 ? ip.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : ip;
+    return (v < 0 ? '−' : '') + ipg + (fp !== undefined ? '.' + fp : '');
+  }
+  const fmtQ = (q, v, sig = 4) => fmt(conv(q, v), sig) + (unit(q) ? ' ' + unit(q) : '');
+  const plain = (v, sig = 8) => (Number.isFinite(v) ? Number(v.toPrecision(sig)).toString() : '');
+
+  // ---------------------------------------------------------------- controls
+  function el(tag, attrs = {}, html = '') {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (html) e.innerHTML = html;
+    return e;
+  }
+  /* spec: {id, label, sym(html), q, min, max, step, log, int, sig, help}
+     values are SI internally; the number box shows/accepts the active unit system. */
+  function slider(container, spec, value, onChange) {
+    const q = spec.q || 'none';
+    const wrap = el('div', { class: 'ctl' });
+    const lab = el('label', { for: spec.id + '-num' }, `<span class="sym">${spec.sym || ''}</span><span>${spec.label}</span>`);
+    const row = el('div', { class: 'ctl-row' });
+    const r = el('input', { type: 'range', id: spec.id, min: 0, max: 1000, step: 1, 'aria-label': spec.label });
+    const nbox = el('input', { type: 'number', id: spec.id + '-num', inputmode: 'decimal', step: 'any' });
+    const u = el('span', { class: 'unit' });
+    row.append(r, nbox, u);
+    wrap.append(lab, row);
+    if (spec.help) wrap.append(el('p', { class: 'help', id: spec.id + '-help' }, spec.help));
+    container.append(wrap);
+    let v = value;
+    const toPos = (x) => spec.log ? 1000 * Math.log(x / spec.min) / Math.log(spec.max / spec.min) : 1000 * (x - spec.min) / (spec.max - spec.min);
+    const fromPos = (p) => {
+      let x = spec.log ? spec.min * Math.pow(spec.max / spec.min, p / 1000) : spec.min + (spec.max - spec.min) * p / 1000;
+      if (spec.int) x = Math.round(x);
+      else if (spec.step) x = Math.round(x / spec.step) * spec.step;
+      return Math.min(spec.max, Math.max(spec.min, x));
+    };
+    const show = () => {
+      r.value = String(Math.round(toPos(v)));
+      const shown = conv(q, v);
+      nbox.value = spec.int ? String(Math.round(shown)) : String(Number(shown.toPrecision(spec.sig || 4)));
+      u.textContent = unit(q);
+      r.setAttribute('aria-valuetext', `${nbox.value} ${unit(q)}`.trim());
+    };
+    r.addEventListener('input', () => { v = fromPos(+r.value); show(); onChange(v); });
+    nbox.addEventListener('change', () => {
+      const x = parseFloat(nbox.value);
+      if (!Number.isFinite(x)) { show(); return; }
+      v = Math.min(spec.max, Math.max(spec.min, unconv(q, x)));
+      if (spec.int) v = Math.round(v);
+      show(); onChange(v);
+    });
+    onSystem(show);
+    show();
+    return { set: (x) => { v = x; show(); }, get: () => v, el: wrap, range: r, box: nbox };
+  }
+
+  function segmented(container, options, value, onChange, label) {
+    const g = el('div', { class: 'seg', role: 'group', 'aria-label': label || '' });
+    const btns = options.map(([val, text]) => {
+      const b = el('button', { type: 'button', 'aria-pressed': String(val === value), 'data-v': val }, text);
+      b.addEventListener('click', () => { btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); onChange(val); });
+      g.append(b);
+      return b;
+    });
+    container.append(g);
+    return { set: (val) => btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === val))) };
+  }
+
+  // ---------------------------------------------------------------- CSV export
+  function toCSV(header, rows) {
+    const esc = (x) => { const s = String(x); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    return [header.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n') + '\n';
+  }
+  /* Saves the CSV and always also shows it in `panel` (a <details> with a textarea and a Copy
+     button). Hosted on claude.ai the page asks the viewer through the `downloads` capability (the
+     viewer confirms each save); opened as a local file it uses an ordinary browser download. */
+  let dlPromise = null;
+  function hostDownloads() {
+    if (!dlPromise) {
+      const c = window.claude;
+      dlPromise = c && typeof c.use === 'function' ? Promise.resolve(c.use('downloads')).catch(() => null) : Promise.resolve(null);
+    }
+    return dlPromise;
+  }
+  if (typeof window !== 'undefined' && window.claude) hostDownloads();
+  function anchorDownload(filename, text) {
+    try {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) { /* download blocked: the panel still has the data */ }
+  }
+  function exportCSV(filename, text, panel) {
+    if (window.claude && typeof window.claude.use === 'function') {
+      hostDownloads().then((dl) => {
+        if (dl) return dl.save({ filename, data: text }).catch(() => { /* declined or unavailable: use the panel */ });
+        anchorDownload(filename, text);
+      });
+    } else anchorDownload(filename, text);
+    if (panel) {
+      panel.hidden = false;
+      panel.open = true;
+      panel.querySelector('.fname').textContent = filename;
+      panel.querySelector('textarea').value = text;
+    }
+  }
+  function wireCopy(panel) {
+    const btn = panel.querySelector('.copy');
+    const ta = panel.querySelector('textarea');
+    const msg = panel.querySelector('.copy-msg');
+    btn.addEventListener('click', () => {
+      const done = (t) => { msg.textContent = t; setTimeout(() => (msg.textContent = ''), 2500); };
+      const fallback = () => { ta.focus(); ta.select(); done('Selected: press Ctrl/Cmd+C to copy'); };
+      try {
+        navigator.clipboard.writeText(ta.value).then(() => done('Copied'), fallback);
+      } catch (e) { fallback(); }
+    });
+  }
+
+  // ---------------------------------------------------------------- SVG plot
+  const DASH = { theory: '', numeric: '7 4', measured: '', third: '7 3 1.5 3', fourth: '1.5 3', muted: '3 3', accent: '' };
+  function niceStep(span, target) {
+    const raw = span / Math.max(1, target);
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+  }
+  function ticks(lo, hi, target) {
+    const st = niceStep(hi - lo, target);
+    const out = [];
+    for (let t = Math.ceil(lo / st - 1e-9) * st; t <= hi + st * 1e-9; t += st) out.push(Math.abs(t) < st * 1e-9 ? 0 : t);
+    return out;
+  }
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  class Plot {
+    /* opts: {xlabel, ylabel, aspect, logx, logy, xfmt, yfmt, legend: true} */
+    constructor(container, opts = {}) {
+      this.c = container;
+      this.o = Object.assign({ aspect: 0.6, minH: 210, maxH: 430, xfmt: (v) => fmt(v, 3), yfmt: (v) => fmt(v, 3) }, opts);
+      this.c.classList.add('plot');
+      this.svgHolder = el('div');
+      this.tip = el('div', { class: 'tip' }); this.tip.hidden = true;
+      this.legendEl = el('div', { class: 'legend' });
+      this.c.append(this.svgHolder, this.tip, this.legendEl);
+      this.data = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        let last = 0;
+        new ResizeObserver(() => { const w = this.c.clientWidth; if (Math.abs(w - last) > 4 && this.data) { last = w; this.draw(this.data); } }).observe(this.c);
+      }
+      this.svgHolder.addEventListener('pointermove', (e) => this.hover(e));
+      this.svgHolder.addEventListener('pointerleave', () => { this.tip.hidden = true; const d = this.svgHolder.querySelector('.hov'); if (d) d.setAttribute('visibility', 'hidden'); });
+    }
+    /* d: {series:[{x,y,role,label,width,markers,opacity,hover}], bands:[{x0,x1,label,labelPos:'top'|'bottom'}], points:[{x,y,role,shape,label,size}],
+           segs:[{x0,y0,x1,y1,role,dash,width,label}], xlim, ylim, desc, texts:[{x,y,text,anchor,role,dx,dy (pixels)}]} */
+    draw(d) {
+      this.data = d;
+      const o = this.o;
+      const W = Math.max(280, this.c.clientWidth || 600);
+      const H = Math.round(Math.min(o.maxH, Math.max(o.minH, W * o.aspect)));
+      const m = { l: 58, r: 14, t: 12, b: 42 };
+      const pw = W - m.l - m.r, ph = H - m.t - m.b;
+      const tx = (v) => (o.logx ? Math.log10(v) : v), ty = (v) => (o.logy ? Math.log10(v) : v);
+      let [x0, x1] = d.xlim, [y0, y1] = d.ylim;
+      if (o.logx) { x0 = Math.log10(x0); x1 = Math.log10(x1); }
+      if (o.logy) { y0 = Math.log10(y0); y1 = Math.log10(y1); }
+      const sx = (v) => m.l + (tx(v) - x0) / (x1 - x0) * pw;
+      const sy = (v) => m.t + ph - (ty(v) - y0) / (y1 - y0) * ph;
+      this.map = { sx, sy, m, pw, ph };
+      const id = 'c' + Math.random().toString(36).slice(2, 8);
+      const parts = [];
+      parts.push(`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(d.desc || o.ylabel + ' versus ' + o.xlabel)}" xmlns="http://www.w3.org/2000/svg">`);
+      parts.push(`<defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}"/></clipPath></defs>`);
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:var(--panel)"/>`);
+      // bands (regions where an assumption fails)
+      for (const b of d.bands || []) {
+        const a = Math.max(m.l, sx(b.x0)), z = Math.min(m.l + pw, sx(b.x1));
+        if (z > a) {
+          parts.push(`<rect x="${a}" y="${m.t}" width="${z - a}" height="${ph}" style="fill:var(--fail);opacity:.16"/>`);
+          parts.push(`<line x1="${a}" y1="${m.t}" x2="${a}" y2="${m.t + ph}" style="stroke:var(--fail);stroke-width:1.2;stroke-dasharray:2 2"/>`);
+          if (b.label) parts.push(`<text x="${a + 5}" y="${b.labelPos === 'bottom' ? m.t + ph - 6 : m.t + 13}" style="fill:var(--fail-ink);font-size:11px;font-weight:600">${esc(b.label)}</text>`);
+        }
+      }
+      // grid + ticks
+      const fs = 11;
+      const xt = o.logx ? decades(d.xlim, Math.max(2, Math.floor(pw / 45))) : ticks(d.xlim[0], d.xlim[1], Math.max(3, Math.floor(pw / 85)));
+      const yt = o.logy ? decades(d.ylim, Math.max(2, Math.floor(ph / 26))) : ticks(d.ylim[0], d.ylim[1], Math.max(3, Math.floor(ph / 45)));
+      for (const t of xt) { const X = sx(o.logx ? 10 ** t : t); if (X < m.l - 0.5 || X > m.l + pw + 0.5) continue;
+        parts.push(`<line x1="${X}" y1="${m.t}" x2="${X}" y2="${m.t + ph}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${X}" y1="${m.t + ph}" x2="${X}" y2="${m.t + ph + 4}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${X}" y="${m.t + ph + 16}" text-anchor="middle" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logx ? supExp(t) : o.xfmt(t))}</text>`); }
+      for (const t of yt) { const Y = sy(o.logy ? 10 ** t : t); if (Y < m.t - 0.5 || Y > m.t + ph + 0.5) continue;
+        parts.push(`<line x1="${m.l}" y1="${Y}" x2="${m.l + pw}" y2="${Y}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${m.l - 4}" y1="${Y}" x2="${m.l}" y2="${Y}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${m.l - 7}" y="${Y + 4}" text-anchor="end" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logy ? supExp(t) : o.yfmt(t))}</text>`); }
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:none;stroke:var(--line)"/>`);
+      parts.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.xlabel)}</text>`);
+      parts.push(`<text transform="translate(13 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.ylabel)}</text>`);
+      parts.push(`<g clip-path="url(#${id})">`);
+      // segments
+      for (const s of d.segs || []) {
+        parts.push(`<line x1="${sx(s.x0)}" y1="${sy(s.y0)}" x2="${sx(s.x1)}" y2="${sy(s.y1)}" style="stroke:var(--${s.role || 'mutedline'});stroke-width:${s.width || 1.2};stroke-dasharray:${s.dash || '4 3'};opacity:${s.opacity || 1}"/>`);
+      }
+      // series
+      this.hoverPts = [];
+      for (const s of d.series || []) {
+        const n = Math.min(s.x.length, s.y.length);
+        if (!n) continue;
+        const col = `var(--${s.role || 'theory'})`;
+        if (s.markers) {
+          const stride = Math.max(1, Math.ceil(n / (s.maxMarkers || 350)));
+          const r = s.r || 2.3;
+          let g = '';
+          for (let i = 0; i < n; i += stride) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+            g += `<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${r}"/>`;
+            if (s.hover !== false) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<g style="fill:none;stroke:${col};stroke-width:1;opacity:${s.opacity || 0.85}">${g}</g>`);
+        } else {
+          let p = '', pen = false;
+          for (let i = 0; i < n; i++) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y) || Math.abs(Y) > 1e5) { pen = false; continue; }
+            p += (pen ? 'L' : 'M') + X.toFixed(1) + ' ' + Y.toFixed(1);
+            pen = true;
+            if (s.hover !== false && (i % Math.max(1, Math.floor(n / 400)) === 0 || i === n - 1)) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<path d="${p}" style="fill:none;stroke:${col};stroke-width:${s.width || 2};stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1};stroke-linejoin:round;stroke-linecap:round"/>`);
+        }
+      }
+      parts.push('</g>');
+      // points (markers with labels)
+      for (const p of d.points || []) {
+        const X = sx(p.x), Y = sy(p.y);
+        if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+        const col = `var(--${p.role || 'ink'})`, z = p.size || 5;
+        if (p.shape === 'diamond') parts.push(`<path d="M${X} ${Y - z - 1}L${X + z + 1} ${Y}L${X} ${Y + z + 1}L${X - z - 1} ${Y}Z" style="fill:var(--panel);stroke:${col};stroke-width:2"/>`);
+        else if (p.shape === 'x') parts.push(`<path d="M${X - z} ${Y - z}L${X + z} ${Y + z}M${X - z} ${Y + z}L${X + z} ${Y - z}" style="stroke:${col};stroke-width:2.2"/>`);
+        else if (p.shape === 'ring') parts.push(`<circle cx="${X}" cy="${Y}" r="${z + 2}" style="fill:none;stroke:${col};stroke-width:2.5"/><circle cx="${X}" cy="${Y}" r="2" style="fill:${col}"/>`);
+        else parts.push(`<circle cx="${X}" cy="${Y}" r="${z}" style="fill:${p.fill ? col : 'var(--panel)'};stroke:${col};stroke-width:2"/>`);
+        if (p.label) {
+          const right = X < m.l + pw * 0.72;
+          parts.push(`<text x="${X + (right ? 9 : -9)}" y="${Y - 8}" text-anchor="${right ? 'start' : 'end'}" style="fill:var(--ink);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(p.label)}</text>`);
+        }
+      }
+      for (const t of d.texts || []) {
+        parts.push(`<text x="${sx(t.x) + (t.dx || 0)}" y="${sy(t.y) + (t.dy || 0)}" text-anchor="${t.anchor || 'start'}" style="fill:var(--${t.role || 'muted'});font-size:11px;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(t.text)}</text>`);
+      }
+      parts.push(`<circle class="hov" r="4.5" visibility="hidden" style="fill:var(--accent);stroke:var(--panel);stroke-width:2"/>`);
+      parts.push('</svg>');
+      this.svgHolder.innerHTML = parts.join('');
+      // legend
+      if (this.o.legend !== false) {
+        const items = (d.series || []).filter((s) => s.label && s.legend !== false).map((s) => {
+          const col = `var(--${s.role || 'theory'})`;
+          const sw = s.markers
+            ? `<svg viewBox="0 0 26 10"><circle cx="13" cy="5" r="3" style="fill:none;stroke:${col};stroke-width:1.2"/></svg>`
+            : `<svg viewBox="0 0 26 10"><line x1="1" y1="5" x2="25" y2="5" style="stroke:${col};stroke-width:2.2;stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1}"/></svg>`;
+          return `<span>${sw}${esc(s.label)}</span>`;
+        });
+        for (const b of d.bands || []) if (b.legend) items.push(`<span><svg viewBox="0 0 26 10"><rect x="1" y="1" width="24" height="8" style="fill:var(--fail);opacity:.35"/></svg>${esc(b.legend)}</span>`);
+        this.legendEl.innerHTML = items.join('');
+      }
+    }
+    hover(e) {
+      if (!this.hoverPts || !this.hoverPts.length) return;
+      const svg = this.svgHolder.querySelector('svg');
+      const r = svg.getBoundingClientRect();
+      const k = svg.viewBox.baseVal.width / r.width;
+      const X = (e.clientX - r.left) * k, Y = (e.clientY - r.top) * k;
+      let best = null, bd = 1e9;
+      for (const p of this.hoverPts) { const dd = (p[0] - X) ** 2 + (p[1] - Y) ** 2; if (dd < bd) { bd = dd; best = p; } }
+      const dot = svg.querySelector('.hov');
+      if (!best || bd > 900 * k * k) { this.tip.hidden = true; dot.setAttribute('visibility', 'hidden'); return; }
+      dot.setAttribute('cx', best[0]); dot.setAttribute('cy', best[1]); dot.setAttribute('visibility', 'visible');
+      this.tip.hidden = false;
+      this.tip.textContent = `${best[4] ? best[4] + ': ' : ''}${this.o.xfmt(best[2])}, ${this.o.yfmt(best[3])}`;
+      const left = best[0] / k + 12, top = best[1] / k - 30;
+      this.tip.style.left = Math.min(left, r.width - this.tip.offsetWidth - 4) + 'px';
+      this.tip.style.top = Math.max(0, top) + 'px';
+    }
+  }
+  function decades(lim, maxN = 99) { const all = []; for (let e = Math.ceil(Math.log10(lim[0]) - 1e-9); e <= Math.floor(Math.log10(lim[1]) + 1e-9); e++) all.push(e); const step = Math.max(1, Math.ceil(all.length / maxN)); return all.filter((e) => e % step === 0); }
+  function supExp(e) { if (e === 0) return '1'; if (e === 1) return '10'; return '10' + String(e).split('').map((c) => SUP[c] || c).join(''); }
+
+  // least-squares slope of log(y) vs log(x)
+  function logSlope(xs, ys) {
+    const pts = xs.map((x, i) => [Math.log(x), Math.log(ys[i])]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+    const n = pts.length; if (n < 2) return NaN;
+    const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+    let sxy = 0, sxx = 0; for (const [a, b] of pts) { sxy += (a - mx) * (b - my); sxx += (a - mx) ** 2; }
+    return sxy / sxx;
+  }
+
+  return { setSystem, onSystem, getSystem, conv, unconv, unit, csvUnit, fmt, fmtQ, plain, slider, segmented, toCSV, exportCSV, wireCopy, Plot, el, logSlope };
+})();
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab9Model, S = SimCore, $ = (id) => document.getElementById(id), PI = Math.PI;
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'partA450';
+  const p = Object.assign({}, M.PRESETS[preset]);
+  let R = null;
+
+  $('mat').innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; if (spec.id !== 'PoPcr') p.Pabs = null; update(); }); };
+  mk('grp-col', { id: 'L', label: 'Length between the ends', sym: 'L', q: 'length', min: 0.02, max: 6, log: true, sig: 5 });
+  mk('grp-col', { id: 'k', label: 'Rotational stiffness of each spring end', sym: 'k', q: 'rotstiff', min: 1, max: 1e8, log: true, sig: 4 });
+  mk('grp-sec', { id: 'b', label: 'Width (the wide side)', sym: 'b', q: 'length', min: 1e-3, max: 0.2, log: true, sig: 4 });
+  mk('grp-sec', { id: 't', label: 'Thickness (buckling direction)', sym: 't', q: 'length', min: 0.5e-3, max: 0.1, log: true, sig: 4 });
+  mk('grp-sec', { id: 'Do', label: 'Outside diameter', sym: 'D<sub>o</sub>', q: 'length', min: 5e-3, max: 0.4, log: true, sig: 4 });
+  mk('grp-sec', { id: 'tw', label: 'Wall thickness', sym: 't<sub>w</sub>', q: 'length', min: 0.3e-3, max: 0.05, log: true, sig: 4 });
+  mk('grp-sec', { id: 'd', label: 'Diameter', sym: 'd', q: 'length', min: 2e-3, max: 0.3, log: true, sig: 4 });
+  mk('grp-mat', { id: 'E', label: 'Modulus of elasticity', sym: 'E', q: 'modulus', min: 1e9, max: 400e9, step: 0.01e9 });
+  mk('grp-mat', { id: 'sY', label: 'Yield strength (0.2 % offset)', sym: 'σ<sub>Y</sub>', q: 'stress', min: 20e6, max: 1500e6, step: 0.1e6 });
+  mk('grp-mat', { id: 'm', label: 'Ramberg–Osgood exponent (sharpness of the knee)', sym: 'm', q: 'none', min: 3, max: 200, log: true, sig: 3 });
+  mk('grp-imp', { id: 'd0', label: 'Initial bow at mid-length (half sine)', sym: 'δ<sub>0</sub>', q: 'length', min: 0, max: 0.02, step: 1e-6 });
+  mk('grp-imp', { id: 'e', label: 'Load eccentricity (load line off the axis)', sym: 'e', q: 'length', min: 0, max: 0.05, step: 1e-6 });
+  mk('grp-imp', { id: 'PoPcr', label: 'Load as a fraction of P_cr', sym: 'P/P<sub>cr</sub>', q: 'none', min: 0, max: 1.5, step: 0.001 });
+  mk('grp-num', { id: 'Ne', label: 'Finite elements along the column', sym: 'N', q: 'none', min: 1, max: 256, log: true, int: true });
+  mk('grp-num', { id: 'Nfd', label: 'Finite-difference intervals (even)', sym: 'N<sub>fd</sub>', q: 'none', min: 4, max: 4000, log: true, int: true });
+  mk('grp-num', { id: 'nf', label: 'Fibers through the thickness', sym: 'n<sub>f</sub>', q: 'none', min: 4, max: 400, log: true, int: true });
+  const modeSeg = S.segmented($('mode'), [['buckle', 'Buckling load'], ['imperfect', 'Imperfect and eccentric'], ['inelastic', 'Short columns']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  for (const id of ['ends', 'sec']) $(id).addEventListener('change', (e) => { p[id] = e.target.value; update(); });
+  $('mat').addEventListener('change', (e) => { p.mat = e.target.value; const m = M.MATERIALS[p.mat]; Object.assign(p, { E: m.E, sY: m.sY, m: m.m }); setAll(); update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(p[k]);
+    for (const id of ['ends', 'sec', 'mat']) $(id).value = p[id];
+    modeSeg.set(p.mode);
+  }
+  function applyPreset(k) {
+    preset = k; $('preset').value = k; Object.assign(p, M.PRESETS[k]);
+    if (p.Pabs) { const sc = M.section(p), cp = M.closedPcr(p, p.E, sc.I); p.PoPcr = p.Pabs / cp.P; }
+    if (k === 'springsB' && SAMPLE.k) p.k = SAMPLE.k;
+    setAll(); update();
+  }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+    conv: new S.Plot($('plot-conv'), { xlabel: '', ylabel: 'Relative error', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+  const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+  const warn = (W) => { $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join(''); };
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const C = (qq, v) => S.conv(qq, v);
+  const ENDNAME = { pinned: 'pinned–pinned', 'fixed-pinned': 'pinned top, fixed bottom', 'fixed-fixed': 'fixed–fixed', 'free-fixed': 'free top, fixed bottom', springs: 'spring ends', 'spring-pin': 'pinned top, spring bottom' };
+  const dataTest = () => ($('overlay').value === 'auto' && p.data && SAMPLE.tests ? SAMPLE.tests[p.data] : null);
+  const designCurve = (sl) => (M.MATERIALS[p.mat].design === 'aa' ? M.aa6061(sl) : M.aisc(sl, p.E, p.sY).sall);
+  const designName = () => (M.MATERIALS[p.mat].design === 'aa' ? 'Aluminum Association allowable (Eqs. 10.43b–10.45b)' : 'AISC allowable (Eqs. 10.38–10.42)');
+
+  // =============================================================== column sketch
+  function drawColumn(spec) {
+    const W0 = Math.round(Math.max(300, Math.min(1000, $('diagram').clientWidth || 900))), wide = W0 >= 620;
+    const H = wide ? 360 : 420, colW = wide ? Math.round(W0 * 0.42) : W0;
+    const top = 48, bot = H - 40, Lpx = bot - top, cx = Math.round(colW * 0.42), amp = Math.min(colW * 0.16, 60);
+    const { x, y, ends, e, kind, Le, tag } = spec;
+    let s = `<rect x="0" y="0" width="${W0}" height="${H}" style="fill:var(--panel)"/>`;
+    const X = (yy) => cx + yy * amp, Y = (xx) => top + xx / spec.L * Lpx;
+    // straight reference axis
+    s += `<line x1="${cx}" y1="${top - 6}" x2="${cx}" y2="${bot + 6}" style="stroke:var(--grid);stroke-width:1;stroke-dasharray:4 3"/>`;
+    // the column (deflected shape) as a thick band
+    let path = '';
+    x.forEach((xx, i) => { path += (i ? 'L' : 'M') + X(y[i]).toFixed(1) + ' ' + Y(xx).toFixed(1); });
+    s += `<path d="${path}" style="fill:none;stroke:var(--mutedline);stroke-width:9;stroke-linecap:round;opacity:.45"/><path d="${path}" style="fill:none;stroke:var(--theory);stroke-width:2.2"/>`;
+    if (spec.fe) { for (let i = 0; i < spec.fe.x.length; i += Math.max(1, Math.round(spec.fe.x.length / 24))) s += `<circle cx="${X(spec.fe.y[i]).toFixed(1)}" cy="${Y(spec.fe.x[i]).toFixed(1)}" r="3.2" style="fill:none;stroke:var(--numeric);stroke-width:1.6"/>`; }
+    // end symbols
+    const sym = (end, yy, isTop) => {
+      const dir = isTop ? -1 : 1, x0 = X(yy[isTop ? 0 : yy.length - 1]), y0 = isTop ? top : bot;
+      if (!end.v) return '';
+      if (!Number.isFinite(end.k)) {           // fixed: hatched block
+        let h = `<rect x="${x0 - 22}" y="${isTop ? y0 - 14 : y0}" width="44" height="14" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`;
+        for (let i = 0; i < 6; i++) h += `<line x1="${x0 - 20 + i * 8}" y1="${isTop ? y0 - 14 : y0 + 14}" x2="${x0 - 14 + i * 8}" y2="${isTop ? y0 : y0}" style="stroke:var(--muted);stroke-width:1"/>`;
+        return h;
+      }
+      let h = `<circle cx="${x0}" cy="${y0}" r="4.5" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.6"/><path d="M${x0} ${y0 + dir * 4.5}L${x0 - 11} ${y0 + dir * 19}L${x0 + 11} ${y0 + dir * 19}Z" style="fill:none;stroke:var(--ink);stroke-width:1.4"/>`;
+      if (end.k > 0) h += `<path d="M${x0 + 8} ${y0 - 9}a9 9 0 1 1 -1 18" style="fill:none;stroke:var(--fourth);stroke-width:1.6"/><text x="${x0 + 20}" y="${y0 + 4}" style="fill:var(--fourth);font-size:11px">k</text>`;
+      return h;
+    };
+    s += sym(ends[0], y, true) + sym(ends[1], y, false);
+    if (!ends[0].v) s += `<text x="${X(y[0]) + 10}" y="${top + 4}" style="fill:var(--muted);font-size:11px">free</text>`;
+    // the load (top) and the reaction (bottom), offset by e on the -y side (exaggerated)
+    const eo = e > 0 ? Math.min(28, 6 + 6e3 * e) : 0, xa = X(y[0]) - eo;
+    s += `<line x1="${xa}" y1="${top - 40}" x2="${xa}" y2="${top - 8}" style="stroke:var(--numeric);stroke-width:2.6"/><path d="M${xa} ${top - 4}l-6 -10h12z" style="fill:var(--numeric)"/><text x="${xa - 8}" y="${top - 30}" text-anchor="end" style="fill:var(--numeric);font-size:12px;font-weight:600">P</text>`;
+    if (eo) s += `<text x="${xa + 4}" y="${top - 30}" style="fill:var(--numeric);font-size:11px">e = ${q('length', e, 3)}</text>`;
+    s += `<text x="${cx - 30}" y="${top + 18}" text-anchor="end" style="fill:var(--muted);font-size:11px">A</text><text x="${cx - 30}" y="${bot - 6}" text-anchor="end" style="fill:var(--muted);font-size:11px">B</text>`;
+    // x and y axes (Beer Fig. 10.7: x down along the column from A, y lateral)
+    s += `<path d="M14 ${top}v34" style="stroke:var(--muted);stroke-width:1.2"/><path d="M14 ${top + 38}l-3.5 -7h7z" style="fill:var(--muted)"/><text x="20" y="${top + 34}" style="fill:var(--muted);font-size:11px">x</text>`;
+    s += `<path d="M14 ${top}h30" style="stroke:var(--muted);stroke-width:1.2"/><path d="M48 ${top}l-7 -3.5v7z" style="fill:var(--muted)"/><text x="40" y="${top - 6}" style="fill:var(--muted);font-size:11px">y</text>`;
+    // length and effective length
+    const xd = colW - 14, ym = (top + bot) / 2;
+    s += `<line x1="${xd}" y1="${top}" x2="${xd}" y2="${bot}" style="stroke:var(--muted);stroke-width:1"/><line x1="${xd - 5}" y1="${top}" x2="${xd + 5}" y2="${top}" style="stroke:var(--muted)"/><line x1="${xd - 5}" y1="${bot}" x2="${xd + 5}" y2="${bot}" style="stroke:var(--muted)"/>`;
+    s += `<text transform="translate(${xd - 6} ${ym}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font-size:11px">L = ${q('length', spec.L, 4)}</text>`;
+    if (Le && kind === 'buckle') {
+      const span = spec.Lespan;
+      if (span) {
+        const ya = Y(span[0]), yb = Y(Math.min(span[1], spec.L)), xe = cx + amp + 34;
+        s += `<line x1="${xe}" y1="${ya}" x2="${xe}" y2="${yb}" style="stroke:var(--third);stroke-width:2"/><line x1="${xe - 5}" y1="${ya}" x2="${xe + 5}" y2="${ya}" style="stroke:var(--third);stroke-width:2"/>`;
+        if (span[1] <= spec.L + 1e-12) s += `<line x1="${xe - 5}" y1="${yb}" x2="${xe + 5}" y2="${yb}" style="stroke:var(--third);stroke-width:2"/>`;
+        s += `<text x="${xe + 7}" y="${(ya + yb) / 2 + 4}" style="fill:var(--third);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">L<tspan baseline-shift="sub" font-size="8">e</tspan> = ${q('length', Le, 4)}</text>`;
+        for (const xi of spec.inflect || []) s += `<circle cx="${X(spec.shapeAt(xi))}" cy="${Y(xi)}" r="3.5" style="fill:var(--third)"/>`;
+      }
+    }
+    // right half: the section (wide layout) or below
+    const sx0 = wide ? colW + 20 : 20, sy0 = wide ? 60 : H - 10;
+    let right = '';
+    if (wide) {
+      right += `<text x="${sx0}" y="${sy0 - 26}" style="fill:var(--ink);font-size:12px;font-weight:600">${esc(tag)}</text>`;
+      const lines = spec.facts || [];
+      lines.forEach((t, i) => { right += `<text x="${sx0}" y="${sy0 + i * 20}" style="fill:var(--muted);font-size:12px">${t}</text>`; });
+      right += sectionSvg(sx0 + 40, sy0 + lines.length * 20 + 105);
+    }
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} ${H}" role="img" aria-label="${esc(spec.aria)}">${s}${right}</svg>`;
+  }
+  function sectionSvg(x0, y0) {
+    const sc = M.section(p), big = p.sec === 'rect' ? Math.max(p.b, p.t) : p.sec === 'tube' ? p.Do : p.d, k = 90 / big;
+    let s = '';
+    if (p.sec === 'rect') s += `<rect x="${x0 - Math.max(p.t * k, 1.5) / 2}" y="${y0 - p.b * k / 2}" width="${Math.max(p.t * k, 1.5)}" height="${p.b * k}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.4"/><text x="${x0}" y="${y0 + p.b * k / 2 + 14}" text-anchor="middle" style="fill:var(--muted);font-size:10px">t</text><text x="${x0 + Math.max(p.t * k, 1.5) / 2 + 5}" y="${y0 + 4}" style="fill:var(--muted);font-size:10px">b</text>`;
+    else if (p.sec === 'tube') s += `<circle cx="${x0}" cy="${y0}" r="${p.Do * k / 2}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.4"/><circle cx="${x0}" cy="${y0}" r="${Math.max(sc.Di * k / 2, 0)}" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.2"/>`;
+    else s += `<circle cx="${x0}" cy="${y0}" r="${p.d * k / 2}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.4"/>`;
+    s += `<line x1="${x0 - 56}" y1="${y0}" x2="${x0 + 56}" y2="${y0}" style="stroke:var(--grid);stroke-dasharray:3 3"/><path d="M${x0 - 52} ${y0 - 62}h104" style="stroke:var(--muted);stroke-width:1.2"/><path d="M${x0 + 56} ${y0 - 62}l-7 -3.5v7z" style="fill:var(--muted)"/><text x="${x0 + 60}" y="${y0 - 58}" style="fill:var(--muted);font-size:11px">y: the column bows this way</text>`;
+    s += `<text x="${x0 + 62}" y="${y0 + 4}" style="fill:var(--muted);font-size:11px">section seen along x; r = ${q('length', sc.r, 4)}</text>`;
+    return s;
+  }
+
+  // =============================================================== readout, convergence
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v, kind]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-300);
+      let status;
+      if (kind === 'model') status = chip('info', 'different models');
+      else if (!Number.isFinite(d)) status = chip('info', '—');
+      else if (d < 1e-6) status = chip('ok', 'agree');
+      else if (d < 1e-2) status = chip('ok', 'agree (discretization)');
+      else if (d < 5e-2) status = chip('warn', 'coarse: refine N');
+      else status = chip('bad', 'check');
+      return `<tr><td>${n}</td><td class="v">${Number.isFinite(c) ? q(qq, c) : '—'}</td><td class="v">${Number.isFinite(v) ? q(qq, v) : '—'}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${status}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+  function drawConv(rows, xlabel, cap, refOrder, labels, refOrder2) {
+    R.conv = { rows, xlabel };
+    plots.conv.o.xlabel = xlabel;
+    const ok = rows.filter((r) => r.err > 1e-15), okM = rows.filter((r) => r.errM > 1e-15);
+    const series = [{ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: labels[0] }];
+    if (okM.length) series.push({ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.errM, 1e-16)), role: 'third', markers: true, r: 3, label: labels[1] });
+    if (ok.length > 1 && refOrder) series.push({ x: [ok[0].N, ok[ok.length - 1].N], y: [ok[0].err, ok[0].err * (ok[0].N / ok[ok.length - 1].N) ** refOrder], role: 'theory', width: 1, dash: '2 3', label: `reference: error ∝ N^−${refOrder}`, hover: false });
+    if (okM.length > 1 && refOrder2) series.push({ x: [okM[0].N, okM[okM.length - 1].N], y: [okM[0].errM, okM[0].errM * (okM[0].N / okM[okM.length - 1].N) ** refOrder2], role: 'fourth', width: 1, dash: '2 3', label: `reference: error ∝ N^−${refOrder2}`, hover: false });
+    plots.conv.draw({ series, xlim: [Math.min(...rows.map((r) => r.N)) * 0.7, Math.max(...rows.map((r) => r.N)) * 1.4], ylim: [1e-16, 1], desc: 'Convergence of the numerical method: relative error against the number of intervals.' });
+    $('cap-conv').innerHTML = cap;
+  }
+  const lim = (ys, pad = 0.08, zero = true) => { const f = ys.filter(Number.isFinite); let lo = Math.min(...f), hi = Math.max(...f); if (zero) { lo = Math.min(0, lo); hi = Math.max(0, hi); } const d = (hi - lo) || 1; return [lo - pad * d, hi + pad * d]; };
+  const linspace = (a, b, n) => Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+
+  // =============================================================== update
+  function validate() {
+    const e = [];
+    if (p.sec === 'tube' && !(p.tw < p.Do / 2)) e.push('The wall thickness must be less than half the outside diameter.');
+    if (p.sec === 'rect' && p.t > p.b) e.push('Here t is the thickness in the buckling direction; make it the smaller dimension (t ≤ b), or the column will buckle the other way first.');
+    if (p.mode === 'inelastic' && p.sec !== 'rect') e.push('The short-column fiber model is written for a rectangle; choose the rectangular section.');
+    if (p.mode !== 'inelastic' && p.Ne < 2 && (p.ends === 'fixed-fixed')) e.push('One element with both ends fixed has no free degree of freedom: use at least two elements.');
+    return e;
+  }
+  function update() {
+    const md = p.mode;
+    $('panel-imp').hidden = md === 'buckle';
+    ctl.k.el.hidden = !(p.ends === 'springs' || p.ends === 'spring-pin');
+    for (const k of ['b', 't']) ctl[k].el.hidden = p.sec !== 'rect';
+    for (const k of ['Do', 'tw']) ctl[k].el.hidden = p.sec !== 'tube';
+    ctl.d.el.hidden = p.sec !== 'round';
+    ctl.PoPcr.el.hidden = md !== 'imperfect';
+    ctl.Nfd.el.hidden = md !== 'imperfect';
+    ctl.nf.el.hidden = md !== 'inelastic';
+    ctl.Ne.el.hidden = md === 'inelastic';
+    ctl.m.el.hidden = md !== 'inelastic';
+    $('ends').disabled = md === 'inelastic';
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    plots.conv.o.logx = true; plots.conv.o.logy = true;
+    for (const k of ['p1', 'p2']) plots[k].o.logx = plots[k].o.logy = false;
+    if (md === 'buckle') updateBuckle(); else if (md === 'imperfect') updateImperfect(); else updateInelastic();
+  }
+
+  // --------------------------------------------------------------- buckling load
+  function columnCurve(sc, extraPts) {
+    const sl0 = p.L / sc.r, mat = M.MATERIALS[p.mat];
+    const sls = linspace(5, 300, 240), sE = sls.map((s) => M.sigmaCr(p.E, s)), sT = sls.map((s) => M.tangentCurve(s, p.E, p.sY, p.m));
+    const sD = sls.map(designCurve), ymax = p.sY * 1.35;
+    plots.p2.o.xlabel = 'Effective slenderness ratio, L_e/r'; plots.p2.o.ylabel = `Critical stress, σ_cr (${S.unit('stress')})`;
+    const series = [
+      { x: sls, y: sE.map((v) => C('stress', v)), role: 'theory', label: 'Euler, Eq. 10.13b' },
+      { x: sls, y: sT.map((v) => C('stress', v)), role: 'third', label: 'tangent modulus (Lab 1 curve)' },
+      { x: sls, y: sD.map((v) => C('stress', v)), role: 'fourth', label: designName() },
+    ];
+    const pts = [];
+    if (extraPts) for (const pt of extraPts) pts.push(pt);
+    if ($('overlay').value === 'auto' && SAMPLE.curve && p.mat === 'al') {
+      series.push({ x: [...SAMPLE.curve.A.map((a) => a[0]), ...SAMPLE.curve.B.map((a) => a[0]), ...SAMPLE.curve.D.map((a) => a[0])], y: [...SAMPLE.curve.A, ...SAMPLE.curve.B, ...SAMPLE.curve.D].map((a) => C('stress', a[1] * 1e6)), role: 'measured', markers: true, r: 4, label: 'sample data: Parts A, B (Southwell) and D (max load)' });
+    }
+    plots.p2.draw({ series, points: pts, segs: [{ x0: 0, y0: C('stress', p.sY), x1: 300, y1: C('stress', p.sY), role: 'mutedline', dash: '5 4' }],
+      texts: [{ x: 250, y: C('stress', p.sY), dy: -5, text: 'σ_Y', anchor: 'middle' }], xlim: [0, 300], ylim: [0, C('stress', ymax)],
+      bands: [{ x0: 0, x1: PI * Math.sqrt(p.E / p.sY), label: 'Euler σ_cr > σ_Y', labelPos: 'bottom', legend: 'Euler gives σ_cr above σ_Y' }],
+      desc: 'Critical stress against effective slenderness: Euler hyperbola, tangent-modulus curve, the design formula and the sample data.' });
+    $('cap2').innerHTML = `Euler's curve (Eq. 10.13b) rises without limit as L<sub>e</sub>/r falls; below L<sub>e</sub>/r = π√(E/σ<sub>Y</sub>) = ${S.fmt(PI * Math.sqrt(p.E / p.sY), 3)} it predicts a stress the material cannot carry (shaded). The tangent-modulus curve uses the Ramberg–Osgood knee (m = ${S.fmt(p.m, 3)}); the design curve includes its factor of safety.`;
+  }
+  function updateBuckle() {
+    const sc = M.section(p), EI = p.E * sc.I, ends = M.endsOf(p), cp = M.closedPcr(p, p.E, sc.I);
+    const fe = M.feBuckle(EI, p.L, p.Ne, ends), Kfe = PI / p.L * Math.sqrt(EI / fe.P), Le = cp.K * p.L, sl = Le / sc.r, scr = cp.P / sc.A;
+    R = { kind: 'buckle', cp, fe, sc };
+    // mode shapes
+    const xs = linspace(0, p.L, 161), ys = M.modeShape(p, p.E, sc.I, xs);
+    const xn = Array.from({ length: p.Ne + 1 }, (_, i) => i * p.L / p.Ne);
+    let yn = xn.map((_, i) => fe.v[2 * i]);
+    let mx = 0;
+    for (const v of yn) if (Math.abs(v) > Math.abs(mx)) mx = v;
+    yn = yn.map((v) => v / (mx || 1));
+    // effective length span between inflection points (ideal cases); the free-fixed column extends beyond the support
+    const span = { pinned: [0, p.L], 'fixed-fixed': [p.L / 4, 3 * p.L / 4], 'fixed-pinned': [0, Le], 'free-fixed': [0, 2 * p.L] }[p.ends] || null;
+    const inflect = { 'fixed-fixed': [p.L / 4, 3 * p.L / 4], 'fixed-pinned': [Le] }[p.ends] || [];
+    const shapeAt = (xx) => M.modeShape(p, p.E, sc.I, [xx])[0];
+    drawColumn({ kind: 'buckle', x: xs, y: ys, fe: { x: xn, y: yn }, ends, e: 0, L: p.L, Le, Lespan: span, inflect, shapeAt, tag: `${ENDNAME[p.ends]}: K = ${S.fmt(cp.K, 4)}`,
+      facts: [`P<tspan baseline-shift="sub" font-size="9">cr</tspan> = ${q('force', cp.P)} (Euler, L<tspan baseline-shift="sub" font-size="9">e</tspan> = K L)`, `σ<tspan baseline-shift="sub" font-size="9">cr</tspan> = ${q('stress', scr)}, L<tspan baseline-shift="sub" font-size="9">e</tspan>/r = ${S.fmt(sl, 4)}`, `finite elements: ${q('force', fe.P)} (${fe.iters} inverse iterations)`],
+      aria: `Buckled shape of a ${ENDNAME[p.ends]} column: closed-form mode shape and finite-element mode.` });
+    $('h-diag').textContent = 'The column and its buckled shape';
+    $('diag-txt').textContent = `first buckling mode, ${ENDNAME[p.ends]}`;
+    $('cap-diag').innerHTML = `Blue: the closed-form first mode; vermillion circles: the finite-element eigenvector (scaled to the same peak). ${span ? 'Purple: the effective length L<sub>e</sub> between points of zero moment (inflection points), Beer Fig. 10.18.' : 'Spring ends: L<sub>e</sub> = K L with K from the characteristic equation (Appendix D.3).'}`;
+    $('stats').innerHTML = [st('P<sub>cr</sub> (closed form)', q('force', cp.P)), st('P<sub>cr</sub> (finite elements)', q('force', fe.P)), st('K = L<sub>e</sub>/L', S.fmt(cp.K, 4)),
+      st('L<sub>e</sub>/r', S.fmt(sl, 4)), st('σ<sub>cr</sub> = P<sub>cr</sub>/A', q('stress', scr)), st('σ<sub>cr</sub>/σ<sub>Y</sub>', S.fmt(scr / p.sY, 3))].join('');
+    // plot 1: mode shape along the column
+    plots.p1.o.xlabel = `Position along the column, x (${S.unit('length')})`; plots.p1.o.ylabel = 'Mode shape, y/y_max';
+    $('h-p1').textContent = 'Buckled shape along the column';
+    plots.p1.draw({ series: [{ x: xs.map((v) => C('length', v)), y: ys, role: 'theory', label: 'closed form' }, { x: xn.map((v) => C('length', v)), y: yn, role: 'numeric', markers: true, r: 3.2, label: `finite elements, N = ${p.Ne}` }],
+      xlim: [0, C('length', p.L)], ylim: lim([...ys, ...yn, 1.1], 0.06), desc: 'Normalized first buckling mode along the column.' });
+    $('cap1').innerHTML = 'x runs from the top end A to the bottom end B (Beer Fig. 10.7). The finite-element mode comes from inverse iteration on (K − P G) v = 0 with cubic Hermite elements; it uses no closed-form shape.';
+    $('h-p2').textContent = 'Column curve: critical stress against slenderness';
+    columnCurve(sc, [{ x: sl, y: C('stress', Math.min(scr, p.sY * 1.3)), role: 'numeric', shape: 'diamond', label: 'this column' }]);
+    // readout
+    const rows = [
+      [`P_cr: ${p.ends === 'springs' || p.ends === 'spring-pin' ? 'characteristic equation (App. D.3)' : 'Euler with L_e = K L (Eq. 10.11b)'} vs finite elements`, 'force', cp.P, fe.P, 'disc'],
+      ['K = L_e/L vs π√(EI/P_FE)/L', 'none', cp.K, Kfe, 'disc'],
+      ['σ_cr = P_cr/A (Eq. 10.13b) vs P_FE/A', 'stress', scr, fe.P / sc.A, 'disc'],
+      ['Mode shape at x = L/4 (closed form vs eigenvector)', 'none', M.modeShape(p, p.E, sc.I, [p.L / 4])[0], p.Ne % 4 === 0 ? yn[p.Ne / 4] : NaN, 'disc'],
+      ['Euler σ_cr vs σ_Y (elastic buckling needs σ_cr < σ_Y)', 'stress', scr, p.sY, 'model'],
+    ];
+    if (p.ends === 'springs') rows.push(['Spring ends vs ideal fixed ends (K = 0.5)', 'force', cp.P, M.euler(p.E, sc.I, 0.5 * p.L), 'model']);
+    renderReadout(rows, `${ENDNAME[p.ends]}; ${p.Ne} elements`);
+    const conv = M.feConvergence(EI, p.L, ends, cp.P);
+    drawConv(conv, 'Number of finite elements, N', `Hermite cubic elements with the consistent geometric stiffness converge as N<sup>−${S.fmt(-S.logSlope(conv.slice(1, 5).map((r) => r.N), conv.slice(1, 5).map((r) => r.err)), 3)}</sup> (expected 4) until round-off in the stiffness solve (near 10<sup>−9</sup>) takes over. ${(() => { const r0 = conv.find((r) => Number.isFinite(r.err)); return `${r0.N} element${r0.N > 1 ? 's' : ''} already give${r0.N > 1 ? '' : 's'} P<sub>cr</sub> within ${S.fmt(100 * r0.err, 2)} %.`; })()}`, 4, ['P_cr, finite elements vs closed form']);
+    const W = [];
+    W.push([scr > p.sY ? 'bad' : scr > 0.5 * p.sY ? 'warn' : 'ok', scr > p.sY ? `Euler's σ_cr = ${q('stress', scr)} exceeds σ_Y: the column yields before it buckles elastically. Use the short-column tab (L_e/r = ${S.fmt(sl, 3)} < ${S.fmt(PI * Math.sqrt(p.E / p.sY), 3)}).` : `σ_cr = ${S.fmt(100 * scr / p.sY, 3)} % of σ_Y: elastic buckling, Euler applies${scr > 0.5 * p.sY ? ', but a real column with imperfections will fall short near the knee' : ''}.`]);
+    if (p.ends === 'fixed-fixed' || p.ends === 'fixed-pinned' || p.ends === 'free-fixed') W.push(['warn', `Fixed ends assume infinitely stiff supports. Lab Part B measured clamps of k ≈ ${SAMPLE.k ? q('rotstiff', SAMPLE.k, 3) : '2800 N·m/rad'}: switch the ends to "rotational springs" to see P_cr drop (kL/EI = ${S.fmt((SAMPLE.k || 2800) * p.L / EI, 3)} here).`]);
+    if (p.ends === 'springs' || p.ends === 'spring-pin') W.push(['ok', `kL/EI = ${S.fmt(p.k * p.L / EI, 3)}: below about 1 the ends act as pins, above about 100 as fixed (K within 1 % of the ideal value).`]);
+    W.push([p.Ne < 2 ? 'warn' : 'ok', `${p.Ne} element${p.Ne > 1 ? 's' : ''}: error ${S.fmt(100 * Math.abs(fe.P / cp.P - 1), 2)} %.`]);
+    warn(W);
+    $('cards').innerHTML = [
+      card('P<sub>cr</sub> = π²EI / L<sub>e</sub>²', 'the linearized elastic curve EI y″ = −P y (Eq. 10.4) has a non-zero solution only at these loads (Beer §10.1A–B, Eqs. 10.11a, b).', 'I is the smaller principal moment of inertia; L_e = K L with K = 1, 0.699, 0.5, 2 (Fig. 10.18).', chip(scr > p.sY ? 'bad' : 'ok', scr > p.sY ? 'σ_cr > σ_Y' : 'elastic, straight, centric'), `P_cr = ${q('force', cp.P)}`),
+      card('tan(pL/2) = −2(pL/2) EI/(kL)', 'equilibrium of the buckled column with end moments M = k y′ (handout Appendix D.3); spring at one end, pin at the other: tan pL = pL/(1 + (pL)² EI/(kL)).', 'p² = P/EI; k = 0 gives pins, k → ∞ fixed ends.', chip('ok', 'any end stiffness'), `kL/EI = ${S.fmt(p.k * p.L / EI, 3)}`),
+      card('σ<sub>cr</sub> = π²E / (L<sub>e</sub>/r)²', 'Eq. 10.11b with I = A r² (Eq. 10.13b).', 'r = √(I/A), the smaller radius of gyration.', chip(sl < PI * Math.sqrt(p.E / p.sY) ? 'bad' : 'ok', sl < PI * Math.sqrt(p.E / p.sY) ? 'too short' : `L_e/r ≥ ${S.fmt(PI * Math.sqrt(p.E / p.sY), 3)}`), `L_e/r = ${S.fmt(sl, 4)}`),
+    ].join('');
+  }
+
+  // --------------------------------------------------------------- imperfect and eccentric column
+  function updateImperfect() {
+    const sc = M.section(p), EI = p.E * sc.I, ends = M.endsOf(p), cp = M.closedPcr(p, p.E, sc.I), fe0 = M.feBuckle(EI, p.L, Math.max(p.Ne, 8), ends);
+    const Pcr = p.ends === 'pinned' ? cp.P : fe0.P, pinned = p.ends === 'pinned', P = p.PoPcr * Pcr, below = p.PoPcr < 1;
+    const Nfd = 2 * Math.round(p.Nfd / 2), dT = dataTest();
+    R = { kind: 'imperfect', Pcr };
+    // load-deflection curves (mid-length deflection change)
+    const Pr = linspace(0, 0.985, 80).map((a) => a * Pcr);
+    const dCF = pinned ? Pr.map((PP) => M.pinnedResponse(PP, Pcr, p.L, [p.L / 2], p.d0, p.e)[0]) : null;
+    const dFE = Pr.map((PP) => M.feMidDefl(M.feImperfect(EI, p.L, p.Ne, ends, PP, p.d0, p.e, p.e)));
+    const dFD = pinned ? Pr.filter((_, i) => i % 6 === 3).map((PP) => M.fdPinned(EI, p.L, PP, Nfd, p.d0, p.e)[Nfd / 2]) : null;
+    const PrFD = Pr.filter((_, i) => i % 6 === 3);
+    // elastica branch of the perfect pinned column (past P_cr)
+    const el = pinned ? linspace(1.0005, 1.5, 40).map((a) => ({ a, d: M.elasticaClosed(a).dL * p.L })) : [];
+    // current state
+    let dNow = NaN, dNowFD = NaN, dNowFE = NaN, smaxCF = NaN, smaxFD = NaN, elNow = null, elShoot = null, rfe = null;
+    if (below) {
+      rfe = M.feImperfect(EI, p.L, p.Ne, ends, P, p.d0, p.e, p.e);
+      dNowFE = M.feMidDefl(rfe);
+      if (pinned) {
+        dNow = M.pinnedResponse(P, Pcr, p.L, [p.L / 2], p.d0, p.e)[0];
+        const w = M.fdPinned(EI, p.L, P, Nfd, p.d0, p.e);
+        dNowFD = w[Nfd / 2];
+        smaxCF = P / sc.A + P * (p.e + p.d0 + dNow) * sc.c / sc.I;
+        smaxFD = P / sc.A + P * (p.e + p.d0 + dNowFD) * sc.c / sc.I;
+      } else {
+        smaxFD = P / sc.A - EI * M.feCurvMid(rfe) * sc.c / sc.I;
+      }
+    } else if (pinned) { elNow = M.elasticaClosed(p.PoPcr); elShoot = M.elasticaShoot(p.PoPcr, 400); }
+    // simulated Southwell (readings from P = 0.5 Pcr to 0.9 Pcr); a perfect column never deflects, so it has none
+    const perfect = p.d0 === 0 && p.e === 0;
+    const Psw = linspace(0.5, 0.9, 9).map((a) => a * Pcr);
+    const dsw = perfect ? Psw.map(() => 0) : Psw.map((PP) => (pinned ? M.pinnedResponse(PP, Pcr, p.L, [p.L / 2], p.d0, p.e)[0] : M.feMidDefl(M.feImperfect(EI, p.L, 64, ends, PP, p.d0, p.e, p.e))));
+    const swSim = perfect ? { Pcr: NaN, d0: NaN, slope: NaN, icpt: NaN } : M.southwell(dsw, Psw);
+    const FQ = Pcr > 20e3 ? 'force' : 'forceN';
+    // sample data Southwell
+    let swData = null;
+    if (dT && dT.d) {
+      const use = dT.P.map((PP, i) => [PP, dT.d[i]]).filter(([PP, dd]) => PP >= (dT.Pmin || 0.5 * Pcr) && dd > 0);
+      if (use.length >= 3) swData = Object.assign(M.southwell(use.map((u) => u[1]), use.map((u) => u[0])), { use });
+    }
+    R.curves = { Pr, dCF, dFE };
+    // diagram: deflected shape (exaggerated), current state
+    let xs = linspace(0, p.L, 121), ysh;
+    if (below && pinned) ysh = M.pinnedResponse(P, Pcr, p.L, xs, p.d0, p.e).map((v, i) => v + p.d0 * Math.sin(PI * xs[i] / p.L));
+    else if (below) { xs = Array.from({ length: p.Ne + 1 }, (_, i) => i * p.L / p.Ne); ysh = xs.map((_, i) => rfe.v[2 * i]); }
+    else ysh = M.modeShape(p, p.E, sc.I, xs);
+    const pk = Math.max(...ysh.map(Math.abs), 1e-30);
+    drawColumn({ kind: 'imperfect', x: xs, y: ysh.map((v) => v / pk), ends, e: p.e, L: p.L, tag: `${ENDNAME[p.ends]}, δ0 = ${q('length', p.d0, 3)}, e = ${q('length', p.e, 3)}`,
+      facts: [`P = ${q('force', P)} = ${S.fmt(p.PoPcr, 3)} P<tspan baseline-shift="sub" font-size="9">cr</tspan>`, below ? `mid-length deflection change ${q('length', pinned ? dNow : dNowFE, 4)}` : 'past P_cr: no linear equilibrium', below && Number.isFinite(smaxFD) ? `largest compressive stress ${q('stress', pinned ? smaxCF : smaxFD)}` : (elNow ? `elastica: δ = ${q('length', elNow.dL * p.L, 3)}` : '')],
+      aria: 'Deflected shape of the imperfect column (exaggerated).' });
+    $('h-diag').textContent = 'The column under load (deflection exaggerated)';
+    $('diag-txt').textContent = below ? `P/P_cr = ${S.fmt(p.PoPcr, 3)}` : 'P above P_cr';
+    $('cap-diag').innerHTML = 'The load acts at distance e from the axis on the left; the column bows to the right, away from the load line, so the lever arm at mid-length is e + y<sub>max</sub> (Beer Fig. 10.23). Shape scaled to fit.';
+    $('stats').innerHTML = [st('P<sub>cr</sub>', q('force', Pcr)), st('Load P', q('force', P)), st('Mid-length deflection change', below ? q('length', pinned ? dNow : dNowFE) : '—'),
+      st('Amplification 1/(1 − P/P<sub>cr</sub>)', below ? S.fmt(1 / (1 - p.PoPcr), 4) : '—'), st('Southwell P<sub>cr</sub> (simulated readings)', perfect ? '—' : q('force', swSim.Pcr)), st('Southwell δ<sub>0</sub>', perfect ? '—' : q('length', swSim.d0))].join('');
+    // plot 1: load vs deflection
+    plots.p1.o.xlabel = `Mid-length deflection change, δ (${S.unit('length')})`; plots.p1.o.ylabel = `Load, P (${S.unit(FQ)})`;
+    $('h-p1').textContent = 'Load against lateral deflection';
+    const s1 = [];
+    if (dCF) s1.push({ x: dCF.map((v) => C('length', v)), y: Pr.map((v) => C(FQ, v)), role: 'theory', label: 'closed form (bow + Eq. 10.26)' });
+    s1.push({ x: dFE.map((v) => C('length', v)), y: Pr.map((v) => C(FQ, v)), role: 'numeric', markers: !pinned ? false : true, r: 2.6, maxMarkers: 26, label: `finite elements, N = ${p.Ne}` });
+    if (dFD) s1.push({ x: dFD.map((v) => C('length', v)), y: PrFD.map((v) => C(FQ, v)), role: 'fourth', markers: true, r: 4, label: `finite differences, N = ${Nfd}` });
+    if (el.length) s1.push({ x: el.map((o) => C('length', o.d)), y: el.map((o) => C(FQ, o.a * Pcr)), role: 'third', label: 'elastica, perfect column (large deflection)' });
+    if (dT) s1.push({ x: dT.d.map((v) => C('length', v)), y: dT.P.map((v) => C(FQ, v)), role: 'measured', markers: true, r: 4, label: `sample data, ${p.data}` });
+    const d85 = M.feMidDefl(M.feImperfect(EI, p.L, Math.max(p.Ne, 8), ends, 0.85 * Pcr, p.d0, p.e, p.e));
+    const dmaxPlot = Math.min(Math.max(1.15 * Math.max(...(dT ? dT.d : [0])), Math.abs(d85), below ? 1.1 * Math.abs(pinned ? dNow : dNowFE) : 0, elNow ? 1.1 * elNow.dL * p.L : 0, perfect ? p.L / 50 : 1e-6), p.L / 4);
+    const pts1 = below ? [{ x: C('length', pinned ? dNow : dNowFE), y: C(FQ, P), role: 'numeric', shape: 'diamond', label: 'now' }] : (elNow ? [{ x: C('length', elNow.dL * p.L), y: C(FQ, P), role: 'third', shape: 'diamond', label: 'elastica' }] : []);
+    plots.p1.draw({ series: s1, points: pts1, segs: [{ x0: 0, y0: C(FQ, Pcr), x1: C('length', dmaxPlot * 1.5), y1: C(FQ, Pcr), role: 'mutedline', dash: '5 4' }],
+      texts: [{ x: C('length', dmaxPlot) * 0.98, y: C(FQ, Pcr), dy: -5, text: 'P_cr', anchor: 'end' }], xlim: [0, C('length', dmaxPlot)], ylim: [0, C(FQ, Pcr * Math.max(1.12, Math.min(1.55, p.PoPcr * 1.08)))],
+      desc: 'Load against mid-length lateral deflection: closed form, finite elements, finite differences, elastica and sample data.' });
+    const a10 = M.bisect((a) => M.elasticaClosed(a).dL - 0.1, 1 + 1e-9, 2, 1e-12);
+    $('cap1').innerHTML = `Linear theory: δ grows like 1/(1 − P/P<sub>cr</sub>) and never reaches P<sub>cr</sub>. The elastica (large deflection, perfect column) shows how little the load rises after buckling: only ${S.fmt(100 * (a10 - 1), 3)} % above P<sub>cr</sub> when δ = L/10.`;
+    // plot 2: Southwell
+    plots.p2.o.xlabel = `Mid-length deflection change, δ (${S.unit('length')})`; plots.p2.o.ylabel = `δ/P (${S.unit('length')}/${S.unit('force')})`;
+    $('h-p2').textContent = 'Southwell plot: δ/P against δ';
+    const s2 = perfect ? [] : [{ x: dsw.map((v) => C('length', v)), y: dsw.map((v, i) => C('length', v) / C('force', Psw[i])), role: 'theory', markers: true, r: 3, label: 'model readings, 0.5–0.9 P_cr' }];
+    const dl = Math.max(...dsw, ...(swData ? swData.use.map((u) => u[1]) : [0]), perfect ? 1e-3 : 0);
+    if (!perfect) s2.push({ x: [0, C('length', dl * 1.1)], y: [swSim.icpt, swSim.icpt + swSim.slope * dl * 1.1].map((v) => v * C('length', 1) / C('force', 1)), role: 'theory', width: 1, dash: '3 3', label: `fit: P_cr = ${q('force', swSim.Pcr)}`, hover: false });
+    if (swData) {
+      s2.push({ x: swData.use.map((u) => C('length', u[1])), y: swData.use.map((u) => C('length', u[1]) / C('force', u[0])), role: 'measured', markers: true, r: 4, label: 'sample data' });
+      s2.push({ x: [0, C('length', dl * 1.1)], y: [swData.icpt, swData.icpt + swData.slope * dl * 1.1].map((v) => v * C('length', 1) / C('force', 1)), role: 'numeric', width: 1.4, label: `data fit: P_cr = ${q('force', swData.Pcr)}`, hover: false });
+    }
+    const yv = s2.flatMap((s) => s.y).filter(Number.isFinite);
+    plots.p2.draw({ series: s2, xlim: [0, C('length', dl * 1.1)], ylim: [0, yv.length ? Math.max(...yv) * 1.08 : 1], texts: perfect ? [{ x: C('length', dl * 0.55), y: 0.5, text: 'a perfect column does not deflect below P_cr: no Southwell plot', anchor: 'middle' }] : [], desc: 'Southwell plot: deflection divided by load against deflection; the inverse slope is the critical load.' });
+    $('cap2').innerHTML = `A straight line of slope 1/P<sub>cr</sub>; its intercept on the δ/P axis is δ<sub>0</sub>/P<sub>cr</sub>, the equivalent initial bow (Appendix D.5). ${p.e > 0 ? 'With an eccentric load the intercept also contains about (4/π) e: the load offset acts like an extra bow.' : ''} The fit needs no reading near P<sub>cr</sub>.`;
+    // readout
+    const rows = [];
+    if (pinned && below) {
+      rows.push(['Mid-length deflection change: closed form vs finite differences', 'length', dNow, dNowFD, 'disc']);
+      rows.push(['Mid-length deflection change: closed form vs finite elements', 'length', dNow, dNowFE, 'disc']);
+      rows.push(['Largest compressive stress P/A + P(e + δ0 + δ)c/I (closed vs FD)', 'stress', smaxCF, smaxFD, 'disc']);
+      if (p.d0 === 0 && p.e > 0) rows.push(['σ_max: secant formula Eq. 10.35 vs finite differences', 'stress', M.sigmaxSecant(P, sc.A, p.e, sc.c, sc.r, Pcr), smaxFD, 'disc']);
+      if (p.e > 0 || p.d0 > 0) {
+        const PY = p.d0 === 0 ? M.secantPY(p.sY, sc.A, p.e, sc.c, sc.r, p.E, p.L) : NaN, PYn = M.secantPYnum(p.E, sc.I, sc.A, sc.c, p.L, p.sY, p.e, Nfd, p.d0);
+        if (p.d0 === 0) rows.push(['First-yield load: secant formula Eq. 10.36 vs finite differences', 'force', PY, PYn, 'disc']);
+        rows.push(['First-yield load vs the linear estimate σ_Y A/(1 + ec/r²) (Eq. 10.37; a bow δ<sub>0</sub> adds (4/π)δ<sub>0</sub> to e)', 'force', p.sY * sc.A / (1 + (p.e + p.d0 * 4 / PI) * sc.c / sc.r ** 2), PYn, 'model']);
+      }
+    }
+    if (!pinned && below) rows.push(['Largest compressive stress (finite elements, curvature at mid-length)', 'stress', NaN, smaxFD, 'disc']);
+    if (!perfect) rows.push([`P_cr: ${pinned ? 'Euler' : 'eigenvalue'} vs Southwell fit to simulated readings`, 'force', Pcr, swSim.Pcr, 'model']);
+    if (swData) rows.push(['P_cr: eigenvalue vs Southwell fit to the sample data', 'force', Pcr, swData.Pcr, 'model']);
+    if (elNow) rows.push(['Elastica mid-length deflection: elliptic integrals vs RK4 shooting', 'length', elNow.dL * p.L, elShoot.dL * p.L, 'disc']);
+    if (!pinned) rows.push(['P_cr: characteristic equation vs finite elements', 'force', cp.P, fe0.P, 'disc']);
+    renderReadout(rows, below ? `P = ${S.fmt(p.PoPcr, 3)} P_cr` : 'past P_cr: elastica');
+    // convergence
+    if (pinned && below) {
+      const conv = M.fdConvergence(EI, p.L, P, Pcr, p.d0, p.e);
+      drawConv(conv, 'Number of intervals or elements, N', `Second-order finite differences converge as N<sup>−2</sup>; the Hermite elements as about N<sup>−4</sup> (mid-length deflection at P = ${S.fmt(p.PoPcr, 3)} P<sub>cr</sub>). Near P<sub>cr</sub> the error constant grows like 1/(1 − P/P<sub>cr</sub>).`, 2, ['finite differences', 'finite elements'], 4);
+    } else {
+      const conv = M.feConvergence(EI, p.L, ends, cp.P);
+      drawConv(conv, 'Number of finite elements, N', 'P<sub>cr</sub> by finite elements against the closed form: error ∝ N<sup>−4</sup>.', 4, ['P_cr, finite elements']);
+    }
+    const W = [];
+    if (!below) W.push(['bad', `P ≥ P_cr: the linearized theory (Eq. 10.5) has no bounded solution. The elastica — the exact large-deflection equation θ″ + p² sin θ = 0 — gives δ = ${elNow ? q('length', elNow.dL * p.L, 3) : '—'} at ${S.fmt(p.PoPcr, 3)} P_cr: the load barely rises after buckling, so a column has almost no reserve beyond P_cr.`]);
+    if (below) {
+      const dd = pinned ? dNow : dNowFE;
+      W.push([dd / p.L > 0.05 ? 'warn' : 'ok', `δ/L = ${S.fmt(dd / p.L, 3)}: small-deflection theory ${dd / p.L > 0.05 ? 'is losing accuracy (curvature ≠ y″)' : 'holds'} (the elastica correction is (π²/8)(δ/L)² = ${S.fmt(100 * PI * PI / 8 * (dd / p.L) ** 2, 2)} %).`]);
+      const sm = pinned ? smaxCF : smaxFD;
+      if (Number.isFinite(sm)) W.push([sm > p.sY ? 'bad' : sm > 0.7 * p.sY ? 'warn' : 'ok', `Largest stress ${q('stress', sm)} = ${S.fmt(100 * sm / p.sY, 3)} % of σ_Y${sm > p.sY ? ': the column has yielded and every elastic formula here overstates its stiffness' : ''}.`]);
+      if (p.e > 0) W.push(['warn', `Superposition fails: doubling the load from ${S.fmt(p.PoPcr / 2, 3)} to ${S.fmt(p.PoPcr, 3)} P_cr multiplies the eccentric deflection by ${S.fmt(M.ymaxSecant(p.e, P, Pcr) / M.ymaxSecant(p.e, P / 2, Pcr), 3)}, not 2 (Beer: apply the factor of safety to the load, not the stress).`]);
+    }
+    if (!pinned) W.push(['warn', 'Closed forms for imperfect columns are written for pinned ends; with other ends the finite elements carry the comparison and the Southwell fit stands in for the eigenvalue.']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('δ = δ<sub>0</sub> (P/P<sub>cr</sub>) / (1 − P/P<sub>cr</sub>)', 'a half-sine initial bow δ<sub>0</sub> sin(πx/L) is amplified by the axial load (handout Appendix D.4).', 'δ is the change of deflection, what the dial gage reads.', chip(below ? 'ok' : 'bad', below ? 'P < P_cr' : 'no equilibrium'), below && pinned ? `amplification ${S.fmt(1 / (1 - p.PoPcr), 4)}` : '—'),
+      card('y<sub>max</sub> = e[sec(π/2 √(P/P<sub>cr</sub>)) − 1]', 'Beer §10.2, Eqs. 10.26–10.31: the eccentric pinned column.', 'e: distance from the load line to the axis at the ends.', chip(p.e > 0 ? 'ok' : 'info', p.e > 0 ? 'eccentric load' : 'e = 0'), p.e > 0 && below ? `y_max = ${q('length', M.ymaxSecant(p.e, P, Pcr))}` : '—'),
+      card('σ<sub>max</sub> = (P/A)[1 + (ec/r²) sec(½√(P/EA) L<sub>e</sub>/r)]', 'Eq. 10.36, the secant formula: Eq. 10.33 with Eq. 10.28.', 'Solve for P with σ_max = σ_Y; apply the factor of safety to P.', chip('ok', 'elastic'), p.e > 0 && below ? `σ_max = ${q('stress', M.sigmaxSecant(P, sc.A, p.e, sc.c, sc.r, Pcr))}` : '—'),
+      card('δ/P = δ/P<sub>cr</sub> + δ<sub>0</sub>/P<sub>cr</sub>', 'the bow amplification rearranged (Southwell, handout Appendix D.5).', 'Fit δ/P against δ; inverse slope = P_cr.', chip(perfect ? 'info' : 'ok', perfect ? 'needs an imperfection' : 'first mode dominates'), perfect ? '—' : `fit: ${q('force', swSim.Pcr)}`),
+    ].join('');
+  }
+
+  // --------------------------------------------------------------- short columns
+  function updateInelastic() {
+    const sc = M.section(p), sl = p.L / sc.r, PE = M.euler(p.E, sc.I, p.L), sT = M.tangentCurve(sl, p.E, p.sY, p.m), sRm = M.tangentCurve(sl, p.E, p.sY, p.m, true);
+    const fp = M.fiberPath({ b: p.b, t: p.t, L: p.L, E: p.E, s02: p.sY, m: p.m, d0: p.d0, e: p.e, dmax: Math.max(20 * (p.d0 + p.e), p.t * 0.4), nstep: 140, nf: p.nf });
+    const fp0 = M.fiberPath({ b: p.b, t: p.t, L: p.L, E: p.E, s02: p.sY, m: p.m, d0: 1e-7 * p.L, e: 0, dmax: p.t * 0.2, nstep: 140, nf: p.nf });
+    const EtT = M.tangentModulus(sT, p.E, p.sY, p.m), feT = M.feBuckle(EtT * sc.I, p.L, 16, [{ v: true, k: 0 }, { v: true, k: 0 }]);
+    const dT = dataTest();
+    R = { kind: 'inelastic', fp };
+    drawColumn({ kind: 'inelastic', x: linspace(0, p.L, 61), y: linspace(0, p.L, 61).map((x) => Math.sin(PI * x / p.L)), ends: [{ v: true, k: 0 }, { v: true, k: 0 }], e: p.e, L: p.L, tag: `short pinned column, L/r = ${S.fmt(sl, 4)}`,
+      facts: [`Euler: ${q('force', PE)} (σ = ${q('stress', PE / sc.A)})`, `tangent modulus: ${q('force', sT * sc.A)}; reduced: ${q('force', sRm * sc.A)}`, `fiber model maximum: ${q('force', fp.Pmax)}`],
+      aria: 'Short pinned column with its assumed half-sine shape.' });
+    $('h-diag').textContent = 'A short column (assumed half-sine shape)';
+    $('diag-txt').textContent = `L/r = ${S.fmt(sl, 4)}; Euler/yield crossover at ${S.fmt(PI * Math.sqrt(p.E / p.sY), 3)}`;
+    $('cap-diag').innerHTML = 'Pinned ends; the fiber model assumes the deflected shape stays a half sine and checks equilibrium at the mid-length section, where each fiber follows the Ramberg–Osgood curve and unloads elastically.';
+    $('stats').innerHTML = [st('Euler P<sub>cr</sub>', q('force', PE)), st('Squash load σ<sub>Y</sub>A', q('force', p.sY * sc.A)), st('Tangent-modulus load', q('force', sT * sc.A)),
+      st('Reduced-modulus load', q('force', sRm * sc.A)), st('Fiber model, maximum load', q('force', fp.Pmax)), st('Design: allowable × 1.95 (aluminum)', M.MATERIALS[p.mat].design === 'aa' ? q('force', 1.95 * M.aa6061(sl) * sc.A) : q('force', M.aisc(sl, p.E, p.sY).scr * sc.A) + ' (AISC σ_cr)')].join('');
+    // plot 1: column curve zoomed on the knee
+    $('h-p1').textContent = 'Column curve near the yield knee';
+    plots.p1.o.xlabel = 'Slenderness ratio, L/r'; plots.p1.o.ylabel = `Critical stress (${S.unit('stress')})`;
+    const sls = linspace(5, 160, 200), cap = p.sY * 1.5;
+    const s1 = [
+      { x: sls, y: sls.map((s) => C('stress', Math.min(M.sigmaCr(p.E, s), cap * 1.2))), role: 'theory', label: 'Euler' },
+      { x: sls, y: sls.map((s) => C('stress', M.tangentCurve(s, p.E, p.sY, p.m))), role: 'third', label: 'tangent modulus' },
+      { x: sls, y: sls.map((s) => C('stress', M.tangentCurve(s, p.E, p.sY, p.m, true))), role: 'fourth', label: 'reduced modulus (rectangle)' },
+      { x: sls, y: sls.map((s) => C('stress', M.MATERIALS[p.mat].design === 'aa' ? 1.95 * M.aa6061(s) : M.aisc(s, p.E, p.sY).scr)), role: 'mutedline', dash: '6 3', label: M.MATERIALS[p.mat].design === 'aa' ? 'AA allowable × 1.95' : 'AISC σ_cr (Eq. 10.38/10.40)' },
+    ];
+    if (dT && p.data === 'D') s1.push({ x: [sl], y: [C('stress', SAMPLE.Dmax / sc.A)], role: 'measured', markers: true, r: 5, label: 'sample data: Part D maximum load' });
+    plots.p1.draw({ series: s1, points: [{ x: sl, y: C('stress', fp.Pmax / sc.A), role: 'numeric', shape: 'diamond', label: 'fiber model' }],
+      segs: [{ x0: 0, y0: C('stress', p.sY), x1: 160, y1: C('stress', p.sY), role: 'mutedline', dash: '5 4' }], xlim: [0, 160], ylim: [0, C('stress', cap)],
+      bands: [{ x0: 0, x1: PI * Math.sqrt(p.E / p.sY), label: 'Euler σ_cr > σ_Y', labelPos: 'bottom' }], desc: 'Critical stress near the yield knee: Euler, tangent and reduced modulus, design curve, fiber model and sample data.' });
+    $('cap1').innerHTML = `The tangent-modulus curve leaves Euler's where the stress reaches the knee of the stress–strain curve: E<sub>t</sub> = dσ/dε falls from E to ${q('modulus', EtT, 3)} at the tangent-modulus stress. Real (imperfect) columns fall below it.`;
+    // plot 2: load path
+    $('h-p2').textContent = 'Load against deflection of the short column';
+    plots.p2.o.xlabel = `Mid-length deflection change, δ (${S.unit('length')})`; plots.p2.o.ylabel = `Load, P (${S.unit('force')})`;
+    const s2 = [{ x: fp.d.map((v) => C('length', v)), y: fp.P.map((v) => C('force', v)), role: 'numeric', label: `fiber model, δ0 = ${q('length', p.d0, 2)}, e = ${q('length', p.e, 2)}` },
+      { x: fp0.d.map((v) => C('length', v)), y: fp0.P.map((v) => C('force', v)), role: 'third', dash: '2 3', label: 'nearly perfect column (δ0 = L/10⁷)' }];
+    if (dT && p.data === 'D') s2.push({ x: dT.d.map((v) => C('length', v)), y: dT.P.map((v) => C('force', v)), role: 'measured', markers: true, r: 4, label: 'sample data, Part D' });
+    const dmx = Math.max(...fp.d, ...(dT && p.data === 'D' ? dT.d : [0]));
+    plots.p2.draw({ series: s2, segs: [[PE, 'Euler'], [p.sY * sc.A, 'σ_Y A'], [sT * sc.A, 'tangent modulus']].map(([v]) => ({ x0: 0, y0: C('force', v), x1: C('length', dmx), y1: C('force', v), role: 'theory', dash: '5 4', width: 1 })),
+      texts: [[PE, 'Euler', PE >= p.sY * sc.A ? -4 : 13], [p.sY * sc.A, 'σ_Y A', PE >= p.sY * sc.A ? 13 : -4], [sT * sc.A, 'tangent modulus', -4]].map(([v, t, dy]) => ({ x: C('length', dmx) * 0.98, y: C('force', v), dy, text: t, anchor: 'end', role: 'theory' })),
+      xlim: [0, C('length', dmx)], ylim: [0, C('force', Math.max(PE, p.sY * sc.A, fp.Pmax) * 1.1)], desc: 'Load against mid-length deflection for the inelastic column.' });
+    $('cap2').innerHTML = `The imperfect column reaches its maximum load at δ = ${q('length', fp.dAtMax, 3)}, ${S.fmt(100 * (1 - fp.Pmax / (sT * sc.A)), 3)} % below the tangent-modulus load, then unloads. The nearly perfect column climbs to between the tangent- and reduced-modulus loads (Shanley).`;
+    // readout
+    const sTp = M.tangentSlender(sT, p.E, p.sY, p.m);
+    const rows = [
+      ['Tangent-modulus stress: σ = π²E_t/(L/r)² (bisection) — its L/r from the closed form π√(E_t/σ)', 'none', sl, sTp, 'exact'],
+      ['Tangent-modulus load vs finite-element eigenvalue with E_t I', 'force', sT * sc.A, feT.P, 'disc'],
+      [`Fiber model bending stiffness Σ dA z² (n_f = ${p.nf}) vs bt³/12`, 'inertia', sc.I, M.fiberI(p.b, p.t, p.nf), 'disc'],
+      ['Nearly perfect column: tangent-modulus load vs fiber-model maximum', 'force', sT * sc.A, fp0.Pmax, 'model'],
+      ['Imperfect column: tangent-modulus load vs fiber-model maximum', 'force', sT * sc.A, fp.Pmax, 'model'],
+      ['Euler P_cr vs fiber-model maximum', 'force', PE, fp.Pmax, 'model'],
+    ];
+    if (dT && p.data === 'D') rows.push(['Fiber model maximum vs sample-data maximum load', 'force', fp.Pmax, SAMPLE.Dmax, 'model']);
+    renderReadout(rows, `L/r = ${S.fmt(sl, 4)}, ${p.nf} fibers`);
+    const nfs = [4, 8, 16, 32, 64, 128, 256], conv = nfs.map((n) => ({ N: n, err: Math.abs(M.fiberI(p.b, p.t, n) / sc.I - 1) }));
+    drawConv(conv, 'Number of fibers, n_f', 'The fiber (midpoint) integration of the section converges as n<sub>f</sub><sup>−2</sup>: the elastic bending stiffness is low by exactly 1/n<sub>f</sub>².', 2, ['bending stiffness, fibers vs exact']);
+    const W = [];
+    W.push([sl < PI * Math.sqrt(p.E / p.sY) ? 'bad' : 'ok', `L/r = ${S.fmt(sl, 4)} ${sl < PI * Math.sqrt(p.E / p.sY) ? '<' : '≥'} π√(E/σ_Y) = ${S.fmt(PI * Math.sqrt(p.E / p.sY), 4)}: Euler predicts ${q('stress', PE / sc.A)}, ${PE / sc.A > p.sY ? 'more than the material can carry' : 'below σ_Y'}. The column actually carries ${S.fmt(100 * fp.Pmax / PE, 3)} % of Euler's load.`]);
+    W.push(['warn', 'The fiber model assumes the deflected shape stays a half sine; real inelastic columns concentrate curvature at mid-length, so it slightly overstates the maximum load.']);
+    W.push(['warn', 'Each fiber follows the same Ramberg–Osgood curve in tension and compression and unloads at slope E (no Bauschinger effect).']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('σ<sub>t</sub> = π²E<sub>t</sub>(σ<sub>t</sub>) / (L<sub>e</sub>/r)²', 'Engesser: a column that is still straight when it starts to bend loads every fiber further, so the tangent modulus governs (handout Appendix D.7).', 'E_t = dσ/dε from the Ramberg–Osgood fit to the Lab 1 curve, ε = σ/E + 0.002(σ/σ_Y)^m.', chip('ok', 'straight column'), `σ_t = ${q('stress', sT)}`),
+      card('E<sub>r</sub> = 4EE<sub>t</sub> / (√E + √E<sub>t</sub>)²', 'von Kármán: the convex side unloads at E (rectangle).', 'An upper bound; Shanley showed bending starts at the tangent-modulus load.', chip('warn', 'upper bound'), `σ_r = ${q('stress', sRm)}`),
+      card('σ<sub>all</sub> = f(L/r)', `${designName()}: empirical curves with the factor of safety built in.`, 'For 6061-T6 the Euler branch is 356 000 MPa/(L/r)², i.e. Euler divided by 1.93.', chip('ok', 'design'), `σ_all = ${q('stress', designCurve(sl))}`),
+    ].join('');
+  }
+
+  const EXPERIMENTS = [
+    ['Load past P_cr', 'A perfect 450 mm pinned bar at 1.02 P_cr: linear theory has no answer; the elastica already deflects about an eighth of L.', () => applyPreset('elastica')],
+    ['Euler on a short column', 'Part D: L/r = 49. Euler predicts 280 MPa — more than σ_Y — while the column fails near 190 MPa.', () => applyPreset('partD')],
+    ['How fixed is a clamp?', 'Fixed–fixed with the clamp stiffness measured in Part B: P_cr drops about 8 % below the ideal 4π²EI/L².', () => applyPreset('springsB')],
+    ['Eccentric load', 'Part C, e = 2 mm: compare the load–deflection data with the secant result, and read the warning on superposition.', () => applyPreset('partC2')],
+    ['The design trap', 'D1 with the ends assumed fixed: then switch the ends to pinned and watch P_cr fall by a factor of four.', () => applyPreset('designTrap')],
+    ['A flagpole', 'Free top, fixed bottom: L_e = 2L, a quarter of the pinned-pinned load.', () => applyPreset('flagpole')],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); });
+
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'buckle') {
+      const sc = R.sc, xs = linspace(0, p.L, 101), ys = M.modeShape(p, p.E, sc.I, xs);
+      S.exportCSV('lab09_mode_shape.csv', S.toCSV([`x_${u('length')}`, 'y_over_ymax'], xs.map((x, i) => [S.plain(C('length', x)), S.plain(ys[i])])), panel);
+    } else if (R.kind === 'imperfect') {
+      const c = R.curves;
+      S.exportCSV('lab09_load_deflection.csv', S.toCSV([`load_${u('forceN')}`, `deflection_closed_${u('length')}`, `deflection_fe_${u('length')}`], c.Pr.map((P, i) => [S.plain(C('forceN', P)), c.dCF ? S.plain(C('length', c.dCF[i])) : '', S.plain(C('length', c.dFE[i]))])), panel);
+    } else {
+      S.exportCSV('lab09_short_column.csv', S.toCSV([`deflection_${u('length')}`, `load_${u('force')}`], R.fp.d.map((d, i) => [S.plain(C('length', d)), S.plain(C('force', R.fp.P[i]))])), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v, kind]) => [n, Number.isFinite(c) ? S.plain(S.conv(qq, c)) : '', Number.isFinite(v) ? S.plain(S.conv(qq, v)) : '', S.unit(qq), kind]);
+    S.exportCSV('lab09_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'comparison'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    const hasM = R.conv.rows.some((r) => r.errM !== undefined);
+    const head = [R.conv.xlabel.replace(/[^A-Za-z]+/g, '_').toLowerCase().replace(/_+$/, ''), 'relative_error'].concat(hasM ? ['relative_error_fe'] : []);
+    S.exportCSV('lab09_convergence.csv', S.toCSV(head, R.conv.rows.filter((r) => Number.isFinite(r.err)).map((r) => [r.N, S.plain(r.err)].concat(hasM ? [S.plain(r.errM)] : []))), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('partA450');
+})();
+</script>
+</body>
+</html>

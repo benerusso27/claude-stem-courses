@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beam Deflection Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 7: deflection of beams (Beer 9.1, 9.2, 9.4, App. F). Superposition of App. F cases vs the Hermite finite-element solver of beam_deflection.cpp; propped and fixed beams with a flexible clamp and support settlement; large deflection of a cantilever (elastica).">
+<style>
+/* SimCore styles — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   Layout concept: an instrument console — control rack on the left, live chart wall on the right;
+   one column on phones. Colors follow style_guide.md section 4 (Okabe-Ito semantic roles). */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel-2: #eef2f5;
+  --ink: #161b20;
+  --muted: #56616c;
+  --line: #d3dae1;
+  --grid: #e4e9ee;
+  --accent: #0072b2;
+  --accent-ink: #ffffff;
+  --theory: #0072b2;
+  --numeric: #d55e00;
+  --measured: #1a1a1a;
+  --third: #b8478f;
+  --fourth: #00845f;
+  --mutedline: #8c8c8c;
+  --fail: #e69f00;
+  --fail-ink: #8a5300;
+  --ok: #1d7a4b;
+  --ok-bg: #e3f3ea;
+  --warn-bg: #fff1d6;
+  --bad: #b3261e;
+  --bad-bg: #fbe4e2;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-num: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+    --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+    --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+    --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+    --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+  --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+  --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+  --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+  --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui);
+  font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(1.25rem, 1.05rem + 1vw, 1.7rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 700; }
+h3 { font-size: 0.95rem; font-weight: 650; }
+p { margin: 0; }
+sub, sup { font-size: 0.72em; line-height: 0; }
+a { color: var(--accent); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+
+/* ---- header ---------------------------------------------------------------------------- */
+.top { max-width: 1440px; margin: 0 auto; padding-block: 18px 12px; display: grid; gap: 8px; }
+.top-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 16px; }
+.eyebrow { font-size: 0.75rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.signconv { font-size: 0.85rem; color: var(--muted); max-width: 95ch; }
+.signconv b { color: var(--ink); font-weight: 650; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 0.85rem; padding: 6px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+.seg button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ---- layout ---------------------------------------------------------------------------- */
+.console { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .console { grid-template-columns: minmax(0, 1fr); } }
+.rack { display: grid; gap: 12px; position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding-block: 4px 12px; }
+@media (max-width: 860px) { .rack { position: static; max-height: none; overflow: visible; } }
+.wall { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.panel-note { font-size: 0.85rem; color: var(--muted); max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- controls ---------------------------------------------------------------------------- */
+.group { display: grid; gap: 10px; }
+.group-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.ctl { display: grid; gap: 3px; }
+.ctl label { font-size: 0.85rem; display: flex; gap: 6px; align-items: baseline; }
+.ctl .sym { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 0.95rem; min-width: 2.2em; }
+.ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) 6.2em 3.6em; gap: 8px; align-items: center; }
+.ctl-row input[type="number"] {
+  width: 100%; font: inherit; font-family: var(--font-num); font-size: 0.85rem; padding: 3px 5px;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); color: var(--ink); text-align: right;
+}
+.ctl-row .unit { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.ctl .help { font-size: 0.78rem; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; min-height: 24px; }
+select { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--ink); width: 100%; }
+.btn {
+  font: inherit; font-size: 0.85rem; padding: 7px 12px; border-radius: var(--r); cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ---- status chips ------------------------------------------------------------------------ */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 650; padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.warn { color: var(--fail-ink); background: var(--warn-bg); }
+.chip.bad { color: var(--bad); background: var(--bad-bg); }
+.chip.info { color: var(--accent); background: var(--panel-2); }
+.chip.ok::before { border-radius: 2px; }
+.chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.chip.bad::before { clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); border-radius: 0; }
+
+/* ---- plots --------------------------------------------------------------------------------- */
+.plot { position: relative; width: 100%; min-width: 0; }
+.plot svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.plot .tip {
+  position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 7px; font-size: 0.78rem; font-family: var(--font-num); white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.12); z-index: 2;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 26px; height: 10px; flex: none; }
+.plot-caption { font-size: 0.8rem; color: var(--muted); }
+
+/* ---- readout table ------------------------------------------------------------------------- */
+.table-wrap { overflow-x: auto; }
+table.readout { width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 640px; }
+table.readout th, table.readout td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.readout th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+table.readout td.v { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+table.readout td.why { color: var(--muted); font-size: 0.8rem; min-width: 18em; }
+table.readout tr.break td { background: var(--warn-bg); }
+
+/* ---- cards ---------------------------------------------------------------------------------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: grid; gap: 6px; align-content: start; background: var(--panel); }
+.card .eq { font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; }
+.card .eq i { font-style: italic; }
+.card .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card p { font-size: 0.83rem; color: var(--muted); }
+.card .live { font-family: var(--font-num); font-size: 0.8rem; color: var(--ink); }
+
+/* ---- misc ----------------------------------------------------------------------------------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.stat { border-left: 3px solid var(--line); padding: 2px 8px; }
+.stat .k { font-size: 0.78rem; color: var(--muted); }
+.stat .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 0.98rem; }
+.export-panel textarea { width: 100%; min-height: 140px; font-family: var(--font-num); font-size: 0.75rem; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; }
+.error-box { border: 1px solid var(--bad); background: var(--bad-bg); color: var(--bad); padding: 8px 10px; border-radius: var(--r); font-size: 0.88rem; }
+details > summary { cursor: pointer; font-weight: 650; }
+.foot { max-width: 1440px; margin: 20px auto 0; font-size: 0.8rem; color: var(--muted); display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chk { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 7 · Beer 8e §9.1, §9.2, §9.4, App. F</div>
+      <h1>Deflection of beams: EI y″ = M, superposition, redundant supports, and large deflection</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> x from the left end; deflection y is positive upward and EI y″ = M (Eq. 9.4); M &gt; 0 sags the beam; V and M as in Fig. 5.6 (on the left free body V acts downward and M counterclockwise). Loads P and w act downward; an applied couple C is positive counterclockwise. Reactions: forces positive upward, couples positive counterclockwise. The finite-element solver is the instructor's beam_deflection.cpp, which works with y downward internally; this page converts its results to Beer's convention. <b>Blue solid</b> = closed-form (App. F and superposition); <b>vermillion dashed / markers</b> = independent numerical solution; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="partA">Lab Part A: simple span, load at 600 mm</option>
+          <option value="partAboth">Lab Part A: both loads (superposition)</option>
+          <option value="partB1">Lab Part B1: cantilever, flexible clamp</option>
+          <option value="partB2">Lab Part B2: propped cantilever</option>
+          <option value="partB3">Lab Part B3: prop lowered 0.5 mm</option>
+          <option value="partC">Lab Part C: spring-steel strip (elastica)</option>
+          <option value="design">D1: overhanging deck beam</option>
+          <option value="F1">App. F case 1: cantilever, end load</option>
+          <option value="F2">App. F case 2: cantilever, uniform load</option>
+          <option value="F3">App. F case 3: cantilever, end couple</option>
+          <option value="F4">App. F case 4: simple span, central load</option>
+          <option value="F5">App. F case 5: simple span, load at a</option>
+          <option value="F6">App. F case 6: simple span, uniform load</option>
+          <option value="F7">App. F case 7: simple span, end couple</option>
+          <option value="fixedw">Fixed at both ends, uniform load</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel" id="panel-beam">
+      <div class="group" id="grp-sup">
+        <div class="group-title">Supports</div>
+        <div class="row2">
+          <div><label class="small" for="family">Type</label>
+            <select id="family"><option value="ss">Pin + roller (overhang allowed)</option><option value="cant">Cantilever</option><option value="propped">Propped cantilever</option><option value="fixed">Fixed both ends</option></select></div>
+          <div><label class="small" for="mat">Material</label><select id="mat"></select></div>
+        </div>
+        <label class="chk" id="rigid-wrap"><input type="checkbox" id="rigid"> Rigid clamp at the left end (k = ∞)</label>
+      </div>
+      <div class="group" id="grp-sec">
+        <div class="group-title">Cross-section</div>
+        <div><label class="small" for="sec">Shape</label>
+          <select id="sec"><option value="rect">Rectangle b × h</option><option value="ibeam">I-section</option></select></div>
+      </div>
+      <div class="group" id="grp-load"><div class="group-title">Loads (P and w downward, C counterclockwise)</div></div>
+    </section>
+    <section class="panel" id="panel-ela">
+      <div class="group" id="grp-ela"><div class="group-title">Strip and tip load</div>
+        <label class="chk"><input type="checkbox" id="sw"> Include the strip's own weight</label></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical solver</div></div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay"><option value="auto">Matching part of sample_data.csv</option><option value="none">No sample data</option></select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">Configuration</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: Euler–Bernoulli beam (Beer §9.1–9.4): closed forms from App. F combined by superposition, redundants from compatibility; numerical solution by the Hermite cubic finite elements of beam_deflection.cpp (ported line by line, extended with a rotational spring at a clamp and a prescribed support settlement). Large deflection: elastica of a tip-loaded cantilever, elliptic-integral closed form (Carlson's integrals) vs. RK4 shooting. Verified by <span class="num">tests/test_lab07_model.js</span> (including a comparison with the compiled C++ program) and <span class="num">tests/test_lab07_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 7 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 7 physics — pure functions, SI base units (N, m, Pa). Loaded unchanged by the Node tests. */
+const Lab7Model = (() => {
+  'use strict';
+  const MATERIALS = {
+    steel: { name: '1018 steel', E: 205e9, sY: 296.2e6, nu: 0.29, rho: 7850 },
+    al: { name: '6061-T6 aluminum', E: 68.9e9, sY: 273.7e6, nu: 0.33, rho: 2700 },
+    spring: { name: 'Spring steel (blue-tempered)', E: 203e9, sY: 1300e6, nu: 0.29, rho: 7850 },
+  };
+  const BASE = { mode: 'beam', family: 'ss', mat: 'steel', rigid: true, sec: 'rect', b: 25.4e-3, h: 6.35e-3, H: 101.6e-3, B: 63.5e-3, tf: 6.4e-3, tw: 4.8e-3,
+    L: 0.8, aov: 0, P1: 0, a1: 0.4, P2: 0, a2: 0.2, w: 0, C0: 0, k: 4400, s: 0, Ne: 120,
+    Ls: 0.25, bs: 12.7e-3, ts: 0.79e-3, Ps: 3, sw: false, Nrk: 200 };
+  const P_ = (o) => Object.assign({}, BASE, o);
+  const PRESETS = {
+    partA: P_({ family: 'ss', L: 0.8, P1: 3.0 * 9.80665, a1: 0.6, P2: 0, a2: 0.2 }),
+    partAboth: P_({ family: 'ss', L: 0.8, P1: 2.0 * 9.80665, a1: 0.6, P2: 1.0 * 9.80665, a2: 0.2 }),
+    partB1: P_({ family: 'cant', L: 0.7, P1: 1.0 * 9.80665, a1: 0.7, rigid: false, k: 4400 }),
+    partB2: P_({ family: 'propped', L: 0.7, P1: 4.0 * 9.80665, a1: 0.35, rigid: false, k: 4400 }),
+    partB3: P_({ family: 'propped', L: 0.7, P1: 3.0 * 9.80665, a1: 0.35, rigid: false, k: 4400, s: -0.5e-3 }),
+    partC: P_({ mode: 'elastica', mat: 'spring', Ls: 0.25, bs: 12.7e-3, ts: 0.787e-3, Ps: 0.62 * 9.80665, sw: true }),
+    design: P_({ family: 'ss', mat: 'al', sec: 'ibeam', H: 101.6e-3, B: 63.5e-3, tf: 6.4e-3, tw: 4.8e-3, L: 3.5, aov: 0.5, P1: 1500, a1: 4.0, w: 2000 }),
+    F1: P_({ family: 'cant', L: 2, sec: 'rect', b: 50e-3, h: 100e-3, P1: 2000, a1: 2 }),
+    F2: P_({ family: 'cant', L: 2, sec: 'rect', b: 50e-3, h: 100e-3, w: 2000 }),
+    F3: P_({ family: 'cant', L: 2, sec: 'rect', b: 50e-3, h: 100e-3, C0: -2000 }),
+    F4: P_({ family: 'ss', L: 3, sec: 'rect', b: 50e-3, h: 100e-3, P1: 5000, a1: 1.5 }),
+    F5: P_({ family: 'ss', L: 3, sec: 'rect', b: 50e-3, h: 100e-3, P1: 5000, a1: 2.1 }),
+    F6: P_({ family: 'ss', L: 3, sec: 'rect', b: 50e-3, h: 100e-3, w: 3000 }),
+    F7: P_({ family: 'ss', L: 3, sec: 'rect', b: 50e-3, h: 100e-3, C0: -3000 }),
+    fixedw: P_({ family: 'fixed', L: 3, sec: 'rect', b: 50e-3, h: 100e-3, w: 3000 }),
+  };
+
+  // ---------------- section ----------------
+  function section(p) {
+    if (p.sec === 'ibeam') {
+      const hw = p.H - 2 * p.tf, I = (p.B * p.H ** 3 - (p.B - p.tw) * hw ** 3) / 12, A = 2 * p.B * p.tf + hw * p.tw;
+      return { I, A, c: p.H / 2, depth: p.H, fs: A / (hw * p.tw) };
+    }
+    return { I: p.b * p.h ** 3 / 12, A: p.b * p.h, c: p.h / 2, depth: p.h, fs: 1.2 };
+  }
+  const totalLength = (p) => (p.family === 'ss' ? p.L + p.aov : p.L);
+  const pointLoads = (p) => [[p.P1, p.a1], [p.P2, p.a2]].filter(([P, a]) => P !== 0 && a >= 0 && a <= totalLength(p) + 1e-12);
+
+  /* ================= finite elements: beam_deflection.cpp ported to JavaScript =================
+     Same algorithm and the same sign convention as the C++ (y DOWN positive, theta = dy/dx, loads down +,
+     couples CLOCKWISE +). Extensions (marked): a rotational spring k at a support, and a prescribed settlement. */
+  const SUP = { PIN: 'Pin', ROL: 'Roller', FIX: 'Fixed' };
+  function hermite(xi, h) {                       // C++ hermite(): N gives y from (y1, th1, y2, th2); dN = d/dx
+    const xi2 = xi * xi, xi3 = xi2 * xi;
+    return { N: [1 - 3 * xi2 + 2 * xi3, h * (xi - 2 * xi2 + xi3), 3 * xi2 - 2 * xi3, h * (-xi2 + xi3)],
+      dN: [(-6 * xi + 6 * xi2) / h, 1 - 4 * xi + 3 * xi2, (6 * xi - 6 * xi2) / h, -2 * xi + 3 * xi2],
+      d2N: [(-6 + 12 * xi) / (h * h), (-4 + 6 * xi) / h, (6 - 12 * xi) / (h * h), (-2 + 6 * xi) / h] };
+  }
+  function intensity(ld, x) { if (ld.type !== 'D' || x < ld.a || x > ld.b || ld.b <= ld.a) return 0; return ld.q1 + (ld.q2 - ld.q1) * (x - ld.a) / (ld.b - ld.a); }
+  const totalIntensity = (bm, x) => bm.loads.reduce((s, ld) => s + intensity(ld, x), 0);
+  function distLeftOf(ld, x) {                   // C++ distLeftOf(): resultant (down +) and its moment about the cut
+    if (ld.type !== 'D' || x <= ld.a) return { F: 0, Mx: 0 };
+    const T = Math.min(x, ld.b) - ld.a, D = x - ld.a, k = (ld.q2 - ld.q1) / (ld.b - ld.a);
+    return { F: ld.q1 * T + k * T * T / 2, Mx: ld.q1 * (D * T - T * T / 2) + k * (D * T * T / 2 - T * T * T / 3) };
+  }
+  function sortUnique(v, tol) { const s = v.slice().sort((a, b) => a - b), out = []; for (const x of s) if (!out.length || x - out[out.length - 1] > tol) out.push(x); return out; }
+  function nearestNode(xn, x) {
+    let lo = 0, hi = xn.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (xn[m] < x) lo = m + 1; else hi = m; }
+    const i = lo;
+    if (i >= xn.length) return xn.length - 1;
+    if (i > 0 && Math.abs(xn[i - 1] - x) < Math.abs(xn[i] - x)) return i - 1;
+    return i;
+  }
+  function stabilityProblem(bm) {
+    if (!bm.supports.length) return 'The beam has no supports, so nothing holds it up.';
+    let fixed = false, lo = 1e300, hi = -1e300;
+    for (const s of bm.supports) { if (s.type === SUP.FIX) fixed = true; lo = Math.min(lo, s.x); hi = Math.max(hi, s.x); }
+    if (!fixed && hi - lo < 1e-9 * bm.L) return "A single pin or roller can't stop the beam from rotating about it. Add a second support or make one fixed.";
+    return '';
+  }
+  function buildMesh(bm, nElem) {                 // C++ buildMesh(): ~nElem equal elements plus a node at every key point
+    let keys = [0, bm.L];
+    for (const s of bm.supports) keys.push(s.x);
+    for (const ld of bm.loads) { keys.push(ld.a); if (ld.type === 'D') keys.push(ld.b); }
+    keys = sortUnique(keys.map((k) => Math.min(Math.max(k, 0), bm.L)), 1e-12 * bm.L);
+    const nodes = keys.slice(), h = bm.L / nElem;
+    for (let i = 1; i < nElem; i++) { const x = i * h; if (!keys.some((k) => Math.abs(x - k) < 0.3 * h)) nodes.push(x); }
+    return sortUnique(nodes, 1e-12 * bm.L);
+  }
+  function solveBeam(bm, nElem = 120) {           // C++ solveBeam(): assemble K u = F, lock DOFs, banded elimination
+    const sol = { ok: false, error: stabilityProblem(bm) };
+    if (sol.error) return sol;
+    const EI = bm.E * bm.I;
+    sol.xn = buildMesh(bm, nElem);
+    const nn = sol.xn.length, nd = 2 * nn, hb = 3, W = 2 * hb + 1;
+    const K = new Float64Array(nd * W), F = new Float64Array(nd);     // band storage: K(i, j) at i*W + (j - i + hb)
+    const kij = (i, j) => i * W + (j - i + hb);
+    const gx = [0.5 - 0.5 * Math.sqrt(0.6), 0.5, 0.5 + 0.5 * Math.sqrt(0.6)], gw = [5 / 18, 8 / 18, 5 / 18];
+    for (let e = 0; e + 1 < nn; e++) {
+      const h = sol.xn[e + 1] - sol.xn[e], c = EI / (h * h * h);
+      const ke = [[12 * c, 6 * h * c, -12 * c, 6 * h * c], [6 * h * c, 4 * h * h * c, -6 * h * c, 2 * h * h * c], [-12 * c, -6 * h * c, 12 * c, -6 * h * c], [6 * h * c, 2 * h * h * c, -6 * h * c, 4 * h * h * c]];
+      const dof = [2 * e, 2 * e + 1, 2 * e + 2, 2 * e + 3];
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) K[kij(dof[i], dof[j])] += ke[i][j];
+      for (let g = 0; g < 3; g++) {               // consistent nodal loads, 3-point Gauss
+        const q = totalIntensity(bm, sol.xn[e] + gx[g] * h);
+        if (q === 0) continue;
+        const { N } = hermite(gx[g], h);
+        for (let i = 0; i < 4; i++) F[dof[i]] += gw[g] * h * N[i] * q;
+      }
+    }
+    for (const ld of bm.loads) {
+      const n = nearestNode(sol.xn, ld.a);
+      if (ld.type === 'P') F[2 * n] += ld.q1;
+      if (ld.type === 'C') F[2 * n + 1] += ld.q1;
+    }
+    // supports: pin/roller lock y; fixed locks y and theta. [extension] k > 0 finite: rotational spring instead of a lock
+    const locked = new Map(), springs = [];        // dof -> prescribed value
+    for (const s of bm.supports) {
+      const n = nearestNode(sol.xn, s.x);
+      if (!locked.has(2 * n)) locked.set(2 * n, s.settle || 0);
+      if (s.type === SUP.FIX) {
+        if (Number.isFinite(s.k)) { K[kij(2 * n + 1, 2 * n + 1)] += s.k; springs.push({ n, k: s.k }); }
+        else locked.set(2 * n + 1, 0);
+      }
+    }
+    const lockedDofs = Array.from(locked.keys()).sort((a, b) => a - b);
+    const origRow = new Map(), origF = new Map();
+    for (const d of lockedDofs) { const r = new Float64Array(W); for (let j = 0; j < W; j++) r[j] = K[d * W + j]; origRow.set(d, r); origF.set(d, F[d]); }
+    for (const d of lockedDofs) {                   // [extension] move a prescribed displacement to the right-hand side
+      const g = locked.get(d);
+      if (g) for (let i = Math.max(0, d - hb); i <= Math.min(nd - 1, d + hb); i++) if (i !== d) F[i] -= K[kij(i, d)] * g;
+    }
+    for (const d of lockedDofs) {
+      const dd = origRow.get(d)[hb];
+      for (let j = Math.max(0, d - hb); j <= Math.min(nd - 1, d + hb); j++) { K[kij(d, j)] = 0; K[kij(j, d)] = 0; }
+      K[kij(d, d)] = dd; F[d] = dd * locked.get(d);
+    }
+    let maxDiag = 0;
+    for (let i = 0; i < nd; i++) maxDiag = Math.max(maxDiag, Math.abs(K[kij(i, i)]));
+    for (let k = 0; k < nd; k++) {
+      const piv = K[kij(k, k)];
+      if (Math.abs(piv) < 1e-12 * maxDiag) { sol.error = "The supports don't hold the beam in place (the stiffness matrix is singular)."; return sol; }
+      const iEnd = Math.min(nd - 1, k + hb);
+      for (let i = k + 1; i <= iEnd; i++) {
+        const m = K[kij(i, k)] / piv;
+        if (m === 0) continue;
+        for (let j = k; j <= iEnd; j++) K[kij(i, j)] -= m * K[kij(k, j)];
+        F[i] -= m * F[k];
+      }
+    }
+    const u = new Float64Array(nd);
+    for (let i = nd - 1; i >= 0; i--) { let s = F[i]; for (let j = i + 1; j <= Math.min(nd - 1, i + hb); j++) s -= K[kij(i, j)] * u[j]; u[i] = s / K[kij(i, i)]; }
+    sol.yn = []; sol.tn = [];
+    for (let n = 0; n < nn; n++) { sol.yn.push(u[2 * n]); sol.tn.push(u[2 * n + 1]); }
+    const Rm = new Map();                           // reaction = K u - F in the original equation of a locked DOF
+    for (const d of lockedDofs) { const r = origRow.get(d); let s = -origF.get(d); for (let j = Math.max(0, d - hb); j <= Math.min(nd - 1, d + hb); j++) s += r[j - d + hb] * u[j]; Rm.set(d, s); }
+    for (const sp of springs) Rm.set(2 * sp.n + 1, -sp.k * u[2 * sp.n + 1]);   // [extension] spring moment on the beam
+    const used = new Set();
+    sol.reactions = bm.supports.map((s) => {
+      const n = nearestNode(sol.xn, s.x), r = { x: sol.xn[n], type: s.type, F_up: 0, M_cw: 0 };
+      if (!used.has(2 * n)) { r.F_up = -Rm.get(2 * n); used.add(2 * n); }
+      if (s.type === SUP.FIX && !used.has(2 * n + 1)) { r.M_cw = Rm.get(2 * n + 1); used.add(2 * n + 1); }
+      return r;
+    });
+    sol.EI = EI; sol.ok = true;
+    return sol;
+  }
+  function elementAt(xn, x) { let e = 0, lo = 0, hi = xn.length; while (lo < hi) { const m = (lo + hi) >> 1; if (xn[m] <= x) lo = m + 1; else hi = m; } e = lo - 1; return Math.min(Math.max(e, 0), xn.length - 2); }
+  function deflectionAt(sol, x) {                 // C++ deflectionAt(): Hermite interpolation (y down, slope); plus curvature
+    const e = elementAt(sol.xn, x), h = sol.xn[e + 1] - sol.xn[e], H = hermite((x - sol.xn[e]) / h, h);
+    const d = [sol.yn[e], sol.tn[e], sol.yn[e + 1], sol.tn[e + 1]];
+    let y = 0, t = 0, k = 0;
+    for (let i = 0; i < 4; i++) { y += H.N[i] * d[i]; t += H.dN[i] * d[i]; k += H.d2N[i] * d[i]; }
+    return { y, t, k };
+  }
+  function internalForces(bm, sol, x) {           // C++ internalForces(): statics of the part LEFT of x
+    let V = 0, M = 0;
+    for (const r of sol.reactions) if (r.x < x) { V += r.F_up; M += r.F_up * (x - r.x) + r.M_cw; }
+    for (const ld of bm.loads) {
+      if (ld.type === 'P' && ld.a < x) { V -= ld.q1; M -= ld.q1 * (x - ld.a); }
+      if (ld.type === 'C' && ld.a < x) M += ld.q1;
+      if (ld.type === 'D') { const { F, Mx } = distLeftOf(ld, x); V -= F; M -= Mx; }
+    }
+    return { V, M };
+  }
+
+  /* ---------------- the page's beam in the C++ convention, and FE results in Beer's ---------------- */
+  function cppBeam(p) {
+    const mat = MATERIALS[p.mat], sec = section(p), Lt = totalLength(p), k = p.rigid ? Infinity : p.k;
+    const supports = p.family === 'ss' ? [{ type: SUP.PIN, x: 0 }, { type: SUP.ROL, x: p.L }]
+      : p.family === 'cant' ? [{ type: SUP.FIX, x: 0, k }]
+      : p.family === 'propped' ? [{ type: SUP.FIX, x: 0, k }, { type: SUP.ROL, x: p.L, settle: -p.s }]
+      : [{ type: SUP.FIX, x: 0, k }, { type: SUP.FIX, x: p.L }];
+    const loads = pointLoads(p).map(([P, a]) => ({ type: 'P', a, b: a, q1: P, q2: 0 }));
+    if (p.w) loads.push({ type: 'D', a: 0, b: Lt, q1: p.w, q2: p.w });
+    if (p.C0) loads.push({ type: 'C', a: Lt, b: Lt, q1: -p.C0, q2: 0 });          // ccw (Beer input) -> cw (C++)
+    return { L: Lt, E: mat.E, I: sec.I, supports, loads };
+  }
+  function feSolve(p, Ne = p.Ne) {
+    const bm = cppBeam(p), sol = solveBeam(bm, Ne);
+    if (!sol.ok) return { ok: false, error: sol.error };
+    const y = (x) => -deflectionAt(sol, x).y, t = (x) => -deflectionAt(sol, x).t;
+    const Mfe = (x) => -sol.EI * deflectionAt(sol, x).k;        // y_down'' = -M/EI
+    const reactions = sol.reactions.map((r) => ({ x: r.x, F_up: r.F_up, M_ccw: -r.M_cw }));
+    return { ok: true, bm, sol, y, t, Mfe, reactions, M: (x) => internalForces(bm, sol, x).M, V: (x) => internalForces(bm, sol, x).V, n: sol.xn.length - 1 };
+  }
+
+  /* ================= closed forms: Beer App. F cases and superposition (Beer y up, loads down, couples ccw) ========= */
+  const cantPoint = (P, a, EI, x) => (x <= a ? [-P * x * x * (3 * a - x) / (6 * EI), -P * x * (2 * a - x) / (2 * EI)] : [-P * a * a * (3 * x - a) / (6 * EI), -P * a * a / (2 * EI)]);
+  const cantUdl = (w, L, EI, x) => [-w * x * x * (6 * L * L - 4 * L * x + x * x) / (24 * EI), -w * x * (3 * L * L - 3 * L * x + x * x) / (6 * EI)];
+  const cantCouple = (C, c, EI, x) => (x <= c ? [C * x * x / (2 * EI), C * x / EI] : [C * c * (2 * x - c) / (2 * EI), C * c / EI]);
+  function ssPoint(P, a, Ls, EI, x) {
+    const b = Ls - a;
+    if (x <= a) return [-P * b * x * (Ls * Ls - b * b - x * x) / (6 * EI * Ls), -P * b * (Ls * Ls - b * b - 3 * x * x) / (6 * EI * Ls)];
+    const xr = Ls - x;
+    return [-P * a * xr * (Ls * Ls - a * a - xr * xr) / (6 * EI * Ls), P * a * (Ls * Ls - a * a - 3 * xr * xr) / (6 * EI * Ls)];
+  }
+  const ssUdl = (w, Ls, EI, x) => [-w * x * (Ls ** 3 - 2 * Ls * x * x + x ** 3) / (24 * EI), -w * (Ls ** 3 - 6 * Ls * x * x + 4 * x ** 3) / (24 * EI)];
+  const ssEndMoment = (MB, Ls, EI, x) => [MB * x * (x * x - Ls * Ls) / (6 * EI * Ls), MB * (3 * x * x - Ls * Ls) / (6 * EI * Ls)];
+  /* Returns {y(x), t(x), reactions {RA, MA, RB, MB}, comps: [{label, f(x)}]}. */
+  function closedForm(p) {
+    const EI = MATERIALS[p.mat].E * section(p).I, w = p.w, C0 = p.C0, Ps = pointLoads(p);
+    if (p.family === 'ss') {
+      const Ls = p.L, a = p.aov, Lt = Ls + a;
+      const span = Ps.filter(([, x]) => x <= Ls), over = Ps.filter(([, x]) => x > Ls);
+      const MB = -over.reduce((s, [P, x]) => s + P * (x - Ls), 0) - w * a * a / 2 + C0;     // sagging + at the roller
+      const spanY = (x) => { let y = 0, t = 0; for (const [P, q] of span) { const r = ssPoint(P, q, Ls, EI, x); y += r[0]; t += r[1]; } if (w) { const r = ssUdl(w, Ls, EI, x); y += r[0]; t += r[1]; } if (MB) { const r = ssEndMoment(MB, Ls, EI, x); y += r[0]; t += r[1]; } return [y, t]; };
+      const thB = spanY(Ls)[1];
+      const overY = (x) => { const u = x - Ls; let y = thB * u, t = thB; for (const [P, q] of over) { const r = cantPoint(P, q - Ls, EI, u); y += r[0]; t += r[1]; } if (w && a > 0) { const r = cantUdl(w, a, EI, u); y += r[0]; t += r[1]; } if (C0 && a > 0) { const r = cantCouple(C0, a, EI, u); y += r[0]; t += r[1]; } return [y, t]; };
+      const f = (x) => (x <= Ls ? spanY(x) : overY(x));
+      const Wt = Ps.reduce((s, [P]) => s + P, 0) + w * Lt, RB = (Ps.reduce((s, [P, x]) => s + P * x, 0) + w * Lt * Lt / 2 - C0) / Ls;
+      const comps = [];
+      for (const [P, q] of span) comps.push({ label: `P at ${q}`, f: (x) => (x <= Ls ? ssPoint(P, q, Ls, EI, x)[0] : ssPoint(P, q, Ls, EI, Ls)[1] * (x - Ls)) });
+      if (w) comps.push({ label: 'w on the span', f: (x) => (x <= Ls ? ssUdl(w, Ls, EI, x)[0] : ssUdl(w, Ls, EI, Ls)[1] * (x - Ls)) });
+      if (MB) comps.push({ label: 'overhang loads', f: (x) => (x <= Ls ? ssEndMoment(MB, Ls, EI, x)[0] : overY(x)[0] - (spanY(Ls)[1] - ssEndMoment(MB, Ls, EI, Ls)[1]) * (x - Ls)) });
+      return { y: (x) => f(x)[0], t: (x) => f(x)[1], R: { RA: Wt - RB, RB, MA: 0, MB: 0 }, comps, EI, Lt };
+    }
+    const L = p.L, k = p.rigid ? Infinity : p.k, flex = Number.isFinite(k) ? 1 / k : 0;
+    const base = (x) => { let y = 0, t = 0; for (const [P, q] of Ps) { const r = cantPoint(P, q, EI, x); y += r[0]; t += r[1]; } if (w) { const r = cantUdl(w, L, EI, x); y += r[0]; t += r[1]; } if (C0) { const r = cantCouple(C0, L, EI, x); y += r[0]; t += r[1]; } return [y, t]; };
+    const M0loads = -Ps.reduce((s, [P, q]) => s + P * q, 0) - w * L * L / 2 + C0;
+    const total = (R, CR, x) => { const b = base(x), c = cantCouple(CR, L, EI, x), M0 = M0loads + R * L + CR, th0 = M0 * flex;
+      return [b[0] + R * x * x * (3 * L - x) / (6 * EI) + c[0] + th0 * x, b[1] + R * x * (2 * L - x) / (2 * EI) + c[1] + th0, M0]; };
+    let R = 0, CR = 0;
+    if (p.family === 'propped') { const y0 = total(0, 0, L)[0], y1 = total(1, 0, L)[0]; R = (p.s - y0) / (y1 - y0); }
+    if (p.family === 'fixed') {
+      const b0 = total(0, 0, L), r1 = total(1, 0, L), c1 = total(0, 1, L);
+      const a11 = r1[0] - b0[0], a12 = c1[0] - b0[0], a21 = r1[1] - b0[1], a22 = c1[1] - b0[1], det = a11 * a22 - a12 * a21;
+      R = (-b0[0] * a22 + b0[1] * a12) / det; CR = (-a11 * b0[1] + a21 * b0[0]) / det;
+    }
+    const M0 = total(R, CR, 0)[2], Wt = Ps.reduce((s, [P]) => s + P, 0) + w * L;
+    const comps = [];
+    for (const [P, q] of Ps) comps.push({ label: `P at ${q}`, f: (x) => cantPoint(P, q, EI, x)[0] });
+    if (w) comps.push({ label: 'w', f: (x) => cantUdl(w, L, EI, x)[0] });
+    if (C0) comps.push({ label: 'end couple', f: (x) => cantCouple(C0, L, EI, x)[0] });
+    if (R) comps.push({ label: 'redundant R', f: (x) => R * x * x * (3 * L - x) / (6 * EI) });
+    if (CR) comps.push({ label: 'redundant couple', f: (x) => cantCouple(CR, L, EI, x)[0] });
+    if (flex) comps.push({ label: 'clamp rotation', f: (x) => M0 * flex * x });
+    return { y: (x) => total(R, CR, x)[0], t: (x) => total(R, CR, x)[1], R: { RA: Wt - R, MA: -M0, RB: R, MB: CR }, comps, EI, Lt: L, M0 };
+  }
+  // bending moment from statics with given reactions (sagging +)
+  function momentStatics(p, R, x) {
+    let M = p.family === 'ss' ? R.RA * x + R.RB * Math.max(x - p.L, 0) : R.RA * x - R.MA;
+    for (const [P, q] of pointLoads(p)) M -= P * Math.max(x - q, 0);
+    M -= p.w * x * x / 2;
+    return M;
+  }
+  function beamConvergence(p, Ns = [2, 4, 8, 16, 32, 64, 128, 256]) {
+    const c = closedForm(p), Lt = c.Lt, xs = Array.from({ length: 401 }, (_, i) => Lt * i / 400);
+    const ymax = Math.max(...xs.map((x) => Math.abs(c.y(x))), 1e-300);
+    const Mmax = Math.max(...xs.map((x) => Math.abs(momentStatics(p, c.R, x))), 1e-300);
+    const rows = Ns.map((N) => {
+      const f = feSolve(p, N);
+      const ey = Math.max(...xs.map((x) => Math.abs(f.y(x) - c.y(x)))) / ymax;
+      const xm = []; for (let e = 0; e + 1 < f.sol.xn.length; e++) xm.push((f.sol.xn[e] + f.sol.xn[e + 1]) / 2);
+      const eM = Math.max(...xm.map((x) => Math.abs(f.Mfe(x) - momentStatics(p, c.R, x)))) / Mmax;
+      return { N, err: ey, errM: eM };
+    });
+    // errors below about 1e-9 are the round-off of the elimination: leave them out of the fitted order
+    const sl = (key) => { const pts = rows.filter((r) => r[key] > 1e-8); return pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r[key]))) : NaN; };
+    return { rows, slope: sl('err'), slopeM: sl('errM') };
+  }
+
+  /* ================= elastica: tip-loaded cantilever, large deflection ================= */
+  function RF(x, y, z) {                          // Carlson's symmetric integral R_F, duplication algorithm
+    for (let i = 0; i < 100; i++) {
+      const sx = Math.sqrt(x), sy = Math.sqrt(y), sz = Math.sqrt(z), lam = sx * sy + sy * sz + sz * sx;
+      x = (x + lam) / 4; y = (y + lam) / 4; z = (z + lam) / 4;
+      const mu = (x + y + z) / 3, dx = 1 - x / mu, dy = 1 - y / mu, dz = 1 - z / mu;
+      if (Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) < 1e-4) {
+        const e2 = dx * dy - dz * dz, e3 = dx * dy * dz;
+        return (1 - e2 / 10 + e3 / 14 + e2 * e2 / 24 - 3 * e2 * e3 / 44) / Math.sqrt(mu);
+      }
+    }
+    return NaN;
+  }
+  function RD(x, y, z) {
+    let sum = 0, fac = 1;
+    for (let i = 0; i < 100; i++) {
+      const sx = Math.sqrt(x), sy = Math.sqrt(y), sz = Math.sqrt(z), lam = sx * sy + sy * sz + sz * sx;
+      sum += fac / (sz * (z + lam)); fac /= 4;
+      x = (x + lam) / 4; y = (y + lam) / 4; z = (z + lam) / 4;
+      const mu = (x + y + 3 * z) / 5, dx = 1 - x / mu, dy = 1 - y / mu, dz = 1 - z / mu;
+      if (Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) < 1e-4) {
+        const ea = dx * dy, eb = dz * dz, ec = ea - eb, ed = ea - 6 * eb, ee = ed + ec + ec;
+        return 3 * sum + fac * (1 + ed * (-3 / 14 + 9 / 88 * ed - 4.5 / 26 * dz * ee) + dz * (ee / 6 + dz * (-9 / 22 * ec + 1.5 / 26 * dz * ea))) / (mu * Math.sqrt(mu));
+      }
+    }
+    return NaN;
+  }
+  const ellF = (phi, k2) => { const s = Math.sin(phi), c = Math.cos(phi); return s * RF(c * c, 1 - k2 * s * s, 1); };
+  const ellE = (phi, k2) => { const s = Math.sin(phi), c = Math.cos(phi), q = 1 - k2 * s * s; return s * RF(c * c, q, 1) - k2 * s ** 3 * RD(c * c, q, 1) / 3; };
+  /* Closed form: sqrt(alpha) = K(k) - F(phi1, k), k^2 = (1 + sin th0)/2, sin phi1 = 1/(k sqrt2). Returns tip angle, dv/L (down),
+     x_tip/L, and the elastic curve from the same elliptic parameterization. */
+  function elasticaClosed(alpha) {
+    if (alpha <= 0) return { th0: 0, dv: 0, xt: 1, k2: 0.5, phi1: Math.PI / 2, shape: (n) => Array.from({ length: n + 1 }, (_, i) => ({ x: i / n, y: 0 })) };
+    const g = (th0) => { const k2 = (1 + Math.sin(th0)) / 2, phi1 = Math.asin(Math.min(1, 1 / Math.sqrt(2 * k2))); return ellF(Math.PI / 2, k2) - ellF(phi1, k2) - Math.sqrt(alpha); };
+    let lo = 1e-12, hi = Math.PI / 2 - 1e-12;
+    for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (g(m) < 0) lo = m; else hi = m; if (hi - lo < 1e-15) break; }
+    const th0 = (lo + hi) / 2, k2 = (1 + Math.sin(th0)) / 2, phi1 = Math.asin(Math.min(1, 1 / Math.sqrt(2 * k2))), sa = Math.sqrt(alpha);
+    const F1 = ellF(phi1, k2), E1 = ellE(phi1, k2);
+    const dv = 1 - 2 / sa * (ellE(Math.PI / 2, k2) - E1), xt = Math.sqrt(2 * Math.sin(th0) / alpha);
+    const shape = (n) => Array.from({ length: n + 1 }, (_, i) => { const ph = phi1 + (Math.PI / 2 - phi1) * i / n; return { x: 2 * Math.sqrt(k2) / sa * (Math.cos(phi1) - Math.cos(ph)), y: -((ellF(ph, k2) - F1) - 2 * (ellE(ph, k2) - E1)) / sa, s: (ellF(ph, k2) - F1) / sa }; });
+    return { th0, dv, xt, k2, phi1, shape };
+  }
+  /* Numerical: RK4 shooting on theta'' = -(alpha + beta (1 - s)) cos theta (s = arc length / L), theta(0) = 0, theta'(1) = 0;
+     beta = w L^3 / EI is the strip's own weight. Bisection on theta'(0) in [0, alpha + beta/2]. */
+  function elasticaShoot(alpha, beta = 0, N = 200, keep = false) {
+    const run = (k0) => {
+      let th = 0, kp = k0, x = 0, y = 0; const h = 1 / N, path = keep ? [{ s: 0, x: 0, y: 0, th: 0 }] : null;
+      const f = (s, T, Kp) => [Kp, -(alpha + beta * (1 - s)) * Math.cos(T), Math.cos(T), -Math.sin(T)];
+      for (let i = 0; i < N; i++) {
+        const s = i * h;
+        const k1 = f(s, th, kp), k2 = f(s + h / 2, th + h / 2 * k1[0], kp + h / 2 * k1[1]), k3 = f(s + h / 2, th + h / 2 * k2[0], kp + h / 2 * k2[1]), k4 = f(s + h, th + h * k3[0], kp + h * k3[1]);
+        th += h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]); kp += h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+        x += h / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]); y += h / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
+        if (keep) path.push({ s: s + h, x, y, th });
+      }
+      return { th, kp, x, y, path };
+    };
+    if (alpha + beta <= 0) return { th0: 0, dv: 0, xt: 1, k0: 0, path: keep ? [{ x: 0, y: 0 }, { x: 1, y: 0 }] : null };
+    let lo = 0, hi = alpha + beta / 2;
+    for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (run(m).kp < 0) lo = m; else hi = m; }
+    const r = run((lo + hi) / 2);
+    return { th0: r.th, dv: -r.y, xt: r.x, k0: (lo + hi) / 2, path: r.path };
+  }
+  function alpha5(target = 0.05) {               // alpha at which alpha/3 overstates the elastica tip deflection by `target`
+    let lo = 1e-3, hi = 5;
+    for (let i = 0; i < 100; i++) { const m = (lo + hi) / 2; if ((m / 3) / elasticaClosed(m).dv - 1 < target) lo = m; else hi = m; }
+    return (lo + hi) / 2;
+  }
+  function elasticaConvergence(alpha, Ns = [4, 8, 16, 32, 64, 128, 256]) {
+    const c = elasticaClosed(alpha).dv;
+    const rows = Ns.map((N) => ({ N, err: Math.abs(elasticaShoot(alpha, 0, N).dv - c) / c }));
+    const pts = rows.filter((r) => r.err > 1e-12);
+    return { rows, slope: pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN };
+  }
+  function stripProps(p) { const m = MATERIALS[p.mat], I = p.bs * p.ts ** 3 / 12, EI = m.E * I, wgt = m.rho * 9.80665 * p.bs * p.ts; return { I, EI, w: wgt, alpha: p.Ps * p.Ls ** 2 / EI, beta: (p.sw ? wgt : 0) * p.Ls ** 3 / EI, betaFull: wgt * p.Ls ** 3 / EI }; }
+  function linSlope(x, y) { const n = x.length; const mx = x.reduce((a, b) => a + b) / n, my = y.reduce((a, b) => a + b) / n; let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } return sxy / sxx; }
+
+  return { MATERIALS, BASE, PRESETS, section, totalLength, pointLoads, SUP, hermite, buildMesh, solveBeam, deflectionAt, internalForces, cppBeam, feSolve,
+           cantPoint, cantUdl, cantCouple, ssPoint, ssUdl, ssEndMoment, closedForm, momentStatics, beamConvergence,
+           RF, RD, ellF, ellE, elasticaClosed, elasticaShoot, alpha5, elasticaConvergence, stripProps, linSlope };
+})();
+if (typeof module !== 'undefined') module.exports = Lab7Model;
+</script>
+
+<script id="sample-data" type="application/json">{"A":{"xg":[0.2,0.4,0.6],"P600":[0.00123,0.0019290000000000002,0.0015780000000000002],"both":[0.001348,0.001928,0.001462]},"B1":{"xg":[0.35000000000000003,0.7000000000000001],"d":[0.003674,0.011082000000000002]},"B2":{"xg":0.35000000000000003,"d":0.001234,"R":12.98},"C":{"x":[0.2504,0.2502,0.249,0.2469,0.24180000000000001,0.2352,0.22769999999999999,0.2121,0.1977,0.1846,0.1733],"y":[-0.0032,-0.0128,-0.022600000000000002,-0.0374,-0.0591,-0.07840000000000001,-0.0948,-0.1205,-0.1396,-0.1537,-0.16319999999999998],"alpha":[0.0,0.1174611277387222,0.2349222554774444,0.41111394708552773,0.704766766432333,0.9984195857791387,1.2920724051259442,1.8793780438195553,2.4666836825131657,3.0539893212067772,3.641294959900388],"dvL":[0.01277738019169329,0.05110952076677316,0.09024024760383387,0.14933563099041533,0.23598224041533544,0.3130458146964856,0.3785298881789137,0.4811482228434504,0.5574132108626197,0.6137135423322683,0.6516463897763577]}}</script>
+<script>
+/* SimCore — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   No dependencies; works offline. Provides: unit system (SI primary, US toggle), number
+   formatting, slider controls, an SVG plotter with hover readout, CSV export with a
+   copy-to-clipboard fallback. Physics never lives here: each lab keeps its model in a
+   <script id="model"> block of pure functions so the Node tests load exactly what runs. */
+const SimCore = (() => {
+  'use strict';
+  const KSI = 6.894757293168e6, IN = 0.0254, LBF = 4.4482216152605;
+  // quantity -> [factor from SI base, label] per unit system
+  const Q = {
+    stress:     { SI: [1e-6, 'MPa'],   US: [1 / KSI, 'ksi'] },
+    modulus:    { SI: [1e-9, 'GPa'],   US: [1 / KSI, 'ksi'] },
+    length:     { SI: [1e3, 'mm'],     US: [1 / IN, 'in'] },
+    longlength: { SI: [1, 'm'],        US: [1 / (12 * IN), 'ft'] },
+    force:      { SI: [1e-3, 'kN'],    US: [1 / (1000 * LBF), 'kip'] },
+    compliance: { SI: [1e6, 'mm/kN'],  US: [1000 * LBF / IN, 'in/kip'] },
+    energy:     { SI: [1e-6, 'MJ/m³'], US: [1000 / KSI, 'in·lb/in³'] },
+    area:       { SI: [1e6, 'mm²'],    US: [1 / (IN * IN), 'in²'] },
+    moment:     { SI: [1, 'N·m'],      US: [1 / (LBF * IN), 'lb·in'] },
+    angle:      { SI: [180 / Math.PI, '°'], US: [180 / Math.PI, '°'] },
+    twistrate:  { SI: [180 / Math.PI, '°/m'], US: [180 / Math.PI / 3.280839895, '°/ft'] },
+    inertia:    { SI: [1e12, 'mm⁴'],   US: [1 / IN ** 4, 'in⁴'] },
+    volume3:    { SI: [1e9, 'mm³'],    US: [1 / IN ** 3, 'in³'] },
+    power:      { SI: [1e-3, 'kW'],    US: [1 / 745.69987, 'hp'] },
+    temperature:{ SI: [1, '°C'],       US: [1.8, '°F'] },
+    percent:    { SI: [100, '%'],      US: [100, '%'] },
+    shearflow:  { SI: [1e-3, 'N/mm'],  US: [IN / LBF, 'lb/in'] },
+    stiffness:  { SI: [1e-6, 'kN/mm'], US: [IN / (1000 * LBF), 'kip/in'] },
+    rigidity:   { SI: [1, 'N·m²'],     US: [1 / (LBF * IN * IN), 'lb·in²'] },
+    forceN:     { SI: [1, 'N'],        US: [1 / LBF, 'lbf'] },
+    rotstiff:   { SI: [1, 'N·m/rad'],  US: [1 / (LBF * IN), 'lb·in/rad'] },
+    lineload:   { SI: [1e-3, 'kN/m'],  US: [0.3048 / (1000 * LBF), 'kip/ft'] },
+    microstrain:{ SI: [1e6, 'µε'],     US: [1e6, 'µε'] },
+    pressure:   { SI: [1e-6, 'MPa'],   US: [1 / 6894.757293168, 'psi'] },
+    none:       { SI: [1, ''],         US: [1, ''] },
+  };
+  let system = 'SI';
+  const listeners = [];
+  const setSystem = (s) => { system = s; listeners.forEach((f) => f(s)); };
+  const onSystem = (f) => listeners.push(f);
+  const getSystem = () => system;
+  const conv = (q, v) => v * Q[q][system][0];
+  const unconv = (q, v) => v / Q[q][system][0];
+  const unit = (q) => Q[q][system][1];
+  const csvUnit = (q) => unit(q).replace('µε', 'ue').replace('²', '2').replace('³', '3').replace('⁴', '4').replace('·', '').replace('°', 'deg').replace('/', '_per_').replace('%', 'pct');
+
+  const SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+  function fmt(v, sig = 4) {
+    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+    if (v === 0) return '0';
+    const a = Math.abs(v);
+    if (a >= 1e6 || a < 1e-4) {
+      const [m, e] = v.toExponential(sig - 1).split('e');
+      return m.replace('-', '−') + '×10' + String(parseInt(e, 10)).split('').map((c) => SUP[c] || c).join('');
+    }
+    const digits = Math.floor(Math.log10(a)) + 1;
+    const dec = Math.max(0, sig - digits);
+    let s = (Math.round(v * 10 ** dec) / 10 ** dec).toFixed(dec);
+    const [ip, fp] = s.replace('-', '').split('.');
+    const ipg = ip.length > 4 ? ip.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : ip;
+    return (v < 0 ? '−' : '') + ipg + (fp !== undefined ? '.' + fp : '');
+  }
+  const fmtQ = (q, v, sig = 4) => fmt(conv(q, v), sig) + (unit(q) ? ' ' + unit(q) : '');
+  const plain = (v, sig = 8) => (Number.isFinite(v) ? Number(v.toPrecision(sig)).toString() : '');
+
+  // ---------------------------------------------------------------- controls
+  function el(tag, attrs = {}, html = '') {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (html) e.innerHTML = html;
+    return e;
+  }
+  /* spec: {id, label, sym(html), q, min, max, step, log, int, sig, help}
+     values are SI internally; the number box shows/accepts the active unit system. */
+  function slider(container, spec, value, onChange) {
+    const q = spec.q || 'none';
+    const wrap = el('div', { class: 'ctl' });
+    const lab = el('label', { for: spec.id + '-num' }, `<span class="sym">${spec.sym || ''}</span><span>${spec.label}</span>`);
+    const row = el('div', { class: 'ctl-row' });
+    const r = el('input', { type: 'range', id: spec.id, min: 0, max: 1000, step: 1, 'aria-label': spec.label });
+    const nbox = el('input', { type: 'number', id: spec.id + '-num', inputmode: 'decimal', step: 'any' });
+    const u = el('span', { class: 'unit' });
+    row.append(r, nbox, u);
+    wrap.append(lab, row);
+    if (spec.help) wrap.append(el('p', { class: 'help', id: spec.id + '-help' }, spec.help));
+    container.append(wrap);
+    let v = value;
+    const toPos = (x) => spec.log ? 1000 * Math.log(x / spec.min) / Math.log(spec.max / spec.min) : 1000 * (x - spec.min) / (spec.max - spec.min);
+    const fromPos = (p) => {
+      let x = spec.log ? spec.min * Math.pow(spec.max / spec.min, p / 1000) : spec.min + (spec.max - spec.min) * p / 1000;
+      if (spec.int) x = Math.round(x);
+      else if (spec.step) x = Math.round(x / spec.step) * spec.step;
+      return Math.min(spec.max, Math.max(spec.min, x));
+    };
+    const show = () => {
+      r.value = String(Math.round(toPos(v)));
+      const shown = conv(q, v);
+      nbox.value = spec.int ? String(Math.round(shown)) : String(Number(shown.toPrecision(spec.sig || 4)));
+      u.textContent = unit(q);
+      r.setAttribute('aria-valuetext', `${nbox.value} ${unit(q)}`.trim());
+    };
+    r.addEventListener('input', () => { v = fromPos(+r.value); show(); onChange(v); });
+    nbox.addEventListener('change', () => {
+      const x = parseFloat(nbox.value);
+      if (!Number.isFinite(x)) { show(); return; }
+      v = Math.min(spec.max, Math.max(spec.min, unconv(q, x)));
+      if (spec.int) v = Math.round(v);
+      show(); onChange(v);
+    });
+    onSystem(show);
+    show();
+    return { set: (x) => { v = x; show(); }, get: () => v, el: wrap, range: r, box: nbox };
+  }
+
+  function segmented(container, options, value, onChange, label) {
+    const g = el('div', { class: 'seg', role: 'group', 'aria-label': label || '' });
+    const btns = options.map(([val, text]) => {
+      const b = el('button', { type: 'button', 'aria-pressed': String(val === value), 'data-v': val }, text);
+      b.addEventListener('click', () => { btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); onChange(val); });
+      g.append(b);
+      return b;
+    });
+    container.append(g);
+    return { set: (val) => btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === val))) };
+  }
+
+  // ---------------------------------------------------------------- CSV export
+  function toCSV(header, rows) {
+    const esc = (x) => { const s = String(x); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    return [header.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n') + '\n';
+  }
+  /* Saves the CSV and always also shows it in `panel` (a <details> with a textarea and a Copy
+     button). Hosted on claude.ai the page asks the viewer through the `downloads` capability (the
+     viewer confirms each save); opened as a local file it uses an ordinary browser download. */
+  let dlPromise = null;
+  function hostDownloads() {
+    if (!dlPromise) {
+      const c = window.claude;
+      dlPromise = c && typeof c.use === 'function' ? Promise.resolve(c.use('downloads')).catch(() => null) : Promise.resolve(null);
+    }
+    return dlPromise;
+  }
+  if (typeof window !== 'undefined' && window.claude) hostDownloads();
+  function anchorDownload(filename, text) {
+    try {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) { /* download blocked: the panel still has the data */ }
+  }
+  function exportCSV(filename, text, panel) {
+    if (window.claude && typeof window.claude.use === 'function') {
+      hostDownloads().then((dl) => {
+        if (dl) return dl.save({ filename, data: text }).catch(() => { /* declined or unavailable: use the panel */ });
+        anchorDownload(filename, text);
+      });
+    } else anchorDownload(filename, text);
+    if (panel) {
+      panel.hidden = false;
+      panel.open = true;
+      panel.querySelector('.fname').textContent = filename;
+      panel.querySelector('textarea').value = text;
+    }
+  }
+  function wireCopy(panel) {
+    const btn = panel.querySelector('.copy');
+    const ta = panel.querySelector('textarea');
+    const msg = panel.querySelector('.copy-msg');
+    btn.addEventListener('click', () => {
+      const done = (t) => { msg.textContent = t; setTimeout(() => (msg.textContent = ''), 2500); };
+      const fallback = () => { ta.focus(); ta.select(); done('Selected: press Ctrl/Cmd+C to copy'); };
+      try {
+        navigator.clipboard.writeText(ta.value).then(() => done('Copied'), fallback);
+      } catch (e) { fallback(); }
+    });
+  }
+
+  // ---------------------------------------------------------------- SVG plot
+  const DASH = { theory: '', numeric: '7 4', measured: '', third: '7 3 1.5 3', fourth: '1.5 3', muted: '3 3', accent: '' };
+  function niceStep(span, target) {
+    const raw = span / Math.max(1, target);
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+  }
+  function ticks(lo, hi, target) {
+    const st = niceStep(hi - lo, target);
+    const out = [];
+    for (let t = Math.ceil(lo / st - 1e-9) * st; t <= hi + st * 1e-9; t += st) out.push(Math.abs(t) < st * 1e-9 ? 0 : t);
+    return out;
+  }
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  class Plot {
+    /* opts: {xlabel, ylabel, aspect, logx, logy, xfmt, yfmt, legend: true} */
+    constructor(container, opts = {}) {
+      this.c = container;
+      this.o = Object.assign({ aspect: 0.6, minH: 210, maxH: 430, xfmt: (v) => fmt(v, 3), yfmt: (v) => fmt(v, 3) }, opts);
+      this.c.classList.add('plot');
+      this.svgHolder = el('div');
+      this.tip = el('div', { class: 'tip' }); this.tip.hidden = true;
+      this.legendEl = el('div', { class: 'legend' });
+      this.c.append(this.svgHolder, this.tip, this.legendEl);
+      this.data = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        let last = 0;
+        new ResizeObserver(() => { const w = this.c.clientWidth; if (Math.abs(w - last) > 4 && this.data) { last = w; this.draw(this.data); } }).observe(this.c);
+      }
+      this.svgHolder.addEventListener('pointermove', (e) => this.hover(e));
+      this.svgHolder.addEventListener('pointerleave', () => { this.tip.hidden = true; const d = this.svgHolder.querySelector('.hov'); if (d) d.setAttribute('visibility', 'hidden'); });
+    }
+    /* d: {series:[{x,y,role,label,width,markers,opacity,hover}], bands:[{x0,x1,label,labelPos:'top'|'bottom'}], points:[{x,y,role,shape,label,size}],
+           segs:[{x0,y0,x1,y1,role,dash,width,label}], xlim, ylim, desc, texts:[{x,y,text,anchor,role,dx,dy (pixels)}]} */
+    draw(d) {
+      this.data = d;
+      const o = this.o;
+      const W = Math.max(280, this.c.clientWidth || 600);
+      const H = Math.round(Math.min(o.maxH, Math.max(o.minH, W * o.aspect)));
+      const m = { l: 58, r: 14, t: 12, b: 42 };
+      const pw = W - m.l - m.r, ph = H - m.t - m.b;
+      const tx = (v) => (o.logx ? Math.log10(v) : v), ty = (v) => (o.logy ? Math.log10(v) : v);
+      let [x0, x1] = d.xlim, [y0, y1] = d.ylim;
+      if (o.logx) { x0 = Math.log10(x0); x1 = Math.log10(x1); }
+      if (o.logy) { y0 = Math.log10(y0); y1 = Math.log10(y1); }
+      const sx = (v) => m.l + (tx(v) - x0) / (x1 - x0) * pw;
+      const sy = (v) => m.t + ph - (ty(v) - y0) / (y1 - y0) * ph;
+      this.map = { sx, sy, m, pw, ph };
+      const id = 'c' + Math.random().toString(36).slice(2, 8);
+      const parts = [];
+      parts.push(`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(d.desc || o.ylabel + ' versus ' + o.xlabel)}" xmlns="http://www.w3.org/2000/svg">`);
+      parts.push(`<defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}"/></clipPath></defs>`);
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:var(--panel)"/>`);
+      // bands (regions where an assumption fails)
+      for (const b of d.bands || []) {
+        const a = Math.max(m.l, sx(b.x0)), z = Math.min(m.l + pw, sx(b.x1));
+        if (z > a) {
+          parts.push(`<rect x="${a}" y="${m.t}" width="${z - a}" height="${ph}" style="fill:var(--fail);opacity:.16"/>`);
+          parts.push(`<line x1="${a}" y1="${m.t}" x2="${a}" y2="${m.t + ph}" style="stroke:var(--fail);stroke-width:1.2;stroke-dasharray:2 2"/>`);
+          if (b.label) parts.push(`<text x="${a + 5}" y="${b.labelPos === 'bottom' ? m.t + ph - 6 : m.t + 13}" style="fill:var(--fail-ink);font-size:11px;font-weight:600">${esc(b.label)}</text>`);
+        }
+      }
+      // grid + ticks
+      const fs = 11;
+      const xt = o.logx ? decades(d.xlim, Math.max(2, Math.floor(pw / 45))) : ticks(d.xlim[0], d.xlim[1], Math.max(3, Math.floor(pw / 85)));
+      const yt = o.logy ? decades(d.ylim, Math.max(2, Math.floor(ph / 26))) : ticks(d.ylim[0], d.ylim[1], Math.max(3, Math.floor(ph / 45)));
+      for (const t of xt) { const X = sx(o.logx ? 10 ** t : t); if (X < m.l - 0.5 || X > m.l + pw + 0.5) continue;
+        parts.push(`<line x1="${X}" y1="${m.t}" x2="${X}" y2="${m.t + ph}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${X}" y1="${m.t + ph}" x2="${X}" y2="${m.t + ph + 4}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${X}" y="${m.t + ph + 16}" text-anchor="middle" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logx ? supExp(t) : o.xfmt(t))}</text>`); }
+      for (const t of yt) { const Y = sy(o.logy ? 10 ** t : t); if (Y < m.t - 0.5 || Y > m.t + ph + 0.5) continue;
+        parts.push(`<line x1="${m.l}" y1="${Y}" x2="${m.l + pw}" y2="${Y}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${m.l - 4}" y1="${Y}" x2="${m.l}" y2="${Y}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${m.l - 7}" y="${Y + 4}" text-anchor="end" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logy ? supExp(t) : o.yfmt(t))}</text>`); }
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:none;stroke:var(--line)"/>`);
+      parts.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.xlabel)}</text>`);
+      parts.push(`<text transform="translate(13 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.ylabel)}</text>`);
+      parts.push(`<g clip-path="url(#${id})">`);
+      // segments
+      for (const s of d.segs || []) {
+        parts.push(`<line x1="${sx(s.x0)}" y1="${sy(s.y0)}" x2="${sx(s.x1)}" y2="${sy(s.y1)}" style="stroke:var(--${s.role || 'mutedline'});stroke-width:${s.width || 1.2};stroke-dasharray:${s.dash || '4 3'};opacity:${s.opacity || 1}"/>`);
+      }
+      // series
+      this.hoverPts = [];
+      for (const s of d.series || []) {
+        const n = Math.min(s.x.length, s.y.length);
+        if (!n) continue;
+        const col = `var(--${s.role || 'theory'})`;
+        if (s.markers) {
+          const stride = Math.max(1, Math.ceil(n / (s.maxMarkers || 350)));
+          const r = s.r || 2.3;
+          let g = '';
+          for (let i = 0; i < n; i += stride) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+            g += `<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${r}"/>`;
+            if (s.hover !== false) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<g style="fill:none;stroke:${col};stroke-width:1;opacity:${s.opacity || 0.85}">${g}</g>`);
+        } else {
+          let p = '', pen = false;
+          for (let i = 0; i < n; i++) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y) || Math.abs(Y) > 1e5) { pen = false; continue; }
+            p += (pen ? 'L' : 'M') + X.toFixed(1) + ' ' + Y.toFixed(1);
+            pen = true;
+            if (s.hover !== false && (i % Math.max(1, Math.floor(n / 400)) === 0 || i === n - 1)) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<path d="${p}" style="fill:none;stroke:${col};stroke-width:${s.width || 2};stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1};stroke-linejoin:round;stroke-linecap:round"/>`);
+        }
+      }
+      parts.push('</g>');
+      // points (markers with labels)
+      for (const p of d.points || []) {
+        const X = sx(p.x), Y = sy(p.y);
+        if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+        const col = `var(--${p.role || 'ink'})`, z = p.size || 5;
+        if (p.shape === 'diamond') parts.push(`<path d="M${X} ${Y - z - 1}L${X + z + 1} ${Y}L${X} ${Y + z + 1}L${X - z - 1} ${Y}Z" style="fill:var(--panel);stroke:${col};stroke-width:2"/>`);
+        else if (p.shape === 'x') parts.push(`<path d="M${X - z} ${Y - z}L${X + z} ${Y + z}M${X - z} ${Y + z}L${X + z} ${Y - z}" style="stroke:${col};stroke-width:2.2"/>`);
+        else if (p.shape === 'ring') parts.push(`<circle cx="${X}" cy="${Y}" r="${z + 2}" style="fill:none;stroke:${col};stroke-width:2.5"/><circle cx="${X}" cy="${Y}" r="2" style="fill:${col}"/>`);
+        else parts.push(`<circle cx="${X}" cy="${Y}" r="${z}" style="fill:${p.fill ? col : 'var(--panel)'};stroke:${col};stroke-width:2"/>`);
+        if (p.label) {
+          const right = X < m.l + pw * 0.72;
+          parts.push(`<text x="${X + (right ? 9 : -9)}" y="${Y - 8}" text-anchor="${right ? 'start' : 'end'}" style="fill:var(--ink);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(p.label)}</text>`);
+        }
+      }
+      for (const t of d.texts || []) {
+        parts.push(`<text x="${sx(t.x) + (t.dx || 0)}" y="${sy(t.y) + (t.dy || 0)}" text-anchor="${t.anchor || 'start'}" style="fill:var(--${t.role || 'muted'});font-size:11px;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(t.text)}</text>`);
+      }
+      parts.push(`<circle class="hov" r="4.5" visibility="hidden" style="fill:var(--accent);stroke:var(--panel);stroke-width:2"/>`);
+      parts.push('</svg>');
+      this.svgHolder.innerHTML = parts.join('');
+      // legend
+      if (this.o.legend !== false) {
+        const items = (d.series || []).filter((s) => s.label && s.legend !== false).map((s) => {
+          const col = `var(--${s.role || 'theory'})`;
+          const sw = s.markers
+            ? `<svg viewBox="0 0 26 10"><circle cx="13" cy="5" r="3" style="fill:none;stroke:${col};stroke-width:1.2"/></svg>`
+            : `<svg viewBox="0 0 26 10"><line x1="1" y1="5" x2="25" y2="5" style="stroke:${col};stroke-width:2.2;stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1}"/></svg>`;
+          return `<span>${sw}${esc(s.label)}</span>`;
+        });
+        for (const b of d.bands || []) if (b.legend) items.push(`<span><svg viewBox="0 0 26 10"><rect x="1" y="1" width="24" height="8" style="fill:var(--fail);opacity:.35"/></svg>${esc(b.legend)}</span>`);
+        this.legendEl.innerHTML = items.join('');
+      }
+    }
+    hover(e) {
+      if (!this.hoverPts || !this.hoverPts.length) return;
+      const svg = this.svgHolder.querySelector('svg');
+      const r = svg.getBoundingClientRect();
+      const k = svg.viewBox.baseVal.width / r.width;
+      const X = (e.clientX - r.left) * k, Y = (e.clientY - r.top) * k;
+      let best = null, bd = 1e9;
+      for (const p of this.hoverPts) { const dd = (p[0] - X) ** 2 + (p[1] - Y) ** 2; if (dd < bd) { bd = dd; best = p; } }
+      const dot = svg.querySelector('.hov');
+      if (!best || bd > 900 * k * k) { this.tip.hidden = true; dot.setAttribute('visibility', 'hidden'); return; }
+      dot.setAttribute('cx', best[0]); dot.setAttribute('cy', best[1]); dot.setAttribute('visibility', 'visible');
+      this.tip.hidden = false;
+      this.tip.textContent = `${best[4] ? best[4] + ': ' : ''}${this.o.xfmt(best[2])}, ${this.o.yfmt(best[3])}`;
+      const left = best[0] / k + 12, top = best[1] / k - 30;
+      this.tip.style.left = Math.min(left, r.width - this.tip.offsetWidth - 4) + 'px';
+      this.tip.style.top = Math.max(0, top) + 'px';
+    }
+  }
+  function decades(lim, maxN = 99) { const all = []; for (let e = Math.ceil(Math.log10(lim[0]) - 1e-9); e <= Math.floor(Math.log10(lim[1]) + 1e-9); e++) all.push(e); const step = Math.max(1, Math.ceil(all.length / maxN)); return all.filter((e) => e % step === 0); }
+  function supExp(e) { if (e === 0) return '1'; if (e === 1) return '10'; return '10' + String(e).split('').map((c) => SUP[c] || c).join(''); }
+
+  // least-squares slope of log(y) vs log(x)
+  function logSlope(xs, ys) {
+    const pts = xs.map((x, i) => [Math.log(x), Math.log(ys[i])]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+    const n = pts.length; if (n < 2) return NaN;
+    const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+    let sxy = 0, sxx = 0; for (const [a, b] of pts) { sxy += (a - mx) * (b - my); sxx += (a - mx) ** 2; }
+    return sxy / sxx;
+  }
+
+  return { setSystem, onSystem, getSystem, conv, unconv, unit, csvUnit, fmt, fmtQ, plain, slider, segmented, toCSV, exportCSV, wireCopy, Plot, el, logSlope };
+})();
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab7Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'partA';
+  const p = Object.assign({}, M.PRESETS.partA);
+  let R = null;
+
+  $('mat').innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; update(); }); };
+  mk('grp-sup', { id: 'L', label: 'Span (length of a cantilever)', sym: 'L', q: 'longlength', min: 0.1, max: 10, step: 0.001 });
+  mk('grp-sup', { id: 'aov', label: 'Overhang beyond the roller', sym: 'a', q: 'longlength', min: 0, max: 5, step: 0.001 });
+  mk('grp-sup', { id: 'k', label: 'Rotational stiffness of the left clamp', sym: 'k', q: 'rotstiff', min: 10, max: 1e9, log: true, sig: 4 });
+  mk('grp-sup', { id: 's', label: 'Settlement of the right support (up +)', sym: 's', q: 'length', min: -5e-3, max: 5e-3, step: 1e-5 });
+  mk('grp-sec', { id: 'b', label: 'Width', sym: 'b', q: 'length', min: 1e-3, max: 400e-3, step: 0.01e-3 });
+  mk('grp-sec', { id: 'h', label: 'Depth', sym: 'h', q: 'length', min: 0.5e-3, max: 600e-3, step: 0.001e-3 });
+  mk('grp-sec', { id: 'H', label: 'Overall depth', sym: 'H', q: 'length', min: 10e-3, max: 600e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'B', label: 'Flange width', sym: 'B', q: 'length', min: 5e-3, max: 400e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'tf', label: 'Flange thickness', sym: 't<sub>f</sub>', q: 'length', min: 0.5e-3, max: 60e-3, step: 0.05e-3 });
+  mk('grp-sec', { id: 'tw', label: 'Web thickness', sym: 't<sub>w</sub>', q: 'length', min: 0.5e-3, max: 60e-3, step: 0.05e-3 });
+  mk('grp-load', { id: 'P1', label: 'Point load 1', sym: 'P<sub>1</sub>', q: 'forceN', min: 0, max: 200e3, step: 0.01 });
+  mk('grp-load', { id: 'a1', label: 'Position of P₁ from the left end', sym: 'a<sub>1</sub>', q: 'longlength', min: 0, max: 15, step: 0.0005 });
+  mk('grp-load', { id: 'P2', label: 'Point load 2', sym: 'P<sub>2</sub>', q: 'forceN', min: 0, max: 200e3, step: 0.01 });
+  mk('grp-load', { id: 'a2', label: 'Position of P₂ from the left end', sym: 'a<sub>2</sub>', q: 'longlength', min: 0, max: 15, step: 0.0005 });
+  mk('grp-load', { id: 'w', label: 'Uniform load over the whole length', sym: 'w', q: 'lineload', min: 0, max: 200e3, step: 1 });
+  mk('grp-load', { id: 'C0', label: 'Couple at the right end (ccw +)', sym: 'C', q: 'moment', min: -200e3, max: 200e3, step: 1 });
+  mk('grp-ela', { id: 'Ls', label: 'Free length', sym: 'L', q: 'length', min: 20e-3, max: 2, step: 0.1e-3 });
+  mk('grp-ela', { id: 'bs', label: 'Width', sym: 'b', q: 'length', min: 1e-3, max: 100e-3, step: 0.01e-3 });
+  mk('grp-ela', { id: 'ts', label: 'Thickness', sym: 't', q: 'length', min: 0.05e-3, max: 10e-3, step: 0.001e-3 });
+  mk('grp-ela', { id: 'Ps', label: 'Tip load (hanging weight)', sym: 'P', q: 'forceN', min: 0, max: 200, step: 0.001 });
+  mk('grp-num', { id: 'Ne', label: 'Finite elements (about)', sym: 'N<sub>e</sub>', q: 'none', min: 2, max: 400, log: true, int: true });
+  mk('grp-num', { id: 'Nrk', label: 'RK4 steps along the strip', sym: 'N', q: 'none', min: 4, max: 2000, log: true, int: true });
+  const modeSeg = S.segmented($('mode'), [['beam', 'Beam (small deflection)'], ['elastica', 'Large deflection']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  for (const id of ['family', 'mat', 'sec']) $(id).addEventListener('change', (e) => { p[id] = e.target.value; update(); });
+  $('rigid').addEventListener('change', (e) => { p.rigid = e.target.checked; update(); });
+  $('sw').addEventListener('change', (e) => { p.sw = e.target.checked; update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(p[k]);
+    for (const id of ['family', 'mat', 'sec']) $(id).value = p[id];
+    $('rigid').checked = p.rigid; $('sw').checked = p.sw;
+    modeSeg.set(p.mode);
+  }
+  function applyPreset(k) { preset = k; $('preset').value = k; Object.assign(p, M.PRESETS[k]); setAll(); update(); }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const fmtx = (v) => S.fmt(v, 3);
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    conv: new S.Plot($('plot-conv'), { xlabel: '', ylabel: 'Relative error', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+  const lim = (ys, pad = 0.12) => { const f = ys.filter(Number.isFinite); let lo = Math.min(0, ...f), hi = Math.max(0, ...f); const d = (hi - lo) || 1; return [lo - pad * d, hi + pad * d]; };
+  const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+  const warn = (W) => { $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join(''); };
+  const near = (a, b, tol = 1e-3) => Math.abs(a - b) <= tol * Math.max(Math.abs(b), 1e-12);
+
+  function validate() {
+    const e = [];
+    if (p.mode === 'elastica') return e;
+    if (p.sec === 'ibeam' && !(2 * p.tf < p.H && p.tw <= p.B)) e.push('Check the I-section: flanges thinner than half the depth, web no wider than the flange.');
+    const Lt = M.totalLength(p);
+    for (const [P, a] of [[p.P1, p.a1], [p.P2, p.a2]]) if (P > 0 && a > Lt + 1e-9) e.push('A point load lies beyond the end of the beam; move it onto the beam.');
+    return e;
+  }
+  function update() {
+    const md = p.mode, fam = p.family;
+    $('panel-beam').hidden = md !== 'beam';
+    $('panel-ela').hidden = md !== 'elastica';
+    ctl.aov.el.hidden = fam !== 'ss';
+    $('rigid-wrap').hidden = fam === 'ss';
+    ctl.k.el.hidden = fam === 'ss' || p.rigid;
+    ctl.s.el.hidden = fam !== 'propped';
+    const ib = p.sec === 'ibeam';
+    ctl.b.el.hidden = ctl.h.el.hidden = ib; ctl.H.el.hidden = ctl.B.el.hidden = ctl.tf.el.hidden = ctl.tw.el.hidden = !ib;
+    ctl.Ne.el.hidden = md !== 'beam'; ctl.Nrk.el.hidden = md !== 'elastica';
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    if (md === 'beam') updateBeam(); else updateElastica();
+  }
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    const scale = {};
+    for (const [, qq, c] of rows) scale[qq] = Math.max(scale[qq] || 0, Math.abs(c));
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v, kind]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-300);
+      let status;
+      if (kind === 'model') status = chip('info', 'different models');
+      else if (!Number.isFinite(d)) status = chip('info', '—');
+      else if (d < 1e-6 || Math.abs(v - c) < 1e-9 * scale[qq]) status = chip('ok', 'agree');
+      else if (d < 1e-2) status = chip('ok', 'agree (discretization)');
+      else if (d < 5e-2) status = chip('warn', 'coarse: refine N');
+      else status = chip('bad', 'check');
+      return `<tr><td>${n}</td><td class="v">${q(qq, c)}</td><td class="v">${q(qq, v)}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${status}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+  function drawConv(rows, slope, xlabel, cap, refOrder, extra) {
+    R.conv = { rows, xlabel };
+    plots.conv.o.xlabel = xlabel;
+    const ok = rows.filter((r) => r.err > 1e-15);
+    const series = [{ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: extra ? 'Deflection, max over the beam' : 'Relative error vs the closed form' }];
+    if (extra) series.push({ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.errM, 1e-16)), role: 'third', markers: true, r: 3, label: 'Moment from EI·y″, max over the element midpoints' });
+    if (ok.length && refOrder) series.push({ x: [ok[0].N, ok[ok.length - 1].N], y: [ok[0].err, ok[0].err * (ok[0].N / ok[ok.length - 1].N) ** refOrder], role: 'theory', width: 1, dash: '2 3', label: `reference: error ∝ N^−${refOrder}`, hover: false });
+    plots.conv.draw({ series, xlim: [Math.min(...rows.map((r) => r.N)) * 0.7, Math.max(...rows.map((r) => r.N)) * 1.4], ylim: [1e-16, 1], desc: 'Convergence of the numerical solution.' });
+    $('cap-conv').innerHTML = cap;
+  }
+  const resetLog = () => { for (const k of ['p1', 'p2']) plots[k].o.logx = plots[k].o.logy = false; };
+
+  // =============================================================== beam
+  function sampleBeam() {
+    if ($('overlay').value !== 'auto' || p.sec !== 'rect' || p.mat !== 'steel' || !near(p.b, 25.4e-3, 5e-3) || !near(p.h, 6.35e-3, 5e-3)) return null;
+    if ((preset === 'partA' || preset === 'partAboth') && p.family === 'ss' && near(p.L, 0.8) && p.aov === 0) {
+      const g = SAMPLE.A; if (!g) return null;
+      if (near(p.a1, 0.6) && p.P2 === 0 && near(p.P1, 3 * 9.80665)) return { x: g.xg, d: g.P600, label: 'Sample data: 3.0 kg at 600 mm' };
+      if (near(p.a1, 0.6) && near(p.a2, 0.2) && near(p.P1, 2 * 9.80665) && near(p.P2, 9.80665)) return { x: g.xg, d: g.both, label: 'Sample data: 2.0 kg at 600 mm + 1.0 kg at 200 mm' };
+    }
+    if (preset === 'partB1' && p.family === 'cant' && near(p.L, 0.7) && near(p.a1, 0.7) && near(p.P1, 9.80665) && SAMPLE.B1) return { x: SAMPLE.B1.xg, d: SAMPLE.B1.d, label: 'Sample data: 1.0 kg at the tip' };
+    if (preset === 'partB2' && p.family === 'propped' && near(p.L, 0.7) && near(p.a1, 0.35) && near(p.P1, 4 * 9.80665) && p.s === 0 && SAMPLE.B2) return { x: [SAMPLE.B2.xg], d: [SAMPLE.B2.d], label: 'Sample data: 4.0 kg at 350 mm', R: SAMPLE.B2.R };
+    return null;
+  }
+  function drawBeamSvg(c, fe) {
+    const W0 = Math.round(Math.max(320, Math.min(900, $('diagram').clientWidth || 900))), Hh = 190, x0 = 34, Lt = M.totalLength(p), scx = (W0 - 2 * x0) / Lt, yb = 96;
+    const X = (x) => x0 + x * scx;
+    let s = '';
+    // deflected shape (exaggerated), drawn first
+    const xs = Array.from({ length: 121 }, (_, i) => Lt * i / 120), ys = xs.map((x) => c.y(x)), ym = Math.max(...ys.map(Math.abs), 1e-30), amp = 34 / ym;
+    s += `<path d="M${xs.map((x, i) => `${X(x).toFixed(1)} ${(yb - ys[i] * amp).toFixed(1)}`).join('L')}" style="fill:none;stroke:var(--theory);stroke-width:2;stroke-dasharray:6 4;opacity:.8"/>`;
+    s += `<rect x="${X(0)}" y="${yb - 6}" width="${Lt * scx}" height="12" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.3"/>`;
+    const pin = (x) => `<path d="M${X(x)} ${yb + 6}l-9 16h18z" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    const rol = (x) => `<circle cx="${X(x)}" cy="${yb + 14}" r="8" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    const wall = (x, side) => `<rect x="${X(x) + (side < 0 ? -12 : 0)}" y="${yb - 40}" width="12" height="80" style="fill:var(--panel-2);stroke:var(--ink)"/><path d="M${X(x) + (side < 0 ? -12 : 0)} ${yb - 40}l12 12M${X(x) + (side < 0 ? -12 : 0)} ${yb - 12}l12 12M${X(x) + (side < 0 ? -12 : 0)} ${yb + 16}l12 12" style="stroke:var(--muted)"/>`;
+    if (p.family === 'ss') s += pin(0) + rol(p.L);
+    else { s += wall(0, -1); if (!p.rigid) s += `<path d="M${X(0) + 4} ${yb - 22}a14 14 0 1 1 0 44" style="fill:none;stroke:var(--third);stroke-width:1.6"/><text x="${X(0) + 20}" y="${yb - 26}" style="fill:var(--third);font-size:11px">k</text>`; }
+    if (p.family === 'propped') s += rol(p.L);
+    if (p.family === 'fixed') s += wall(p.L, 1);
+    for (const [P, a] of M.pointLoads(p)) s += `<path d="M${X(a)} ${yb - 52}L${X(a)} ${yb - 10}" style="stroke:var(--numeric);stroke-width:2.6"/><path d="M${X(a)} ${yb - 7}l-6 -12h12z" style="fill:var(--numeric)"/><text x="${X(a)}" y="${yb - 56}" text-anchor="middle" style="fill:var(--numeric);font-size:11px">${q('forceN', P, 3)}</text>`;
+    if (p.w) { s += `<rect x="${X(0)}" y="${yb - 30}" width="${Lt * scx}" height="14" style="fill:var(--numeric);fill-opacity:.13;stroke:var(--numeric);stroke-width:1"/>`; for (let i = 0; i <= 10; i++) s += `<path d="M${X(Lt * i / 10)} ${yb - 16}l0 8" style="stroke:var(--numeric)"/>`; }
+    if (p.C0) { const xr = X(Lt), cw = p.C0 < 0; s += `<path d="M${xr - 14} ${yb - 20}A20 20 0 0 ${cw ? 1 : 0} ${xr - 14} ${yb + 20}" style="fill:none;stroke:var(--numeric);stroke-width:2"/><text x="${xr - 40}" y="${yb + 36}" style="fill:var(--numeric);font-size:11px">C ${cw ? '(cw)' : '(ccw)'}</text>`; }
+    if (fe && fe.ok) { const xn = fe.sol.xn, st_ = Math.max(1, Math.ceil(xn.length / 40)); for (let i = 0; i < xn.length; i += st_) s += `<circle cx="${X(xn[i])}" cy="${yb + 36}" r="1.6" style="fill:var(--muted)"/>`; }
+    const capA = `deflected shape exaggerated ×${S.fmt(amp, 2)}`, capB = 'dots: finite-element nodes', tx = `x="${W0 / 2}" text-anchor="middle" style="fill:var(--muted);font-size:11px"`;
+    s += W0 < 520 ? `<text ${tx} y="${Hh - 22}">${capA}</text><text ${tx} y="${Hh - 8}">${capB}</text>` : `<text ${tx} y="${Hh - 8}">${capA}; ${capB}</text>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} ${Hh}" role="img" aria-label="Beam, supports, loads and exaggerated deflected shape">${s}</svg>`;
+  }
+  function updateBeam() {
+    const c = M.closedForm(p), fe = M.feSolve(p), sec = M.section(p), mat = M.MATERIALS[p.mat], Lt = c.Lt;
+    if (!fe.ok) { $('errors').hidden = false; $('errors').textContent = fe.error; return; }
+    R = { kind: 'beam', c, fe };
+    $('h-diag').textContent = 'Beam, loads and deflected shape';
+    drawBeamSvg(c, fe);
+    const xs = Array.from({ length: 801 }, (_, i) => Lt * i / 800);
+    const yc = xs.map((x) => c.y(x));
+    let imax = 0; yc.forEach((v, i) => { if (Math.abs(v) > Math.abs(yc[imax])) imax = i; });
+    const Mc = xs.map((x) => M.momentStatics(p, c.R, x)); let jm = 0; Mc.forEach((v, i) => { if (Math.abs(v) > Math.abs(Mc[jm])) jm = i; });
+    const sig = Math.abs(Mc[jm]) * sec.c / sec.I;
+    const span = p.family === 'ss' ? p.L : Lt;
+    $('diag-txt').textContent = `EI = ${q('rigidity', c.EI, 4)}; ${p.family === 'ss' ? (p.aov > 0 ? 'simple span with overhang' : 'simple span') : p.family === 'cant' ? 'cantilever' : p.family === 'propped' ? 'propped cantilever (one redundant)' : 'fixed at both ends (two redundants)'}`;
+    const reac = p.family === 'ss' ? `R<sub>A</sub> ${q('forceN', c.R.RA, 4)}, R<sub>B</sub> ${q('forceN', c.R.RB, 4)}` : `R<sub>A</sub> ${q('forceN', c.R.RA, 4)}, M<sub>A</sub> ${q('moment', c.R.MA, 4)}${p.family !== 'cant' ? `, R<sub>B</sub> ${q('forceN', c.R.RB, 4)}` : ''}${p.family === 'fixed' ? `, M<sub>B</sub> ${q('moment', c.R.MB, 4)}` : ''}`;
+    $('stats').innerHTML = [st('Largest deflection y', `${q('length', yc[imax])} at x = ${q('longlength', xs[imax], 4)}`), st('Span / |y|<sub>max</sub>', S.fmt(span / Math.max(Math.abs(yc[imax]), 1e-300), 4)),
+      st('Reactions (up +, ccw +)', reac), st('Largest |M|', `${q('moment', Math.abs(Mc[jm]))} at x = ${q('longlength', xs[jm], 4)}`),
+      st('Largest bending stress |M|c/I', q('stress', sig)), st('Slope at the ends', `${q('angle', c.t(0), 3)}, ${q('angle', c.t(Lt), 3)}`)].join('');
+    // plot 1: deflection
+    const s1 = [{ x: xs.map((x) => S.conv('longlength', x)), y: yc.map((v) => S.conv('length', v)), role: 'theory', label: 'Closed form (App. F + superposition)' }];
+    const xn = fe.sol.xn, stp = Math.max(1, Math.ceil(xn.length / 45)), xf = xn.filter((_, i) => i % stp === 0 || i === xn.length - 1);
+    s1.push({ x: xf.map((x) => S.conv('longlength', x)), y: xf.map((x) => S.conv('length', fe.y(x))), role: 'numeric', markers: true, r: 2.4, label: `Finite elements (beam_deflection.cpp, ${fe.n} elements)` });
+    if (c.comps.length > 1) c.comps.slice(0, 5).forEach((cp) => s1.push({ x: xs.filter((_, i) => i % 8 === 0).map((x) => S.conv('longlength', x)), y: xs.filter((_, i) => i % 8 === 0).map((x) => S.conv('length', cp.f(x))), role: 'mutedline', width: 1, dash: '3 3', label: `part: ${cp.label}`, hover: false }));
+    const ov = sampleBeam();
+    if (ov) s1.unshift({ x: ov.x.map((x) => S.conv('longlength', x)), y: ov.d.map((d) => -S.conv('length', d)), role: 'measured', markers: true, label: ov.label });
+    resetLog();
+    plots.p1.o.xlabel = `Position x (${S.unit('longlength')})`; plots.p1.o.ylabel = `Deflection y, up + (${S.unit('length')})`;
+    plots.p1.draw({ series: s1, xlim: [0, S.conv('longlength', Lt)], ylim: lim(s1.flatMap((q_) => q_.y)), desc: 'Elastic curve.' });
+    $('h-p1').textContent = 'Elastic curve y(x)';
+    $('cap1').innerHTML = `Thin dashed lines are the App. F cases that add up to the closed form (Beer §9.4)${p.family === 'propped' || p.family === 'fixed' ? '; the redundant reaction is the one that makes the parts satisfy the extra support condition' : ''}. The finite elements use none of these formulas.`;
+    // plot 2: bending moment
+    const xm = []; for (let e = 0; e + 1 < xn.length; e++) xm.push((xn[e] + xn[e + 1]) / 2);
+    const xmf = xm.filter((_, i) => i % stp === 0);
+    const s2 = [{ x: xs.map((x) => S.conv('longlength', x)), y: Mc.map((v) => S.conv('moment', v)), role: 'theory', label: 'M from statics with the closed-form reactions' },
+      { x: xmf.map((x) => S.conv('longlength', x)), y: xmf.map((x) => S.conv('moment', fe.Mfe(x))), role: 'numeric', markers: true, r: 2.4, label: 'M = EI·y″ from the finite elements' }];
+    plots.p2.o.xlabel = `Position x (${S.unit('longlength')})`; plots.p2.o.ylabel = `Bending moment M (${S.unit('moment')})`;
+    plots.p2.draw({ series: s2, xlim: [0, S.conv('longlength', Lt)], ylim: lim(s2.flatMap((q_) => q_.y)), desc: 'Bending moment diagram.' });
+    $('h-p2').textContent = 'Bending moment M(x), sagging +';
+    $('cap2').innerHTML = 'EI y″ = M (Eq. 9.4): the curvature of the computed elastic curve, times EI, reproduces the moment diagram. Inside an element the cubic gives a linear curvature, so with a distributed load the element midpoints converge as N⁻².';
+    // readout
+    const xr = [Lt / 4, Lt / 2, 3 * Lt / 4].concat(p.family === 'ss' && p.aov > 0 ? [Lt] : []);
+    const rows = xr.map((x) => [`Deflection at x = ${S.fmt(S.conv('longlength', x), 4)} ${S.unit('longlength')}`, 'length', c.y(x), fe.y(x), 'disc']);
+    rows.push(['Slope at x = 0 (rad shown in degrees)', 'angle', c.t(0), fe.t(0), 'disc']);
+    const fr = fe.reactions;
+    if (p.family === 'ss') { rows.push(['Reaction at the pin, R_A', 'forceN', c.R.RA, fr[0].F_up, 'disc']); rows.push(['Reaction at the roller, R_B', 'forceN', c.R.RB, fr[1].F_up, 'disc']); }
+    else {
+      rows.push(['Reaction at the left support, R_A', 'forceN', c.R.RA, fr[0].F_up, 'disc']);
+      rows.push(['Reaction couple at the left support, M_A (ccw +)', 'moment', c.R.MA, fr[0].M_ccw, 'disc']);
+      if (p.family !== 'cant') rows.push(['Redundant reaction at the right support, R_B', 'forceN', c.R.RB, fr[1].F_up, 'disc']);
+      if (p.family === 'fixed') rows.push(['Redundant couple at the right support, M_B (ccw +)', 'moment', c.R.MB, fr[1].M_ccw, 'disc']);
+    }
+    rows.push(['Largest |M| (statics vs EI·y″ at the nearest element midpoint)', 'moment', Math.abs(Mc[jm]), Math.abs(fe.Mfe(xm.reduce((a, b) => (Math.abs(b - xs[jm]) < Math.abs(a - xs[jm]) ? b : a), xm[0]))), 'disc']);
+    if (!p.rigid && p.family !== 'ss') {
+      const cr = M.closedForm(Object.assign({}, p, { rigid: true }));
+      rows.push([p.family === 'cant' ? 'Tip deflection: rigid clamp vs flexible clamp' : 'Redundant R_B: rigid clamp vs flexible clamp', p.family === 'cant' ? 'length' : 'forceN', p.family === 'cant' ? cr.y(Lt) : cr.R.RB, p.family === 'cant' ? c.y(Lt) : c.R.RB, 'model']);
+    }
+    if (ov && ov.R !== undefined) rows.push(['Redundant R_B: model vs sample data (4.0 kg)', 'forceN', c.R.RB, ov.R, 'model']);
+    renderReadout(rows, `Numerical: ${fe.n} Hermite cubic beam elements (beam_deflection.cpp algorithm: element stiffness EI/h³[12 6h …], consistent loads by 3-point Gauss, banded elimination; reactions from the original equations of the locked degrees of freedom).`);
+    const cv = M.beamConvergence(p), hasW = p.w !== 0;
+    drawConv(cv.rows, cv.slope, 'Finite elements, N_e', hasW ? `With a distributed load the nodal values are exact (Hermite cubics contain the homogeneous solution), the deflection between nodes converges with order ${S.fmt(cv.slope, 3)} (expected 4) until it meets the round-off floor of the elimination (about 10⁻⁹), and the moment from EI·y″ converges with order ${S.fmt(cv.slopeM, 3)} (expected 2).` : 'With point loads and couples only, the exact elastic curve is a cubic between nodes, so the elements reproduce it exactly at every mesh: the error is round-off (about 10⁻¹² and below) whatever N_e.', hasW ? 4 : 0, true);
+    // warnings
+    const W = [], sY = mat.sY;
+    if (sig > sY) W.push(['bad', `|M|c/I = ${q('stress', sig, 3)} exceeds σ_Y = ${q('stress', sY, 3)}: the beam yields; EI y″ = M no longer applies (Lab 4).`]);
+    else W.push(['ok', `Largest bending stress ${q('stress', sig, 3)} = ${S.fmt(100 * sig / sY, 3)} % of σ_Y.`]);
+    const thmax = Math.max(...xs.map((x) => Math.abs(c.t(x))));
+    if (thmax > 0.1) W.push(['bad', `Largest slope ${S.fmt(thmax, 3)} rad: (dy/dx)² is no longer negligible beside 1 in Beer Eq. 9.2. Use the Large deflection tab.`]);
+    else W.push([thmax > 0.05 ? 'warn' : 'ok', `Largest slope ${S.fmt(thmax, 3)} rad (${S.fmt(thmax * 180 / Math.PI, 3)}°): the small-slope curvature 1/ρ ≈ y″ is ${thmax > 0.05 ? 'within about ' + S.fmt(150 * thmax * thmax, 2) + ' %' : 'accurate'}.`]);
+    const G = mat.E / (2 * (1 + mat.nu)), shear = 12 * sec.fs * mat.E * sec.I / (G * sec.A * span * span);
+    W.push([shear > 0.05 ? 'bad' : shear > 0.01 ? 'warn' : 'ok', `Shear deformation (Lab 5) would add about ${S.fmt(100 * shear, 2)} % to a central-load deflection over this span (span/depth = ${S.fmt(span / sec.depth, 3)}).`]);
+    if (!p.rigid && p.family !== 'ss') { const share = Math.abs(c.M0 / p.k * (p.family === 'cant' ? Lt : Lt / 2)) / Math.max(Math.abs(c.y(p.family === 'cant' ? Lt : Lt / 2)), 1e-300); W.push(['warn', `Flexible clamp: the clamp's rotation M_A/k accounts for ${S.fmt(100 * share, 3)} % of the deflection at ${p.family === 'cant' ? 'the tip' : 'mid-length'}; App. F assumes a rigid support.`]); }
+    if (p.family === 'propped' && p.s) W.push(['warn', `Support settlement ${q('length', p.s, 3)} changes the redundant reaction by ${q('forceN', c.R.RB - M.closedForm(Object.assign({}, p, { s: 0 })).R.RB, 3)}: in an indeterminate beam the reactions depend on support movements, in a determinate one they do not.`]);
+    warn(W);
+    $('cards').innerHTML = [
+      card('<i>EI</i> d²<i>y</i>/d<i>x</i>² = <i>M</i>(<i>x</i>)', 'curvature 1/ρ = M/EI (Ch. 4) with 1/ρ ≈ d²y/dx² for small slopes (Beer §9.1A, Eqs. 9.2–9.4).', 'Integrate twice; constants from the supports (y = 0 at a pin or roller; y = 0 and dy/dx = 0 at a fixed end).', thmax > 0.1 ? chip('bad', 'slopes too large') : chip('ok', 'valid'), `y_max = ${q('length', yc[imax])}`),
+      card('Superposition (§9.4)', 'linearity of EI y″ = M: deflections from separate loads add.', 'Each App. F case contributes its elastic curve; a redundant reaction is found from one extra condition, e.g. y = 0 at the prop.', chip('ok', 'valid while elastic, small slopes'), `${c.comps.length} superposed parts`),
+      card('<b>K</b><b>u</b> = <b>F</b>, Hermite cubics', 'beam_deflection.cpp: stiffness of each element from EI y⁗ = w, assembled and solved.', 'Two unknowns per node (deflection and slope); exact at the nodes for a uniform beam.', chip('ok', 'numerical check'), `${fe.n} elements`),
+    ].join('');
+  }
+
+  // =============================================================== elastica
+  function updateElastica() {
+    const sp = M.stripProps(p), mat = M.MATERIALS[p.mat], a = sp.alpha, b = sp.beta;
+    const cl = M.elasticaClosed(a), n0 = M.elasticaShoot(a, 0, p.Nrk, true), nw = b > 0 ? M.elasticaShoot(a, b, p.Nrk, true) : n0;
+    R = { kind: 'ela', sp, cl, n0, nw };
+    $('h-diag').textContent = 'Strip, tip load and deflected shape (true scale)';
+    const L = p.Ls, W0 = Math.round(Math.max(320, Math.min(900, $('diagram').clientWidth || 900))), Hh = Math.round(Math.min(340, W0 * 0.62)), x0 = 40, sc = Math.min((W0 - 80) / L, (Hh - 50) / L), y0 = 26;
+    const X = (x) => x0 + x * L * sc, Y = (y) => y0 - y * L * sc;
+    let s = `<rect x="${x0 - 14}" y="${y0 - 16}" width="14" height="32" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    s += `<path d="M${x0} ${y0}L${X(1)} ${y0}" style="stroke:var(--muted);stroke-dasharray:3 3"/>`;
+    const lin = Array.from({ length: 41 }, (_, i) => { const x = i / 40; return { x, y: -a * x * x * (3 - x) / 6 }; }).filter((pt) => Y(pt.y) < Hh + 40);
+    s += `<path d="M${lin.map((pt) => `${X(pt.x).toFixed(1)} ${Math.min(Y(pt.y), Hh + 40).toFixed(1)}`).join('L')}" style="fill:none;stroke:var(--third);stroke-width:1.6;stroke-dasharray:7 3 1.5 3"/>`;
+    s += `<path d="M${nw.path.filter((_, i) => i % Math.max(1, Math.round(p.Nrk / 60)) === 0 || i === nw.path.length - 1).map((pt) => `${X(pt.x).toFixed(1)} ${Y(pt.y).toFixed(1)}`).join('L')}" style="fill:none;stroke:var(--ink);stroke-width:4;opacity:.75"/>`;
+    const tx = X(nw.xt), ty = Y(-nw.dv);
+    s += `<path d="M${tx} ${ty}L${tx} ${ty + 34}" style="stroke:var(--numeric);stroke-width:2"/><rect x="${tx - 7}" y="${ty + 34}" width="14" height="14" style="fill:var(--numeric)"/>`;
+    s += `<text x="${Math.min(tx + 12, W0 - 120)}" y="${ty + 46}" style="fill:var(--numeric);font-size:11px">P = ${q('forceN', p.Ps, 3)}</text>`;
+    s += `<text x="${X(0.55)}" y="${y0 - 8}" style="fill:var(--third);font-size:11px">linear theory (dash-dot)</text>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} ${Hh}" role="img" aria-label="Cantilever strip with a hanging tip load, drawn at true scale with the linear-theory curve for comparison.">${s}</svg>`;
+    $('diag-txt').textContent = `α = PL²/EI = ${S.fmt(a, 4)}${p.sw ? `, self-weight β = wL³/EI = ${S.fmt(sp.betaFull, 3)}` : ''}`;
+    const sigma = sp.EI * nw.k0 / L * (p.ts / 2) / sp.I;
+    $('stats').innerHTML = [st('Tip deflection δ<sub>v</sub> (elastica)', q('length', nw.dv * L)), st('Linear theory PL³/3EI', q('length', a / 3 * L)), st('Tip moves toward the clamp', q('length', (1 - nw.xt) * L)),
+      st('Tip angle θ<sub>0</sub>', q('angle', nw.th0)), st('Root bending stress', q('stress', sigma)), st('EI of the strip', q('rigidity', sp.EI))].join('');
+    // plot 1: shapes
+    const sh = cl.shape(60);
+    const s1 = [
+      { x: sh.map((pt) => S.conv('length', pt.x * L)), y: sh.map((pt) => S.conv('length', pt.y * L)), role: 'theory', label: 'Elastica, closed form (tip load only)' },
+      { x: n0.path.filter((_, i) => i % Math.max(1, Math.round(p.Nrk / 25)) === 0).map((pt) => S.conv('length', pt.x * L)), y: n0.path.filter((_, i) => i % Math.max(1, Math.round(p.Nrk / 25)) === 0).map((pt) => S.conv('length', pt.y * L)), role: 'numeric', markers: true, r: 2.4, label: `RK4 shooting (N = ${p.Nrk})` },
+      { x: lin.map((pt) => S.conv('length', pt.x * L)), y: lin.map((pt) => S.conv('length', pt.y * L)), role: 'third', label: 'Linear theory, y = −Px²(3L − x)/6EI' },
+    ];
+    if (b > 0) s1.push({ x: nw.path.filter((_, i) => i % Math.max(1, Math.round(p.Nrk / 50)) === 0).map((pt) => S.conv('length', pt.x * L)), y: nw.path.filter((_, i) => i % Math.max(1, Math.round(p.Nrk / 50)) === 0).map((pt) => S.conv('length', pt.y * L)), role: 'fourth', label: 'RK4 with the strip\'s weight' });
+    const ov = $('overlay').value === 'auto' && preset === 'partC' && near(p.Ls, 0.25, 0.01) && near(p.ts, 0.787e-3, 0.02) && SAMPLE.C ? SAMPLE.C : null;
+    if (ov) s1.unshift({ x: ov.x.map((v) => S.conv('length', v)), y: ov.y.map((v) => S.conv('length', v)), role: 'measured', markers: true, label: 'Sample data: tip positions at every load' });
+    resetLog();
+    plots.p1.o.xlabel = `Horizontal position x (${S.unit('length')})`; plots.p1.o.ylabel = `Vertical position y, up + (${S.unit('length')})`;
+    const ally = s1.flatMap((q_) => q_.y).filter(Number.isFinite);
+    plots.p1.draw({ series: s1, xlim: [0, S.conv('length', 1.05 * L)], ylim: [Math.max(Math.min(...ally), -S.conv('length', 1.1 * L)) * 1.05, S.conv('length', 0.05 * L)], desc: 'Deflected shapes of the strip.' });
+    $('h-p1').textContent = 'Deflected shape';
+    $('cap1').innerHTML = 'The strip keeps its length, so its tip moves inward as well as down; linear theory keeps x fixed and lets the strip stretch. Equal axis units are not enforced: compare the shapes, not the angles.';
+    // plot 2: tip deflection vs alpha
+    const amax = Math.max(4, 1.2 * a), as = Array.from({ length: 61 }, (_, i) => amax * i / 60);
+    const dvs = as.map((aa) => M.elasticaClosed(aa).dv), xts = as.map((aa) => 1 - M.elasticaClosed(aa).xt);
+    const nas = Array.from({ length: 9 }, (_, i) => amax * (i + 0.5) / 9);
+    const s2 = [
+      { x: as, y: dvs, role: 'theory', label: 'δ_v/L, elastica (closed form)' }, { x: as, y: xts, role: 'theory', dash: '2 3', width: 1.6, label: 'δ_h/L (tip moves inward)' },
+      { x: nas, y: nas.map((aa) => M.elasticaShoot(aa, 0, p.Nrk).dv), role: 'numeric', markers: true, r: 2.6, label: 'RK4 shooting' },
+      { x: [0, Math.min(amax, 3)], y: [0, Math.min(amax, 3) / 3], role: 'third', label: 'Linear theory α/3' },
+    ];
+    if (ov) s2.unshift({ x: ov.alpha, y: ov.dvL, role: 'measured', markers: true, label: 'Sample data: δ_v/L (EI from the fit)' });
+    const a5 = M.alpha5();
+    plots.p2.o.xlabel = 'Load parameter α = PL²/EI'; plots.p2.o.ylabel = 'Tip displacement / L';
+    plots.p2.draw({ series: s2, bands: [{ x0: a5, x1: amax, label: 'linear theory off by > 5 %', legend: 'Linear theory overstates δ_v by more than 5 %' }], xlim: [0, amax], ylim: [0, 1.05], points: [{ x: a, y: cl.dv, role: 'theory', shape: 'ring', label: 'this load' }], desc: 'Tip displacement versus load parameter.' });
+    $('h-p2').textContent = 'Tip displacement against α';
+    $('cap2').innerHTML = `Linear theory (δ_v = PL³/3EI) is the tangent at α = 0; it overstates the tip deflection by 5 % at α = ${S.fmt(a5, 4)} and by a factor of 2 at large α, where the strip carries the load partly by tension along its length.`;
+    const rows = [['Tip angle θ₀', 'angle', cl.th0, n0.th0, 'disc'], ['Tip deflection δ_v', 'length', cl.dv * L, n0.dv * L, 'disc'], ['Tip position x_tip', 'length', cl.xt * L, n0.xt * L, 'disc'],
+      ['δ_v: linear theory PL³/3EI vs elastica', 'length', a / 3 * L, cl.dv * L, 'model']];
+    if (b > 0) rows.push(['δ_v: tip load only vs with the strip\'s weight', 'length', cl.dv * L, nw.dv * L, 'model']);
+    renderReadout(rows, `Numerical: RK4 integration of θ″ = −(α + β(1 − s)) cos θ along the strip with ${p.Nrk} steps, shooting on θ′(0) so that the tip moment vanishes; closed form from Carlson's elliptic integrals. They share no formula.`);
+    const cv = M.elasticaConvergence(Math.max(a, 0.05));
+    drawConv(cv.rows, cv.slope, 'RK4 steps, N', `Error in δ_v vs the closed form. Observed order ${S.fmt(cv.slope, 3)} (RK4: 4).`, 4);
+    const W = [];
+    W.push([a > a5 ? 'bad' : a > a5 / 2 ? 'warn' : 'ok', `α = ${S.fmt(a, 3)}: linear theory ${a > 0 ? `overstates δ_v by ${S.fmt(100 * (a / 3 / cl.dv - 1), 3)} %` : 'is exact at zero load'} (5 % at α = ${S.fmt(a5, 3)}).`]);
+    W.push([sigma > 0.8 * mat.sY ? 'bad' : 'ok', `Root stress ${q('stress', sigma, 3)} vs σ_Y ≈ ${q('stress', mat.sY, 3)} (${mat.name}): the elastica assumes the strip stays elastic.`]);
+    if (p.sw) W.push([sp.betaFull / Math.max(a, 1e-9) > 0.05 ? 'warn' : 'ok', `The strip's weight (β = ${S.fmt(sp.betaFull, 3)}) changes δ_v by ${S.fmt(Math.abs(nw.dv - cl.dv) * L * 1e3, 3)} mm here; the closed form ignores it.`]);
+    W.push(['ok', 'The load is a hanging weight: it stays vertical as the tip rotates (a "dead" load). A load that turned with the tip would give a different curve.']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('<i>EI</i> d<i>θ</i>/d<i>s</i> = <i>M</i>', 'exact curvature 1/ρ = dθ/ds (Beer Eq. 9.2 without the small-slope step).', 'θ angle of the tangent, s arc length; M = P(x_tip − x) from the tip load.', chip('ok', 'valid for any slope'), `θ₀ = ${q('angle', cl.th0, 4)}`),
+      card('√α = <i>K</i>(<i>k</i>) − <i>F</i>(<i>φ</i>₁, <i>k</i>)', 'first integral of θ″ = −α cos θ and the substitution 1 + sin θ = 2k² sin² φ (Appendix D of the handout).', 'k² = (1 + sin θ₀)/2, sin φ₁ = 1/(k√2); K, F, E elliptic integrals.', chip('ok', 'closed form'), `δ_v/L = ${S.fmt(cl.dv, 5)}`),
+    ].join('');
+  }
+
+  const EXPERIMENTS = [
+    ['Superposition by the parts', 'Part A with both loads: the two App. F curves add to the measured shape.', () => { applyPreset('partAboth'); }],
+    ['A clamp is a spring', 'Part B1: compare the rigid and the flexible clamp (untick "Rigid clamp" to see k).', () => { applyPreset('partB1'); }],
+    ['Settle the prop', 'Part B3: lowering the prop 0.5 mm shifts load from the prop to the clamp.', () => { applyPreset('partB3'); }],
+    ['Bend it far', 'Part C: linear theory predicts a tip deflection larger than the strip.', () => { applyPreset('partC'); }],
+    ['Where to put the roller', 'D1 beam: move the roller and watch the span and tip deflections trade off.', () => { applyPreset('design'); }],
+    ['Fix both ends', 'A fixed-fixed beam deflects one fifth as much as a simple span under the same uniform load.', () => { applyPreset('fixedw'); }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); setAll(); update(); });
+
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'beam') {
+      const Lt = R.c.Lt, rows = Array.from({ length: 201 }, (_, i) => { const x = Lt * i / 200; return [S.plain(S.conv('longlength', x)), S.plain(S.conv('length', R.c.y(x))), S.plain(S.conv('length', R.fe.y(x))), S.plain(S.conv('moment', M.momentStatics(p, R.c.R, x))), S.plain(S.conv('moment', R.fe.Mfe(x)))]; });
+      S.exportCSV('lab07_beam.csv', S.toCSV([`x_${u('longlength')}`, `y_closed_${u('length')}`, `y_FE_${u('length')}`, `M_statics_${u('moment')}`, `M_FE_${u('moment')}`], rows), panel);
+    } else {
+      const rows = R.nw.path.map((pt) => [S.plain(pt.s), S.plain(S.conv('length', pt.x * p.Ls)), S.plain(S.conv('length', pt.y * p.Ls)), S.plain(pt.th * 180 / Math.PI)]);
+      S.exportCSV('lab07_elastica.csv', S.toCSV(['s_over_L', `x_${u('length')}`, `y_${u('length')}`, 'theta_deg'], rows), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v, kind]) => [n, S.plain(S.conv(qq, c)), S.plain(S.conv(qq, v)), S.unit(qq), kind]);
+    S.exportCSV('lab07_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'comparison'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    const hasM = R.conv.rows.some((r) => r.errM !== undefined);
+    const head = [R.conv.xlabel.replace(/[^A-Za-z]+/g, '_').toLowerCase(), 'relative_error'].concat(hasM ? ['relative_error_moment'] : []);
+    S.exportCSV('lab07_convergence.csv', S.toCSV(head, R.conv.rows.map((r) => [r.N, S.plain(r.err)].concat(hasM ? [S.plain(r.errM)] : []))), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('partA');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+ "E_al": 68900000000.0,
+ "nu_al": 0.33,
+ "E_st": 205000000000.0,
+ "alpha_st": 1.19e-05,
+ "alpha_al": 2.34e-05,
+ "gf_error": 0.006,
+ "bend_A": 0.055,
+ "bend_B": 0.03,
+ "gap": 4e-05,
+ "C_cap": 1.5e-09,
+ "dial_seat": 4e-06,
+ "preload": 2000.0,
+ "gage_thermal_ue_per_C": 0.4,
+ "E_al_temp_coeff": -0.0003,
+ "B_P_gap": 6925.0022143324695,
+ "B_share": 0.3703447746295016,
+ "B_rod_stress_at_30kN": 169351042.93314022,
+ "C_dF_dT_true": 91.35195630517383,
+ "C_preload_strain_ue": 124.21849216928416
+}

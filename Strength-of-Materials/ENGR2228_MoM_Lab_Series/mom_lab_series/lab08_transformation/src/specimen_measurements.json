@@ -1,0 +1,48 @@
+{
+ "tube": {
+  "Do_mm": [
+   38.12,
+   38.14,
+   38.13,
+   38.13
+  ],
+  "t_mm": [
+   3.2,
+   3.21,
+   3.2,
+   3.21
+  ],
+  "Lb_mm": 250.0,
+  "aL_mm": 200.0,
+  "axis_mm": 0.0
+ },
+ "rosette": {
+  "GF": 2.1,
+  "GF_tol_pct": 0.5,
+  "Kt": 0.012,
+  "nu0": 0.285,
+  "angles_deg": [
+   0,
+   45,
+   90
+  ]
+ },
+ "g": 9.80665,
+ "micrometer_accuracy_mm": 0.003,
+ "ball_micrometer_accuracy_mm": 0.005,
+ "rule_accuracy_mm": 0.5,
+ "loadcell_accuracy_pct": 0.5,
+ "p_accuracy_MPa": 0.05,
+ "strain_resolution_ue": 1.0,
+ "strain_accuracy_pct": 0.1,
+ "reference": {
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "nu_al": 0.3296,
+  "u_nu_al": 0.0029,
+  "G_al_GPa": 26.03,
+  "u_G_al_GPa": 0.12,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0
+ }
+}

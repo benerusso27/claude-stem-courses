@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Torsion Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 3: torsion of circular shafts in the elastic and elastoplastic range, residual stresses, and noncircular and thin-walled sections. Closed forms compared with ring integration and a finite-difference stress-function solver.">
+<style>
+/*@@SIM_CORE_CSS@@*/
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 3 · Beer 8e §3.1–3.3, 3.6–3.10</div>
+      <h1>Torsion: elastic, elastoplastic and noncircular shafts</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> torque and angle of twist follow the right-hand rule; an internal torque T is positive when its vector points out of the cut section (along the outward normal), and φ is positive in the same sense. Shear stress τ and shear strain γ on the cross-section are reported as magnitudes for a positive T. <b>Blue solid</b> = closed-form (textbook) solution; <b>vermillion dashed / markers</b> = independent numerical solution; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="steel">Lab specimen: 1018 steel, d = 6.35 mm</option>
+          <option value="al">Lab specimen: 6061-T6 aluminum, d = 6.35 mm</option>
+          <option value="ci">Lab specimen: gray cast iron, d = 6.35 mm</option>
+          <option value="hollow">Hollow shaft, elastic–perfectly plastic</option>
+          <option value="rect">Rectangular bar (noncircular)</option>
+          <option value="tube">Thin-walled tube</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel" id="panel-circ">
+      <div class="group" id="grp-circ">
+        <div class="group-title">Circular shaft</div>
+        <div><label class="small" for="mat">Material</label><select id="mat"></select></div>
+        <div><div class="small" style="margin-bottom:4px">Shear stress–strain law used by the numerical solution</div><div id="law"></div></div>
+      </div>
+    </section>
+    <section class="panel" id="panel-nc" hidden>
+      <div class="group" id="grp-nc">
+        <div class="group-title">Noncircular or thin-walled section (elastic)</div>
+        <div><label class="small" for="sec">Section</label>
+          <select id="sec"><option value="rect">Solid rectangle a × b</option><option value="tube">Thin-walled circular tube</option></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-load"><div class="group-title">Material, length and loading</div></div>
+      <div id="view-wrap"><div class="small" style="margin:6px 0 4px">Stress state shown</div><div id="view"></div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical solver</div></div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay">
+          <option value="auto">Matching specimen in sample_data.csv</option>
+          <option value="none">No sample data</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">Cross-section</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: plane cross-sections of a circular shaft rotate rigidly, so γ = ρφ/L; τ follows the chosen shear stress–strain law; torque T = ∫τρ dA. Closed forms from Beer 8e §3.1–3.2 and §3.6–3.10; the numerical solutions are ring integration of the stress over the section and a finite-difference solution of the Prandtl stress function for the rectangle. Verified by <span class="num">tests/test_lab03_model.js</span> and <span class="num">tests/test_lab03_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 3 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 3 physics — pure functions, SI base units (N, m, Pa, rad). Loaded unchanged by the Node tests. */
+const Lab3Model = (() => {
+  'use strict';
+  /* Shear stress–strain laws (magnitudes; odd in γ):
+     epp     elastic–perfectly plastic, τ = min(Gγ, τY)                                    (Beer §3.7)
+     plateau elastic, yield plateau to γL, then hardening τ = A(γ − γL + γa)^n, continuous at γL (hot-rolled steel)
+     ro      Ramberg–Osgood in shear, γ = τ/G + g0 (τ/τY)^m  (τY = offset shear yield)     (aluminum)
+     tanh    τ = τc tanh(Gγ/τc); brittle, fractures when τ (= σ1 on 45° planes) reaches σUT  (gray cast iron) */
+  const MATERIALS = {
+    steel: { name: '1018 steel, hot rolled', G: 79.5e9, law: 'plateau', tauY: 170e6, gL: 0.030, A: 394e6, n: 0.19, gf: 1.6 },
+    al: { name: '6061-T6 aluminum', G: 26.0e9, law: 'ro', tauY: 158e6, g0: 0.00346, m: 17, gf: 0.8 },
+    ci: { name: 'Gray cast iron, class 30', G: 41e9, law: 'tanh', tauY: 214e6, tauc: 450e6, sigUT: 214e6, gf: null },
+    epp: { name: 'Elastic–perfectly plastic', G: 79.5e9, law: 'epp', tauY: 170e6, gf: null },
+  };
+  const PRESETS = {
+    steel: { mode: 'circ', mat: 'steel', law: 'material', d: 6.35e-3, di: 0, L: 50.8e-3, phi: 10 * Math.PI / 180, N: 64, view: 'loaded' },
+    al: { mode: 'circ', mat: 'al', law: 'material', d: 6.35e-3, di: 0, L: 50.8e-3, phi: 10 * Math.PI / 180, N: 64, view: 'loaded' },
+    ci: { mode: 'circ', mat: 'ci', law: 'material', d: 6.35e-3, di: 0, L: 50.8e-3, phi: 5 * Math.PI / 180, N: 64, view: 'loaded' },
+    hollow: { mode: 'circ', mat: 'epp', law: 'epp', d: 50e-3, di: 30e-3, L: 1.0, phi: 6 * Math.PI / 180, N: 64, view: 'loaded' },
+    rect: { mode: 'nc', sec: 'rect', a: 20e-3, b: 10e-3, T: 50, L: 0.5, Gnc: 79.5e9, Nfd: 16 },
+    tube: { mode: 'nc', sec: 'tube', dt: 50e-3, t: 3e-3, T: 500, L: 1.0, Gnc: 79.5e9, Nfd: 16 },
+  };
+
+  const Jp = (c, ci) => Math.PI * (c ** 4 - ci ** 4) / 2;
+
+  function roTau(m, g) {            // invert γ = τ/G + g0 (τ/τY)^m by bisection (monotone)
+    if (g <= 0) return 0;
+    let lo = 0, hi = Math.min(m.G * g, m.tauY * Math.pow(g / m.g0, 1 / m.m));
+    for (let k = 0; k < 64; k++) {
+      const t = 0.5 * (lo + hi);
+      if (t / m.G + m.g0 * Math.pow(t / m.tauY, m.m) > g) hi = t; else lo = t;
+    }
+    return 0.5 * (lo + hi);
+  }
+  function tauOf(m, g) {
+    const s = g < 0 ? -1 : 1, a = Math.abs(g);
+    let t;
+    if (m.law === 'epp') t = Math.min(m.G * a, m.tauY);
+    else if (m.law === 'plateau') {
+      const gY = m.tauY / m.G;
+      if (a <= gY) t = m.G * a;
+      else if (a <= m.gL) t = m.tauY;
+      else t = m.A * Math.pow(a - m.gL + Math.pow(m.tauY / m.A, 1 / m.n), m.n);
+    } else if (m.law === 'ro') t = roTau(m, a);
+    else if (m.law === 'tanh') t = m.tauc * Math.tanh(m.G * a / m.tauc);
+    else throw new Error('unknown law ' + m.law);
+    return s * t;
+  }
+
+  /* ---------------- circular shafts: closed forms (Beer §3.1–3.2, 3.7–3.8) ---------------- */
+  function eppTorque(c, ci, G, tauY, theta) {          // theta = twist per unit length (rad/m)
+    if (theta <= 0) return 0;
+    const rY = tauY / (G * theta);
+    if (rY >= c) return Jp(c, ci) * G * theta;         // elastic throughout
+    if (rY <= ci) return 2 * Math.PI / 3 * tauY * (c ** 3 - ci ** 3);
+    return Math.PI / 2 * tauY / rY * (rY ** 4 - ci ** 4) + 2 * Math.PI / 3 * tauY * (c ** 3 - rY ** 3);
+  }
+  function eppTau(c, G, tauY, theta, r) { return Math.min(G * theta * r, tauY); }
+  function eppInverseSolid(c, G, tauY, T) {            // twist rate for torque T on a solid shaft (T_Y < T < T_p)
+    const TY = tauY * Math.PI * c ** 3 / 2;
+    if (T <= TY) return T / (Jp(c, 0) * G);
+    const x = 4 - 3 * T / TY;
+    if (x <= 0) return Infinity;
+    return tauY / (G * c * Math.cbrt(x));
+  }
+  function circClosed(p, mat) {
+    const c = p.d / 2, ci = p.di / 2, G = mat.G, tauY = mat.tauY, th = p.phi / p.L;
+    const J = Jp(c, ci);
+    const T = eppTorque(c, ci, G, tauY, th);
+    const TY = tauY * J / c, Tp = 2 * Math.PI / 3 * tauY * (c ** 3 - ci ** 3);
+    const rY = Math.min(c, Math.max(ci, tauY / (G * th)));
+    const thP = th - T / (J * G);                      // permanent twist rate after elastic unloading
+    const resSurf = eppTau(c, G, tauY, th, c) - T * c / J;
+    return { c, ci, J, T, TY, Tp, rY, phiY: tauY * p.L / (G * c), phiP: thP * p.L, resSurf, th, tauElastic: T * c / J };
+  }
+
+  /* ---------------- circular shafts: independent numerical solution ----------------
+     Ring integration: N rings of equal width between ci and c, midpoint radius; T = Σ 2πρ²τ(ρθ)Δρ.
+     Works for any stress–strain law; never uses the closed forms. */
+  function torqueRings(mat, c, ci, theta, N) {
+    const h = (c - ci) / N;
+    let T = 0;
+    for (let k = 0; k < N; k++) { const r = ci + (k + 0.5) * h; T += 2 * Math.PI * r * r * tauOf(mat, r * theta) * h; }
+    return T;
+  }
+  function ringProfile(mat, c, ci, theta, N) {
+    const h = (c - ci) / N, r = [], tau = [];
+    for (let k = 0; k < N; k++) { const rr = ci + (k + 0.5) * h; r.push(rr); tau.push(tauOf(mat, rr * theta)); }
+    return { r, tau };
+  }
+  function invertRings(mat, c, ci, T, N, L) {           // twist (over L) that gives torque T, by bisection
+    let lo = 0, hi = 1e-6;
+    while (torqueRings(mat, c, ci, hi / L, N) < T) { hi *= 2; if (hi > 1e6) return Infinity; }
+    for (let k = 0; k < 100; k++) { const m = 0.5 * (lo + hi); if (torqueRings(mat, c, ci, m / L, N) < T) lo = m; else hi = m; }
+    return 0.5 * (lo + hi);
+  }
+  function ringConvergence(mat, c, ci, theta, ref, Ns = [1, 2, 4, 8, 16, 32, 64, 128, 256]) {
+    const rows = Ns.map((N) => { const v = torqueRings(mat, c, ci, theta, N); return { N, v, err: Math.abs(v - ref) / Math.abs(ref) }; });
+    const pts = rows.filter((r) => r.err > 1e-12);
+    const slope = pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN;
+    return { rows, slope };
+  }
+
+  /* ---------------- noncircular sections (elastic, Beer §3.9–3.10) ---------------- */
+  // Rectangle with long side a and short side b (a >= b): Saint-Venant series for the Prandtl stress function.
+  function rectSeries(a, b, nterms = 400) {
+    if (a < b) [a, b] = [b, a];
+    let s2 = 0, sk = 0;
+    for (let n = 1; n < 2 * nterms; n += 2) {
+      const z = n * Math.PI * a / (2 * b);
+      s2 += Math.tanh(z) / n ** 5;
+      sk += z > 700 ? 0 : 1 / (n * n * Math.cosh(z));
+    }
+    const c2 = (1 - 192 / Math.PI ** 5 * (b / a) * s2) / 3;
+    const k = 1 - 8 / Math.PI ** 2 * sk;               // τmax = k G θ b, at the middle of each long side
+    return { c1: c2 / k, c2, k };
+  }
+  // shear stress along the short centre line (x = a/2, 0 <= y <= b), divided by Gθ
+  function rectSeriesMidline(a, b, y, nterms = 400) {
+    if (a < b) [a, b] = [b, a];
+    let s = 0;
+    for (let n = 1; n < 2 * nterms; n += 2) {
+      const z = n * Math.PI * a / (2 * b);
+      s += 8 * b / (Math.PI ** 2 * n * n) * (1 - (z > 700 ? 0 : 1 / Math.cosh(z))) * Math.cos(n * Math.PI * y / b);
+    }
+    return s;
+  }
+  /* Independent numerical solution: finite differences for ∇²ψ = −2 on the rectangle, ψ = 0 on the boundary
+     (Prandtl stress function with Gθ factored out). 5-point stencil, conjugate gradients.
+     T = 2Gθ∫ψ dA (trapezoid);  τmax = Gθ ∂ψ/∂n at the middle of the long side (second-order one-sided). */
+  function rectFD(a, b, N) {
+    if (a < b) [a, b] = [b, a];
+    const ny = Math.max(2, 2 * Math.round(N / 2)), nx = Math.max(2, 2 * Math.round(ny * a / b / 2));
+    const hx = a / nx, hy = b / ny, mx = nx - 1, my = ny - 1, n = mx * my;
+    const ax = 1 / (hx * hx), ay = 1 / (hy * hy), d = 2 * ax + 2 * ay;
+    const idx = (i, j) => (j - 1) * mx + (i - 1);
+    const Aop = (v, out) => {
+      for (let j = 1; j <= my; j++) for (let i = 1; i <= mx; i++) {
+        const k = idx(i, j);
+        let s = d * v[k];
+        if (i > 1) s -= ax * v[k - 1];
+        if (i < mx) s -= ax * v[k + 1];
+        if (j > 1) s -= ay * v[k - mx];
+        if (j < my) s -= ay * v[k + mx];
+        out[k] = s;
+      }
+    };
+    const x = new Float64Array(n), r = new Float64Array(n).fill(2), pv = new Float64Array(n).fill(2), Ap = new Float64Array(n);
+    let rr = 4 * n;
+    const tol = 1e-26 * rr;
+    let it = 0;
+    for (; it < 20 * (nx + ny) + 200 && rr > tol; it++) {
+      Aop(pv, Ap);
+      let pAp = 0; for (let k = 0; k < n; k++) pAp += pv[k] * Ap[k];
+      const al = rr / pAp;
+      let rn = 0;
+      for (let k = 0; k < n; k++) { x[k] += al * pv[k]; r[k] -= al * Ap[k]; rn += r[k] * r[k]; }
+      const be = rn / rr; rr = rn;
+      for (let k = 0; k < n; k++) pv[k] = r[k] + be * pv[k];
+    }
+    let integ = 0; for (let k = 0; k < n; k++) integ += x[k];
+    integ *= hx * hy;
+    const ic = nx / 2;
+    const p1 = ny > 1 ? x[idx(ic, 1)] : 0, p2 = ny > 2 ? x[idx(ic, 2)] : 0;
+    const kfd = (4 * p1 - p2) / (2 * hy) / b;            // τmax/(Gθ b)
+    const c2 = 2 * integ / (a * b ** 3);
+    // shear along the short centre line, τ/(Gθ) = ∂ψ/∂y (central differences inside, one-sided at the edges)
+    const ys = [], ts = [];
+    for (let j = 0; j <= ny; j++) {
+      const v = (jj) => (jj <= 0 || jj >= ny ? 0 : x[idx(ic, jj)]);
+      let g;
+      if (j === 0) g = (4 * v(1) - v(2)) / (2 * hy);
+      else if (j === ny) g = -(4 * v(ny - 1) - v(ny - 2)) / (2 * hy);
+      else g = (v(j + 1) - v(j - 1)) / (2 * hy);
+      ys.push(j * hy); ts.push(g);
+    }
+    return { c2, k: kfd, c1: c2 / kfd, nx, ny, iters: it, ys, ts };
+  }
+  function rectConvergence(a, b, Ns) {
+    const s = rectSeries(a, b);
+    const rows = Ns.map((N) => { const f = rectFD(a, b, N); return { N, c2: f.c2, k: f.k, errC2: Math.abs(f.c2 - s.c2) / s.c2, errK: Math.abs(f.k - s.k) / s.k }; });
+    const pts = rows.filter((r) => r.errC2 > 1e-13);
+    const slope = pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.errC2))) : NaN;
+    const slopeK = linSlope(rows.map((r) => Math.log(1 / r.N)), rows.map((r) => Math.log(Math.max(r.errK, 1e-16))));
+    return { rows, slope, slopeK };
+  }
+  // thin-walled tube: Bredt–Batho (Beer §3.10) vs the exact solution for a hollow circle
+  function tubeBredt(dout, t, T, G) {
+    const c = dout / 2, rm = c - t / 2, Am = Math.PI * rm * rm;
+    return { tau: T / (2 * t * Am), theta: T * (2 * Math.PI * rm / t) / (4 * Am * Am * G) };
+  }
+  function tubeExact(dout, t, T, G) {
+    const c = dout / 2, ci = c - t, J = Jp(c, ci);
+    return { tau: T * c / J, tauIn: T * ci / J, theta: T / (J * G), J };
+  }
+  function linSlope(x, y) { const n = x.length; const mx = x.reduce((a, b) => a + b) / n, my = y.reduce((a, b) => a + b) / n; let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } return sxy / sxx; }
+
+  return { MATERIALS, PRESETS, Jp, tauOf, roTau, eppTorque, eppTau, eppInverseSolid, circClosed, torqueRings, ringProfile, invertRings,
+           ringConvergence, rectSeries, rectSeriesMidline, rectFD, rectConvergence, tubeBredt, tubeExact, linSlope };
+})();
+if (typeof module !== 'undefined') module.exports = Lab3Model;
+</script>
+
+<script id="sample-data" type="application/json">/*@@SAMPLE_DATA@@*/</script>
+<script>
+/*@@SIM_CORE_JS@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab3Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'steel';
+  const p = Object.assign({}, M.PRESETS.rect, M.PRESETS.tube, M.PRESETS.steel, { G: M.MATERIALS.steel.G, tauY: M.MATERIALS.steel.tauY });
+  let R = null;
+
+  $('mat').innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; update(); }); };
+  mk('grp-circ', { id: 'd', label: 'Outer diameter', sym: 'd', q: 'length', min: 2e-3, max: 120e-3, step: 0.01e-3 });
+  mk('grp-circ', { id: 'di', label: 'Inner diameter (0 = solid)', sym: 'd<sub>i</sub>', q: 'length', min: 0, max: 110e-3, step: 0.01e-3 });
+  mk('grp-nc', { id: 'a', label: 'Long side', sym: 'a', q: 'length', min: 2e-3, max: 200e-3, step: 0.1e-3 });
+  mk('grp-nc', { id: 'b', label: 'Short side', sym: 'b', q: 'length', min: 2e-3, max: 100e-3, step: 0.1e-3 });
+  mk('grp-nc', { id: 'dt', label: 'Tube outer diameter', sym: 'd', q: 'length', min: 5e-3, max: 200e-3, step: 0.1e-3 });
+  mk('grp-nc', { id: 't', label: 'Wall thickness', sym: 't', q: 'length', min: 0.2e-3, max: 50e-3, step: 0.05e-3 });
+  mk('grp-load', { id: 'L', label: 'Length (gage length for the specimens)', sym: 'L', q: 'length', min: 10e-3, max: 3, log: true });
+  mk('grp-load', { id: 'G', label: 'Modulus of rigidity', sym: 'G', q: 'modulus', min: 10e9, max: 100e9, step: 0.1e9 });
+  mk('grp-load', { id: 'tauY', label: 'Shear yield strength (EPP law)', sym: 'τ<sub>Y</sub>', q: 'stress', min: 20e6, max: 600e6, step: 1e6 });
+  mk('grp-load', { id: 'phi', label: 'Angle of twist over L', sym: 'φ', q: 'angle', min: 0.01 * Math.PI / 180, max: 3000 * Math.PI / 180, log: true });
+  mk('grp-load', { id: 'Gnc', label: 'Modulus of rigidity', sym: 'G', q: 'modulus', min: 10e9, max: 100e9, step: 0.1e9 });
+  mk('grp-load', { id: 'T', label: 'Applied torque', sym: 'T', q: 'moment', min: 0.1, max: 20000, log: true });
+  mk('grp-num', { id: 'N', label: 'Rings across the section', sym: 'N', q: 'none', min: 1, max: 512, log: true, int: true });
+  mk('grp-num', { id: 'Nfd', label: 'Grid cells across the short side', sym: 'N', q: 'none', min: 2, max: 64, log: true, int: true });
+  const modeSeg = S.segmented($('mode'), [['circ', 'Circular shaft'], ['nc', 'Noncircular / thin wall']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  const lawSeg = S.segmented($('law'), [['material', "Material's own curve"], ['epp', 'Elastic–perfectly plastic']], p.law, (v) => { p.law = v; update(); }, 'Stress–strain law');
+  const viewSeg = S.segmented($('view'), [['loaded', 'Loaded'], ['unloaded', 'After unloading']], 'loaded', (v) => { p.view = v; update(); }, 'Stress state');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  $('mat').addEventListener('change', (e) => { p.mat = e.target.value; p.G = M.MATERIALS[p.mat].G; p.tauY = M.MATERIALS[p.mat].tauY; setAll(); update(); });
+  $('sec').addEventListener('change', (e) => { p.sec = e.target.value; update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(p[k]);
+    $('mat').value = p.mat; $('sec').value = p.sec;
+    modeSeg.set(p.mode); lawSeg.set(p.law); viewSeg.set(p.view);
+  }
+  function applyPreset(k) {
+    preset = k;
+    $('preset').value = k;
+    Object.assign(p, M.PRESETS[k]);
+    if (M.PRESETS[k].mode === 'circ') { p.G = M.MATERIALS[p.mat].G; p.tauY = M.MATERIALS[p.mat].tauY; }
+    setAll(); update();
+  }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const fmtx = (v) => S.fmt(v, 3);
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    conv: new S.Plot($('plot-conv'), { xlabel: '', ylabel: 'Relative error', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+  const deg = (r) => r * 180 / Math.PI;
+  const lim = (ys, lo0 = true) => { const f = ys.filter(Number.isFinite); const lo = Math.min(lo0 ? 0 : Infinity, ...f), hi = Math.max(lo0 ? 0 : -Infinity, ...f); const pad = 0.1 * (hi - lo || Math.abs(hi) || 1); return [lo - (lo < 0 || !lo0 ? pad : 0), hi + pad]; };
+  const matNow = () => Object.assign({}, M.MATERIALS[p.mat], { G: p.G, tauY: p.tauY });
+  const eppNow = () => ({ law: 'epp', G: p.G, tauY: p.tauY });
+  const lawMat = () => (p.law === 'epp' ? eppNow() : matNow());
+
+  function validate() {
+    const e = [];
+    if (p.mode === 'circ' && !(p.di < p.d)) e.push('The inner diameter must be smaller than the outer diameter.');
+    if (p.mode === 'nc' && p.sec === 'tube' && !(p.t < p.dt / 2)) e.push('The wall thickness must be less than the outer radius.');
+    return e;
+  }
+  function update() {
+    $('panel-circ').hidden = p.mode !== 'circ';
+    $('panel-nc').hidden = p.mode !== 'nc';
+    $('view-wrap').hidden = p.mode !== 'circ';
+    for (const k of ['G', 'tauY', 'phi']) ctl[k].el.hidden = p.mode !== 'circ';
+    for (const k of ['Gnc', 'T']) ctl[k].el.hidden = p.mode !== 'nc';
+    ctl.N.el.hidden = p.mode !== 'circ'; ctl.Nfd.el.hidden = !(p.mode === 'nc' && p.sec === 'rect');
+    ctl.a.el.hidden = ctl.b.el.hidden = !(p.mode === 'nc' && p.sec === 'rect');
+    ctl.dt.el.hidden = ctl.t.el.hidden = !(p.mode === 'nc' && p.sec === 'tube');
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    if (p.mode === 'circ') updateCirc(); else if (p.sec === 'rect') updateRect(); else updateTube();
+  }
+
+  // =============================================================== circular shafts
+  function updateCirc() {
+    const mat = matNow(), lm = lawMat(), epp = eppNow();
+    const cf = M.circClosed(p, epp);
+    const c = cf.c, ci = cf.ci, th = cf.th;
+    const Tnum = M.torqueRings(lm, c, ci, th, p.N);
+    const Tepp = M.torqueRings(epp, c, ci, th, p.N);
+    R = { kind: 'circ', cf };
+    $('diag-txt').textContent = p.di > 0 ? 'hollow circular shaft' : 'solid circular shaft';
+    drawCircDiagram(cf, lm);
+    const tauS = Math.abs(M.tauOf(lm, c * th));
+    const unl = p.view === 'unloaded';
+    $('stats').innerHTML = [st('Torque (numerical, chosen law)', q('moment', Tnum)), st('Torque at first yield T<sub>Y</sub>', q('moment', cf.TY)),
+      st('Fully plastic torque T<sub>p</sub>', q('moment', cf.Tp)), st('Surface shear strain γ = cφ/L', S.fmt(c * th, 4)),
+      st('Surface shear stress', q('stress', tauS)), st(unl ? 'Permanent twist after unloading' : 'Elastic-core radius ρ<sub>Y</sub>', unl ? q('angle', cf.phiP) : q('length', cf.rY))].join('');
+    // plot 1: torque vs twist
+    const phiMax = p.phi;
+    const ph = Array.from({ length: 161 }, (_, i) => phiMax * i / 160);
+    const Tcf = ph.map((f) => M.eppTorque(c, ci, p.G, p.tauY, f / p.L));
+    const nPts = Array.from({ length: 33 }, (_, i) => phiMax * i / 32);
+    const Tn = nPts.map((f) => M.torqueRings(lm, c, ci, f / p.L, p.N));
+    const mu = S.unit('moment');
+    plots.p1.o.logx = false;
+    const series = [
+      { x: ph.map(deg), y: ph.map((f) => S.conv('moment', cf.J * p.G * f / p.L)), role: 'mutedline', width: 1, dash: '3 3', label: 'Elastic formula T = JGφ/L', hover: false },
+      { x: ph.map(deg), y: Tcf.map((v) => S.conv('moment', v)), role: 'theory', label: 'Closed form, elastic–perfectly plastic (§3.7)' },
+      { x: nPts.map(deg), y: Tn.map((v) => S.conv('moment', v)), role: 'numeric', markers: true, r: 2.6, label: `Ring integration, ${p.law === 'epp' ? 'EPP law' : 'material curve'} (N = ${p.N})` },
+    ];
+    const ov = $('overlay').value === 'auto' && SAMPLE[preset] && Math.abs(p.d - 6.35e-3) < 1e-6 && Math.abs(p.L - 50.8e-3) < 1e-6 ? SAMPLE[preset] : null;
+    if (ov) {
+      const keep = ov.phi.map((f, i) => i).filter((i) => ov.phi[i] * Math.PI / 180 <= phiMax * 1.0001);
+      series.unshift({ x: keep.map((i) => ov.phi[i]), y: keep.map((i) => S.conv('moment', ov.T[i])), role: 'measured', markers: true, label: 'Sample data (twist over the 50.8 mm gage)' });
+    }
+    const pts = [];
+    if (unl) pts.push({ x: deg(cf.phiP), y: 0, role: 'theory', shape: 'ring', label: 'permanent twist (EPP)' });
+    if (mat.gf && c * th >= mat.gf && p.law === 'material') pts.push({ x: deg(mat.gf * p.L / c), y: S.conv('moment', M.torqueRings(lm, c, ci, mat.gf / c, p.N)), role: 'fail-ink', shape: 'diamond', label: 'fracture (sample truth γf)' });
+    const allY = series.flatMap((s) => s.y).filter(Number.isFinite);
+    const ymax = Math.max(...Tcf.map((v) => S.conv('moment', v)), ...Tn.map((v) => S.conv('moment', v)), 1e-12) * 1.25;
+    plots.p1.o.xlabel = 'Angle of twist over L, φ (°)'; plots.p1.o.ylabel = `Torque, T (${mu})`;
+    plots.p1.draw({ series, xlim: [0, deg(phiMax)], ylim: [0, Math.max(ymax, ...allY.map((v) => Math.min(v, ymax)))], points: pts,
+      segs: unl ? [{ x0: deg(phiMax), y0: S.conv('moment', cf.T), x1: deg(cf.phiP), y1: 0, role: 'theory', dash: '5 3', width: 1.5, label: 'elastic unloading' }] : [],
+      desc: `Torque versus angle of twist; at φ = ${q('angle', phiMax)} the numerical torque is ${q('moment', Tnum)}.` });
+    $('h-p1').textContent = 'Torque–twist curve';
+    $('cap1').innerHTML = `Below φ<sub>Y</sub> = ${q('angle', cf.phiY)} the shaft is elastic and T = JGφ/L. Beyond it a plastic shell grows from the surface and the elastic–perfectly-plastic torque approaches (4/3)T<sub>Y</sub> for a solid shaft${ci > 0 ? ' (for this hollow shaft, T<sub>p</sub>/T<sub>Y</sub> = ' + S.fmt(cf.Tp / cf.TY, 4) + ')' : ''}. ${p.law === 'material' && mat.law !== 'epp' ? 'The markers use the material\'s own curve, which keeps hardening.' : ''}`;
+    // plot 2: stress across the radius
+    const prof = M.ringProfile(lm, c, ci, th, Math.min(p.N, 64));
+    const rs = Array.from({ length: 121 }, (_, i) => ci + (c - ci) * i / 120);
+    const lu = S.unit('length'), su = S.unit('stress');
+    const s2 = [
+      { x: rs.map((r) => S.conv('length', r)), y: rs.map((r) => S.conv('stress', M.eppTau(c, p.G, p.tauY, th, r))), role: 'theory', label: 'Closed form, EPP: τ = min(Gρφ/L, τ_Y)' },
+      { x: prof.r.map((r) => S.conv('length', r)), y: prof.tau.map((t) => S.conv('stress', t)), role: 'numeric', markers: true, r: 2.4, label: `Ring values (${p.law === 'epp' ? 'EPP' : 'material curve'})` },
+      { x: rs.map((r) => S.conv('length', r)), y: rs.map((r) => S.conv('stress', Tnum * r / cf.J)), role: 'mutedline', width: 1, dash: '3 3', label: 'Elastic formula Tρ/J with the same T', hover: false },
+    ];
+    if (unl) {
+      s2.push({ x: rs.map((r) => S.conv('length', r)), y: rs.map((r) => S.conv('stress', M.eppTau(c, p.G, p.tauY, th, r) - cf.T * r / cf.J)), role: 'fourth', label: 'Residual stress after unloading (EPP)' });
+      s2.push({ x: prof.r.map((r) => S.conv('length', r)), y: prof.tau.map((t, i) => S.conv('stress', t - Tnum * prof.r[i] / cf.J)), role: 'numeric', markers: true, r: 2, label: 'Residual, ring values', opacity: 0.6 });
+    }
+    const y2 = s2.flatMap((s) => s.y);
+    plots.p2.o.xlabel = `Radius, ρ (${lu})`; plots.p2.o.ylabel = `Shear stress, τ (${su})`;
+    plots.p2.draw({ series: s2, xlim: [0, S.conv('length', c)], ylim: [Math.min(0, ...y2) * 1.15, Math.max(...y2) * 1.15 + 1e-9],
+      desc: `Shear stress across the radius at φ = ${q('angle', phiMax)}.` });
+    $('h-p2').textContent = unl ? 'Shear stress across the radius, loaded and after unloading' : 'Shear stress across the radius';
+    $('cap2').innerHTML = `Plane sections stay plane, so γ = ρφ/L grows linearly with ρ; the stress follows the material curve. The dashed grey line is what the elastic formula τ = Tρ/J would claim for the same torque. ${unl ? 'Unloading is elastic, so it subtracts Tρ/J: the residual stress is negative at the surface and positive inside, and integrates to zero torque.' : ''}`;
+    // readout
+    const rows = [
+      ['Torque at φ, elastic–perfectly plastic (§3.7)', 'moment', cf.T, Tepp, 'disc'],
+    ];
+    if (p.law === 'material' && mat.law !== 'epp') rows.push([`Torque at φ: EPP formula vs ring integration of the ${mat.name} curve`, 'moment', cf.T, Tnum, 'model']);
+    const thY = p.tauY / (p.G * c);
+    rows.push(['Torque at first yield, T_Y = τ_Y J/c', 'moment', cf.TY, M.torqueRings(epp, c, ci, thY, p.N), 'disc']);
+    rows.push(['Fully plastic torque, (2π/3)τ_Y(c³ − c_i³)', 'moment', cf.Tp, M.torqueRings(epp, c, ci, 1e4 * thY, p.N), 'disc']);
+    rows.push(['Permanent twist after unloading, φ − TL/(JG)', 'angle', cf.phiP, p.phi - Tepp * p.L / (cf.J * p.G), 'disc']);
+    rows.push(['Residual shear stress at the surface', 'stress', cf.resSurf, M.tauOf(epp, c * th) - Tepp * c / cf.J, 'disc']);
+    if (ci === 0) {
+      const Tt = 1.2 * cf.TY;
+      rows.push(['Twist needed for T = 1.2 T_Y (inverse of §3.7)', 'angle', M.eppInverseSolid(c, p.G, p.tauY, Tt) * p.L, M.invertRings(epp, c, 0, Tt, p.N, p.L), 'disc']);
+    }
+    renderReadout(rows, 'Numerical: ring integration of τ(ρφ/L) over N rings and bisection for inverse problems; it never uses the closed forms.');
+    // convergence (EPP law vs closed form)
+    const cv = M.ringConvergence(epp, c, ci, th, cf.T);
+    R.conv = { kind: 'rings', rows: cv.rows, slope: cv.slope };
+    plots.conv.o.xlabel = 'Rings across the section, N';
+    plots.conv.draw({ series: [{ x: cv.rows.map((r) => r.N), y: cv.rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: 'Relative error in T (EPP law vs closed form)' },
+      { x: [1, 256], y: [cv.rows[0].err, cv.rows[0].err / 256 ** 2], role: 'theory', width: 1, dash: '2 3', label: 'reference: error ∝ N⁻²', hover: false }],
+      xlim: [0.8, 320], ylim: [1e-14, 1], desc: `Ring-integration convergence: observed order ${S.fmt(cv.slope, 3)}.` });
+    $('cap-conv').innerHTML = `Observed order ${S.fmt(cv.slope, 3)} (midpoint rule: 2). ${th * c > thY * c ? 'The kink in τ(ρ) at the elastic–plastic boundary sits inside one ring, so the error wobbles about the N⁻² line but keeps its slope.' : 'Fully elastic: the integrand ρ³ is smooth.'}`;
+    renderWarnCirc(cf, mat, lm, th, c, Tnum);
+    renderCardsCirc(cf, mat);
+  }
+
+  function drawCircDiagram(cf, lm) {
+    const W = Math.round(Math.max(340, Math.min(900, $('diagram').clientWidth || 900))), H = 230;
+    const cx = Math.min(W / 2, 160), cy = H / 2, Rp = 95;
+    const sc = Rp / cf.c, ri = cf.ci * sc, ry = cf.rY * sc;
+    const plastic = cf.rY < cf.c - 1e-15;
+    const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Circular cross-section; elastic core radius ${q('length', cf.rY)} of outer radius ${q('length', cf.c)}.">
+      <circle cx="${cx}" cy="${cy}" r="${Rp}" style="fill:${plastic ? 'var(--fail)' : 'var(--panel-2)'};fill-opacity:${plastic ? 0.35 : 1};stroke:var(--ink);stroke-width:1.5"/>
+      ${plastic ? `<circle cx="${cx}" cy="${cy}" r="${Math.max(ry, ri)}" style="fill:var(--panel-2);stroke:var(--theory);stroke-width:1.5;stroke-dasharray:5 3"/>` : ''}
+      ${ri > 0 ? `<circle cx="${cx}" cy="${cy}" r="${ri}" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.5"/>` : ''}
+      <path d="M${cx} ${cy}L${cx + Rp} ${cy}" style="stroke:var(--ink);stroke-width:1"/>
+      <text x="${cx + Rp / 2 + 10}" y="${cy - 6}" text-anchor="middle" style="fill:var(--ink);font-size:12px;paint-order:stroke;stroke:var(--panel-2);stroke-width:3px">c = ${q('length', cf.c, 3)}</text>
+      ${plastic ? `<text x="${cx}" y="${cy + Math.max(ry, 6) + 16}" text-anchor="middle" style="fill:var(--theory);font-size:12px;paint-order:stroke;stroke:var(--panel-2);stroke-width:3px">elastic core ρ_Y = ${q('length', cf.rY, 3)}</text>
+        <text x="${cx}" y="${cy + Rp - 10}" text-anchor="middle" style="fill:var(--fail-ink);font-size:12px">plastic shell</text>` : `<text x="${cx}" y="${cy + 20}" text-anchor="middle" style="fill:var(--muted);font-size:12px">fully elastic</text>`}
+      <text x="${cx * 2 + 20}" y="${cy - 40}" style="fill:var(--ink);font-size:13px">J = ${q('inertia', cf.J, 4)}</text>
+      <text x="${cx * 2 + 20}" y="${cy - 16}" style="fill:var(--ink);font-size:13px">φ_Y = ${q('angle', cf.phiY, 3)} over L</text>
+      <text x="${cx * 2 + 20}" y="${cy + 8}" style="fill:var(--ink);font-size:13px">T_Y = ${q('moment', cf.TY, 3)},  T_p = ${q('moment', cf.Tp, 3)}</text>
+      <text x="${cx * 2 + 20}" y="${cy + 32}" style="fill:var(--muted);font-size:12px">EPP law, τ_Y = ${q('stress', p.tauY, 3)}, G = ${q('modulus', p.G, 3)}</text>
+    </svg>`;
+    $('diagram').innerHTML = svg;
+  }
+
+  function renderWarnCirc(cf, mat, lm, th, c, Tnum) {
+    const W = [];
+    const g = c * th;
+    if (p.law === 'material' && mat.gf && g >= mat.gf) W.push(['bad', `Surface shear strain ${S.fmt(g, 3)} exceeds the fracture strain of this material (about ${S.fmt(mat.gf, 2)}): the specimen has broken.`]);
+    if (mat.law === 'tanh' && p.law === 'material') {
+      const ts = M.tauOf(lm, g);
+      if (ts >= mat.sigUT) W.push(['bad', `Surface shear stress ${q('stress', ts)} has reached the tensile strength ${q('stress', mat.sigUT)}. On planes at 45° to the axis the normal stress equals τ, so this brittle material fractures along a 45° helix.`]);
+      else W.push(['warn', `Brittle material: it will fracture when the surface shear stress (equal to the 45° tensile stress) reaches ${q('stress', mat.sigUT)}; now ${q('stress', ts)}.`]);
+    }
+    if (g > p.tauY / p.G) {
+      W.push(['warn', `The surface has yielded (γ = ${S.fmt(g, 3)} > γ_Y = ${S.fmt(p.tauY / p.G, 3)}): τ = Tc/J no longer gives the surface stress. Here it would claim ${q('stress', Tnum * c / cf.J)}.`]);
+      if (p.law === 'material' && mat.law !== 'epp') {
+        const d = (Tnum - cf.T) / cf.T;
+        W.push([Math.abs(d) > 0.05 ? 'bad' : 'warn', `The material's own curve gives ${S.fmt(100 * d, 3)} % ${d > 0 ? 'more' : 'less'} torque than the elastic–perfectly-plastic formula at this twist.`]);
+      }
+    }
+    if (g > 0.3) W.push(['warn', `Shear strain ${S.fmt(g, 3)}: small-strain kinematics (γ = ρφ/L, no length change) is an approximation at this level.`]);
+    if (!W.length) W.push(['ok', 'Elastic and small strain: τ = Tρ/J and φ = TL/(JG) apply exactly.']);
+    $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join('');
+  }
+
+  function renderCardsCirc(cf, mat) {
+    const yielded = cf.rY < cf.c - 1e-15;
+    const cards = [
+      card('<i>τ</i> = <i>Tρ</i>/<i>J</i>,&nbsp; <i>φ</i> = <i>TL</i>/(<i>JG</i>)', 'plane sections rotate rigidly (γ = ρφ/L), Hooke\'s law in shear, and equilibrium T = ∫ρτ dA (§3.1C, §3.2).', 'Elastic, circular, uniform section, away from the grips.',
+        yielded ? chip('bad', 'surface has yielded') : chip('ok', 'valid'), `T_Y = τ_Y J/c = ${q('moment', cf.TY)}`),
+      card('<i>T</i> = (4/3)<i>T</i><sub>Y</sub>[1 − ¼(ρ<sub>Y</sub>/<i>c</i>)³]', 'the same kinematics with an elastic–perfectly plastic material (§3.7).', 'Solid shaft; exact only if the material really has a flat yield plateau.',
+        mat.law === 'plateau' || mat.law === 'epp' ? chip('ok', 'good model for this material') : chip('warn', 'material hardens'), `ρ_Y = ${q('length', cf.rY)}`),
+      card('<i>τ</i><sub>res</sub> = <i>τ</i>(<i>ρ</i>) − <i>T</i><sub>max</sub><i>ρ</i>/<i>J</i>', 'elastic unloading superposed on the loaded state (§3.8).', 'Valid if the unloading does not cause reverse yielding.',
+        chip('info', 'unloading'), `surface residual ${q('stress', cf.resSurf)}; permanent twist ${q('angle', cf.phiP)}`),
+      card('<i>R</i><sub>T</sub> = <i>T</i><sub>U</sub><i>c</i>/<i>J</i>', 'the elastic formula applied at the ultimate torque: the modulus of rupture in torsion (§3.6).', 'Overstates the true ultimate shear stress of a ductile material (by up to 4/3 for a flat plateau).',
+        chip('info', 'definition'), `here Tc/J = ${q('stress', cf.T * cf.c / cf.J)} vs τ_Y = ${q('stress', p.tauY)}`),
+      card('<i>σ</i><sub>45°</sub> = ±<i>τ</i>', 'equilibrium of an element cut at 45° in pure shear (§3.1C).', 'Explains the 45° helical fracture of brittle materials, which fail in tension.',
+        mat.law === 'tanh' ? chip('warn', 'governs this material') : chip('info', 'reference'), `σ on 45° planes = ${q('stress', Math.abs(M.tauOf(lawMat(), cf.c * cf.th)))}`),
+    ];
+    $('cards').innerHTML = cards.join('');
+  }
+  const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+
+  // =============================================================== rectangle
+  function updateRect() {
+    const a = Math.max(p.a, p.b), b = Math.min(p.a, p.b);
+    const s = M.rectSeries(a, b), f = M.rectFD(a, b, p.Nfd);
+    const G = p.Gnc, T = p.T;
+    const tauS = T / (s.c1 * a * b * b), tauF = T / (f.c1 * a * b * b);
+    const thS = T / (s.c2 * a * b ** 3 * G), thF = T / (f.c2 * a * b ** 3 * G);
+    R = { kind: 'rect', s, f };
+    $('diag-txt').textContent = `a/b = ${S.fmt(a / b, 3)}`;
+    drawRectDiagram(a, b, tauS);
+    const Jpol = a * b * (a * a + b * b) / 12, cdiag = Math.hypot(a, b) / 2;
+    $('stats').innerHTML = [st('c₁ (series)', S.fmt(s.c1, 5)), st('c₂ (series)', S.fmt(s.c2, 5)), st('Maximum shear stress', q('stress', tauS)),
+      st('Angle of twist over L', q('angle', thS * p.L)), st('Torsional constant c₂ab³', q('inertia', s.c2 * a * b ** 3)), st('Polar moment of area (not the torsional constant)', q('inertia', Jpol))].join('');
+    // plot 1: coefficients vs aspect ratio
+    const rs = Array.from({ length: 80 }, (_, i) => Math.pow(10, i / 79));
+    const ser = rs.map((r) => M.rectSeries(r, 1));
+    plots.p1.o.xlabel = 'Aspect ratio, a/b'; plots.p1.o.ylabel = 'Coefficient';
+    plots.p1.draw({ series: [
+      { x: rs, y: ser.map((c) => c.c1), role: 'theory', label: 'c₁ (series), τ_max = T/(c₁ab²)' },
+      { x: rs, y: ser.map((c) => c.c2), role: 'third', label: 'c₂ (series), φ = TL/(c₂ab³G)' },
+      { x: [a / b, a / b], y: [f.c1, f.c2], role: 'numeric', markers: true, r: 4, width: 0.01, label: `Finite differences at a/b = ${S.fmt(a / b, 3)} (N = ${p.Nfd})` },
+    ], xlim: [1, 10], ylim: [0.1, 0.36], segs: [{ x0: 1, y0: 1 / 3, x1: 10, y1: 1 / 3, role: 'mutedline', dash: '4 3', width: 1, label: 'thin strip: 1/3' }],
+      desc: 'Torsion coefficients c1 and c2 of a rectangle versus aspect ratio; both approach 1/3 for a thin strip.' });
+    $('h-p1').textContent = 'Rectangle coefficients vs. aspect ratio (§3.9)';
+    $('cap1').innerHTML = `Both coefficients approach 1/3 as the strip becomes thin (dashed line). For a/b = ${S.fmt(a / b, 3)}: c₁ = ${S.fmt(s.c1, 4)}, c₂ = ${S.fmt(s.c2, 4)}. The markers are the finite-difference solution on an ${f.nx} × ${f.ny} grid.`;
+    // plot 2: shear along the short centre line
+    const ys = Array.from({ length: 101 }, (_, i) => b * i / 100);
+    const lu = S.unit('length'), su = S.unit('stress');
+    const GT = G * thS;
+    plots.p2.o.logx = false;
+    plots.p2.o.xlabel = `Distance across the short side from a long edge, y (${lu})`; plots.p2.o.ylabel = `Shear stress, τ (${su})`;
+    plots.p2.draw({ series: [
+      { x: ys.map((y) => S.conv('length', y)), y: ys.map((y) => S.conv('stress', GT * M.rectSeriesMidline(a, b, y))), role: 'theory', label: 'Series solution' },
+      { x: f.ys.map((y) => S.conv('length', y)), y: f.ts.map((t) => S.conv('stress', G * thF * t)), role: 'numeric', markers: true, r: 2.6, label: 'Finite differences' },
+    ], xlim: [0, S.conv('length', b)], ylim: lim([GT * 1.05, -GT * 0.05].map((v) => S.conv('stress', v * b)), false), desc: 'Shear stress along the short centre line of the rectangle: largest at the long edges, zero at the centre.' });
+    $('h-p2').textContent = 'Shear stress along the short centre line';
+    $('cap2').innerHTML = 'The stress is largest at the middle of each long side and zero at the centre; at the corners it is zero. Unlike a circle, the cross-section warps, so plane sections do not stay plane and τ is not proportional to the distance from the centre.';
+    const rows = [
+      ['Maximum shear stress, T/(c₁ab²)', 'stress', tauS, tauF, 'disc'],
+      ['Angle of twist over L, TL/(c₂ab³G)', 'angle', thS * p.L, thF * p.L, 'disc'],
+      ['Circular formula misused: T·(half diagonal)/J_polar vs. finite differences', 'stress', T * cdiag / Jpol, tauF, 'model'],
+      ['Circular twist formula misused: TL/(J_polar G) vs. finite differences', 'angle', T * p.L / (Jpol * G), thF * p.L, 'model'],
+    ];
+    renderReadout(rows, `Numerical: finite differences for the Prandtl stress function on a ${f.nx} × ${f.ny} grid (${f.iters} conjugate-gradient iterations).`);
+    const Ns = a / b > 4 ? [2, 4, 8, 16] : [2, 4, 8, 16, 32];
+    const cv = M.rectConvergence(a, b, Ns);
+    R.conv = { kind: 'fd', rows: cv.rows, slope: cv.slope, slopeK: cv.slopeK };
+    plots.conv.o.xlabel = 'Grid cells across the short side, N';
+    plots.conv.draw({ series: [
+      { x: cv.rows.map((r) => r.N), y: cv.rows.map((r) => Math.max(r.errC2, 1e-16)), role: 'numeric', markers: true, r: 3, label: 'Error in c₂ (twist)' },
+      { x: cv.rows.map((r) => r.N), y: cv.rows.map((r) => Math.max(r.errK, 1e-16)), role: 'third', markers: true, r: 3, label: 'Error in τ_max' },
+      { x: [2, 32], y: [cv.rows[0].errC2, cv.rows[0].errC2 / 256], role: 'theory', width: 1, dash: '2 3', label: 'reference: error ∝ N⁻²', hover: false }],
+      xlim: [1.6, 40], ylim: [1e-7, 1], desc: `Finite-difference convergence: order ${S.fmt(cv.slope, 3)} for c2.` });
+    $('cap-conv').innerHTML = `Observed order ${S.fmt(cv.slope, 3)} for c₂ and ${S.fmt(cv.slopeK, 3)} for τ_max (5-point stencil and one-sided second-order derivative: 2 expected).`;
+    const W = [];
+    const misuse = (T * cdiag / Jpol - tauF) / tauF;
+    W.push(['bad', `Applying the circular formula τ = Tc/J (with J = polar moment, c = half diagonal) is ${S.fmt(100 * misuse, 3)} % off the true maximum stress, and it puts the maximum at the corners, where the stress is actually zero.`]);
+    if (a / b > 5) W.push(['ok', `Thin strip: c₁ ≈ c₂ ≈ 1/3 within ${S.fmt(100 * Math.abs(s.c1 - 1 / 3) * 3, 2)} %, so τ_max ≈ 3T/(ab²).`]);
+    $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join('');
+    $('cards').innerHTML = [
+      card('<i>τ</i><sub>max</sub> = <i>T</i>/(<i>c</i>₁<i>ab</i>²),&nbsp; <i>φ</i> = <i>TL</i>/(<i>c</i>₂<i>ab</i>³<i>G</i>)', 'the elasticity solution for a rectangle (Saint-Venant), tabulated in §3.9; here c₁ and c₂ come from its series.', 'Elastic, prismatic, free warping. The maximum is at the middle of the long sides.', chip('ok', 'valid'), `c₁ = ${S.fmt(s.c1, 4)}, c₂ = ${S.fmt(s.c2, 4)}`),
+      card('<i>τ</i> = <i>Tρ</i>/<i>J</i>', 'circular shafts only: it relies on plane sections staying plane (§3.1B).', 'Fails for any noncircular section, which warps.', chip('bad', 'does not apply'), `would give ${q('stress', T * cdiag / Jpol)}`),
+    ].join('');
+  }
+  function drawRectDiagram(a, b, tauS) {
+    const W = Math.round(Math.max(340, Math.min(900, $('diagram').clientWidth || 900))), H = 210;
+    const sc = Math.min((W - 80) / a, 150 / b), w = a * sc, h = b * sc, x0 = (W - w) / 2, y0 = (H - h) / 2;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Rectangular section ${q('length', a)} by ${q('length', b)}; maximum shear stress ${q('stress', tauS)} at the middle of the long sides.">
+      <rect x="${x0}" y="${y0}" width="${w}" height="${h}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.5"/>
+      <path d="M${x0 + w / 2 - 30} ${y0 - 8}L${x0 + w / 2 + 30} ${y0 - 8}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x0 + w / 2 + 36} ${y0 - 8}L${x0 + w / 2 + 24} ${y0 - 14}L${x0 + w / 2 + 24} ${y0 - 2}Z" style="fill:var(--numeric)"/>
+      <path d="M${x0 + w / 2 + 30} ${y0 + h + 8}L${x0 + w / 2 - 30} ${y0 + h + 8}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x0 + w / 2 - 36} ${y0 + h + 8}L${x0 + w / 2 - 24} ${y0 + h + 2}L${x0 + w / 2 - 24} ${y0 + h + 14}Z" style="fill:var(--numeric)"/>
+      <text x="${x0 + w / 2}" y="${y0 - 18}" text-anchor="middle" style="fill:var(--numeric);font-size:12px">τ_max = ${q('stress', tauS, 3)}</text>
+      <circle cx="${x0}" cy="${y0}" r="4" style="fill:var(--fourth)"/><text x="${x0 + 6}" y="${y0 + 16}" style="fill:var(--fourth);font-size:11px">corner: τ = 0</text>
+      <text x="${x0 + w / 2}" y="${y0 + h / 2 + 4}" text-anchor="middle" style="fill:var(--ink);font-size:12px">a = ${q('length', a, 3)} × b = ${q('length', b, 3)}</text>
+    </svg>`;
+  }
+
+  // =============================================================== thin-walled tube
+  function updateTube() {
+    const G = p.Gnc, T = p.T;
+    const br = M.tubeBredt(p.dt, p.t, T, G), ex = M.tubeExact(p.dt, p.t, T, G);
+    const c = p.dt / 2, ci = c - p.t, rm = c - p.t / 2;
+    R = { kind: 'tube', br, ex };
+    $('diag-txt').textContent = `t/r_m = ${S.fmt(p.t / rm, 3)}`;
+    const W = Math.round(Math.max(340, Math.min(900, $('diagram').clientWidth || 900))), H = 210, cx = W / 2, cy = H / 2, Rp = 90;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tube with wall thickness ${q('length', p.t)}"><circle cx="${cx}" cy="${cy}" r="${Rp}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.5"/><circle cx="${cx}" cy="${cy}" r="${Rp * ci / c}" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.5"/><circle cx="${cx}" cy="${cy}" r="${Rp * rm / c}" style="fill:none;stroke:var(--theory);stroke-dasharray:4 3"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" style="fill:var(--theory);font-size:12px">mid-wall circle, A_m = ${q('area', Math.PI * rm * rm, 3)}</text></svg>`;
+    $('stats').innerHTML = [st('τ, Bredt (uniform)', q('stress', br.tau)), st('τ_max exact (outer surface)', q('stress', ex.tau)), st('τ exact (inner surface)', q('stress', ex.tauIn)),
+      st('φ over L, Bredt', q('angle', br.theta * p.L)), st('φ over L, exact', q('angle', ex.theta * p.L)), st('t/r_m', S.fmt(p.t / rm, 3))].join('');
+    const ratios = Array.from({ length: 80 }, (_, i) => 0.01 + 1.99 * i / 79);
+    const err = ratios.map((x) => { const rmm = 1, t = x * rmm, d = 2 * (rmm + t / 2); const b1 = M.tubeBredt(d, t, 1, 1), e1 = M.tubeExact(d, t, 1, 1); return [(b1.tau - e1.tau) / e1.tau, (b1.theta - e1.theta) / e1.theta]; });
+    plots.p1.o.logx = false;
+    plots.p1.o.xlabel = 'Wall thickness / mid-wall radius, t/r_m'; plots.p1.o.ylabel = 'Bredt error relative to exact (%)';
+    plots.p1.draw({ series: [
+      { x: ratios, y: err.map((e) => 100 * e[0]), role: 'theory', label: 'Maximum shear stress' },
+      { x: ratios, y: err.map((e) => 100 * e[1]), role: 'third', label: 'Angle of twist' },
+      { x: [p.t / rm], y: [100 * (br.tau - ex.tau) / ex.tau], role: 'numeric', markers: true, r: 4, width: 0.01, label: 'current tube' },
+    ], xlim: [0, 2], ylim: lim(err.flatMap((e) => [100 * e[0], 100 * e[1]])), bands: [{ x0: 0.2, x1: 2, label: 'error beyond 10 %', legend: 'thin-wall assumption breaks' }],
+      desc: 'Error of the thin-walled formulas relative to the exact hollow-circle solution as the wall gets thicker.' });
+    $('h-p1').textContent = 'Thin-wall formula error vs. wall thickness (§3.10)';
+    $('cap1').innerHTML = 'Bredt\'s formula assumes τ is uniform through the wall. For a circular tube it underestimates the outer-surface stress by about t/(2r_m).';
+    const rs = Array.from({ length: 61 }, (_, i) => ci + p.t * i / 60);
+    const prof = M.ringProfile({ law: 'epp', G: G, tauY: 1e30 }, c, ci, ex.theta, 24);
+    plots.p2.o.xlabel = `Radius, ρ (${S.unit('length')})`; plots.p2.o.ylabel = `Shear stress, τ (${S.unit('stress')})`;
+    plots.p2.draw({ series: [
+      { x: rs.map((r) => S.conv('length', r)), y: rs.map((r) => S.conv('stress', T * r / ex.J)), role: 'theory', label: 'Exact, Tρ/J' },
+      { x: rs.map((r) => S.conv('length', r)), y: rs.map(() => S.conv('stress', br.tau)), role: 'third', label: 'Bredt, uniform T/(2tA_m)' },
+      { x: prof.r.map((r) => S.conv('length', r)), y: prof.tau.map((t) => S.conv('stress', t)), role: 'numeric', markers: true, r: 2.4, label: 'Ring values (elastic)' },
+    ], xlim: [S.conv('length', ci), S.conv('length', c)], ylim: lim([T * ci / ex.J, T * c / ex.J, br.tau].map((v) => S.conv('stress', v))), desc: 'Shear stress through the tube wall: exact linear distribution versus the uniform thin-wall value.' });
+    $('h-p2').textContent = 'Shear stress through the wall';
+    $('cap2').innerHTML = 'The exact stress rises linearly through the wall; Bredt replaces it with its mid-wall value.';
+    const Tring = M.torqueRings({ law: 'epp', G: G, tauY: 1e30 }, c, ci, ex.theta, 64);
+    renderReadout([
+      ['Torque from ring integration at the exact twist (check)', 'moment', T, Tring, 'disc'],
+      ['Maximum shear stress: Bredt vs. exact', 'stress', br.tau, ex.tau, 'model'],
+      ['Angle of twist over L: Bredt vs. exact', 'angle', br.theta * p.L, ex.theta * p.L, 'model'],
+    ], 'Numerical check: ring integration of the elastic stress through the wall; the Bredt rows compare two closed forms.');
+    const cv = M.ringConvergence({ law: 'epp', G: G, tauY: 1e30 }, c, ci, ex.theta, T);
+    R.conv = { kind: 'rings', rows: cv.rows, slope: cv.slope };
+    plots.conv.o.xlabel = 'Rings through the wall, N';
+    plots.conv.draw({ series: [{ x: cv.rows.map((r) => r.N), y: cv.rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: 'Relative error in T' }], xlim: [0.8, 320], ylim: [1e-16, 1], desc: 'Ring integration convergence for the tube.' });
+    $('cap-conv').innerHTML = `Observed order ${S.fmt(cv.slope, 3)} (2 expected).`;
+    const e = (br.tau - ex.tau) / ex.tau;
+    $('warnings').innerHTML = [[Math.abs(e) > 0.1 ? 'bad' : Math.abs(e) > 0.05 ? 'warn' : 'ok', `Bredt's thin-wall formula is ${S.fmt(100 * e, 3)} % off the exact maximum stress at t/r_m = ${S.fmt(p.t / rm, 3)}.`]]
+      .map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join('');
+    $('cards').innerHTML = [
+      card('<i>τ</i> = <i>T</i>/(2<i>tA</i><sub>m</sub>),&nbsp; <i>φ</i> = <i>TL</i>∮d<i>s</i>/<i>t</i> /(4<i>A</i><sub>m</sub>²<i>G</i>)', 'constant shear flow q = τt around a thin closed wall (§3.10).', 'Thin walls: τ assumed uniform through t.', Math.abs(e) > 0.05 ? chip('warn', 'wall too thick') : chip('ok', 'valid'), `q = τt = ${q('stress', br.tau * p.t * 1e3, 4)}·mm`),
+      card('<i>τ</i> = <i>Tρ</i>/<i>J</i>,&nbsp; <i>J</i> = π(<i>c</i>⁴ − <i>c</i><sub>i</sub>⁴)/2', 'exact for any hollow circle (§3.1C).', 'Elastic.', chip('ok', 'exact'), `J = ${q('inertia', ex.J)}`),
+    ].join('');
+  }
+
+  // =============================================================== shared renderers
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v, kind]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-300);
+      let status;
+      if (kind === 'model') status = chip('info', 'different models');
+      else if (d < 1e-6) status = chip('ok', 'agree');
+      else if (d < 1e-2) status = chip('ok', 'agree (discretization)');
+      else if (d < 5e-2) status = chip('warn', 'coarse: refine N');
+      else status = chip('bad', 'check');
+      return `<tr><td>${n}</td><td class="v">${q(qq, c)}</td><td class="v">${q(qq, v)}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${status}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+
+  // =============================================================== experiments
+  const EXPERIMENTS = [
+    ['Aluminum is not elastic–perfectly plastic', '6061-T6 specimen twisted to 10° over the gage: compare the material curve with the §3.7 formula.', () => { applyPreset('al'); }],
+    ['Elastic formula beyond yield', 'Steel specimen at 120°: τ = Tc/J (the modulus of rupture) vs. the actual surface stress.', () => { applyPreset('steel'); p.phi = 120 * Math.PI / 180; }],
+    ['Overload, then unload', 'Steel, EPP law, twisted to 3φ_Y and released: residual stress and permanent twist.', () => { applyPreset('steel'); p.law = 'epp'; p.phi = 3 * p.tauY * p.L / (p.G * p.d / 2); p.view = 'unloaded'; }],
+    ['Cast iron breaks on a helix', 'Brittle specimen twisted until the 45° tensile stress reaches the tensile strength.', () => { applyPreset('ci'); p.phi = 5.3 * Math.PI / 180; }],
+    ['Circular formula on a square bar', 'Square 10 mm × 10 mm bar: τ = Tc/J vs. the elasticity solution.', () => { applyPreset('rect'); p.a = 10e-3; p.b = 10e-3; }],
+    ['Thin strip', 'Rectangle 100 mm × 5 mm: both coefficients approach 1/3.', () => { applyPreset('rect'); p.a = 100e-3; p.b = 5e-3; p.Nfd = 8; }],
+    ['Thin wall gets thick', 'Tube with t/r_m = 0.5: how wrong is Bredt\'s formula?', () => { applyPreset('tube'); p.dt = 50e-3; p.t = 10e-3; }],
+    ['Refine the rings', 'Steel, EPP law, N = 1 ring: compare with the closed form, then raise N.', () => { applyPreset('steel'); p.law = 'epp'; p.N = 1; }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); setAll(); update(); });
+
+  // =============================================================== export
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'circ') {
+      const c = p.d / 2, ci = p.di / 2, lm = lawMat();
+      const rows = Array.from({ length: 101 }, (_, i) => p.phi * i / 100).map((f) => [S.plain(deg(f)), S.plain(S.conv('moment', M.eppTorque(c, ci, p.G, p.tauY, f / p.L))), S.plain(S.conv('moment', M.torqueRings(lm, c, ci, f / p.L, p.N)))]);
+      S.exportCSV('lab03_torque_twist.csv', S.toCSV(['phi_deg', `T_EPP_closed_${u('moment')}`, `T_rings_${u('moment')}`], rows), panel);
+    } else if (R.kind === 'rect') {
+      const rows = Array.from({ length: 80 }, (_, i) => Math.pow(10, i / 79)).map((r) => { const s = M.rectSeries(r, 1); return [S.plain(r), S.plain(s.c1), S.plain(s.c2)]; });
+      S.exportCSV('lab03_rect_coefficients.csv', S.toCSV(['a_over_b', 'c1', 'c2'], rows), panel);
+    } else {
+      const rows = Array.from({ length: 41 }, (_, i) => 0.05 * i + 0.01).map((x) => { const t = x, d = 2 * (1 + t / 2); const b1 = M.tubeBredt(d, t, 1, 1), e1 = M.tubeExact(d, t, 1, 1); return [S.plain(x), S.plain((b1.tau - e1.tau) / e1.tau), S.plain((b1.theta - e1.theta) / e1.theta)]; });
+      S.exportCSV('lab03_thin_wall_error.csv', S.toCSV(['t_over_rm', 'tau_rel_error', 'twist_rel_error'], rows), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v, kind]) => [n, S.plain(S.conv(qq, c)), S.plain(S.conv(qq, v)), S.unit(qq), kind]);
+    S.exportCSV('lab03_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'comparison'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    const rows = R.conv.kind === 'fd' ? R.conv.rows.map((r) => [r.N, S.plain(r.errC2), S.plain(r.errK)]) : R.conv.rows.map((r) => [r.N, S.plain(r.err)]);
+    S.exportCSV('lab03_convergence.csv', S.toCSV(R.conv.kind === 'fd' ? ['cells_across_b', 'rel_error_c2', 'rel_error_tau_max'] : ['rings', 'rel_error_T'], rows), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('steel');
+})();
+</script>
+</body>
+</html>

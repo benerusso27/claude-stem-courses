@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mohr's Circle and Rosettes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 8: transformation of stress and strain (Beer 7.1-7.4, 7.6, 7.7, 7.9, 8.3). Draggable Mohr's circle with a rotating element, three-dimensional Mohr's circles, strain rosettes with misalignment and transverse sensitivity, and a tube under bending, torsion and internal pressure.">
+<style>
+/*@@SIM_CORE_CSS@@*/
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; touch-action: none; }
+.diagram svg .handle { cursor: grab; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chk { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 8 · Beer 8e §7.1–7.4, §7.6, §7.7, §7.9, §8.3</div>
+      <h1>Transformation of stress and strain: Mohr's circle, strain rosettes, and a tube under combined loads</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> tension positive; τ<sub>xy</sub> &gt; 0 acts on the +x face in the +y direction (Fig. 7.2); θ is measured counterclockwise from x. Mohr's circle: a face whose shear stress turns the element clockwise is plotted above the σ axis (Fig. 7.15), so X = (σ<sub>x</sub>, −τ<sub>xy</sub>), and turning the element by θ moves the point by 2θ in the same sense. Strain: ε(θ) = ε<sub>x</sub> cos²θ + ε<sub>y</sub> sin²θ + γ<sub>xy</sub> sin θ cos θ (Eq. 7.41); Mohr's circle for strain plots (ε, γ/2) by the same rule. On the tube, x runs along the tube toward the free end and y is 90° counterclockwise from x as seen from outside the tube; rosette gage a is along x, b at 45° and c at 90°. <b>Blue solid</b> = closed form; <b>vermillion markers</b> = independent numerical method; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="partA">Lab Part A: load on the axis, rosette H</option>
+          <option value="partAK">Lab Part A: load on the axis, rosette K</option>
+          <option value="partB">Lab Part B: load on the lever, rosette H</option>
+          <option value="partBK">Lab Part B: load on the lever, rosette K</option>
+          <option value="partC">Lab Part C: pressure 8 MPa, rosette H</option>
+          <option value="partCc">Lab Part C: 8 MPa and the lever load, H</option>
+          <option value="partCcK">Lab Part C: 8 MPa and the lever load, K</option>
+          <option value="rosHB">Rosette H, Part B sample readings</option>
+          <option value="rosKB">Rosette K, Part B sample readings</option>
+          <option value="crooked">Rosette turned 5° (Part B state at H)</option>
+          <option value="ktbig">Rosette with Kt = 4 % (Part B state at H)</option>
+          <option value="uniax">Uniaxial tension</option>
+          <option value="pureshear">Pure shear</option>
+          <option value="biax">Equal biaxial tension</option>
+          <option value="gen3d">General three-dimensional state</option>
+          <option value="thick">Thick tube under pressure</option>
+          <option value="design">D1: pressurized swivel arm, inner surface</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel" id="panel-stress">
+      <div class="group" id="grp-stress"><div class="group-title">Stress components at the point</div>
+        <label class="chk"><input type="checkbox" id="gen3"> General 3-D state (τ<sub>yz</sub>, τ<sub>zx</sub> not zero)</label></div>
+    </section>
+    <section class="panel" id="panel-ros">
+      <div class="group" id="grp-ros">
+        <div class="group-title">Rosette and readings</div>
+        <div><label class="small" for="ros">Rosette</label>
+          <select id="ros"><option value="rect">Rectangular 0°/45°/90° (Fig. 7.64)</option><option value="delta">Delta 0°/60°/120°</option><option value="custom">Any three angles (Eq. 7.60)</option></select></div>
+        <label class="chk"><input type="checkbox" id="ktcorr"> Correct for transverse sensitivity K<sub>t</sub></label>
+      </div>
+    </section>
+    <section class="panel" id="panel-tube">
+      <div class="group" id="grp-tube">
+        <div class="group-title">Tube, loads and point</div>
+        <div class="row2">
+          <div><label class="small" for="surf">Surface</label><select id="surf"><option value="outer">Outer (gages)</option><option value="inner">Inner</option></select></div>
+          <div><label class="small" for="wall">Pressure stresses</label><select id="wall"><option value="lame">Thick wall (Lamé)</option><option value="thin">Thin wall, pr/t</option></select></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-common">
+        <div class="group-title">Element and material</div>
+        <div><label class="small" for="mat">Material (σ<sub>Y</sub> for the failure criteria)</label><select id="mat"></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical methods</div></div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay"><option value="auto">Matching part of sample_data.csv</option><option value="none">No sample data</option></select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">Mohr's circle and the element</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <p class="plot-caption" id="cap-diag"></p>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: plane stress and plane strain transformation (Beer §7.1–7.2, §7.7), three-dimensional principal stresses (§7.3–7.4), strain rosettes (§7.9) with a rosette turned by β and gage transverse sensitivity K<sub>t</sub>, and a circular tube under bending, torsion, transverse shear and internal pressure (§8.3, §7.6, and the thick-wall Lamé solution). Independent numerical methods: tensor rotation R·S·Rᵀ, Jacobi eigenvalue iterations, Gaussian elimination, a sweep over all directions, Simpson quadrature for Q and a finite-difference solution of the thick cylinder. Verified by <span class="num">tests/test_lab08_model.js</span> and <span class="num">tests/test_lab08_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 8 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 8 physics — pure functions, SI base units (N, m, Pa, rad; strain dimensionless). Loaded unchanged by the Node tests. */
+const Lab8Model = (() => {
+  'use strict';
+  const MATERIALS = {
+    al: { name: '6061-T6 aluminum', E: 68.9e9, nu: 0.33, sY: 273.7e6 },
+    steel: { name: '1018 steel', E: 205e9, nu: 0.29, sY: 296.2e6 },
+  };
+  const D = Math.PI / 180;
+
+  // ---------------- stress at a point (Beer §7.1–7.4) ----------------
+  function transform(sx, sy, txy, th) {         // Eqs. 7.5–7.7
+    const a = (sx + sy) / 2, d = (sx - sy) / 2, c = Math.cos(2 * th), s = Math.sin(2 * th);
+    return { sx1: a + d * c + txy * s, sy1: a - d * c - txy * s, t1: -d * s + txy * c };
+  }
+  function mohr(sx, sy, txy) {                  // Eqs. 7.10–7.15
+    const ave = (sx + sy) / 2, R = Math.hypot((sx - sy) / 2, txy), thp = 0.5 * Math.atan2(txy, (sx - sy) / 2);
+    return { ave, R, s1: ave + R, s2: ave - R, thp, ths: thp - Math.PI / 4 };
+  }
+  function rotNum(sx, sy, txy, th) {            // numerical: R S R^T by matrix products (no double-angle formulas)
+    const c = Math.cos(th), s = Math.sin(th), Rm = [[c, s], [-s, c]], S = [[sx, txy], [txy, sy]];
+    const RS = [[0, 0], [0, 0]], out = [[0, 0], [0, 0]];
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) for (let k = 0; k < 2; k++) RS[i][j] += Rm[i][k] * S[k][j];
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) for (let k = 0; k < 2; k++) out[i][j] += RS[i][k] * Rm[j][k];
+    return { sx1: out[0][0], sy1: out[1][1], t1: out[0][1] };
+  }
+  function sweep(sx, sy, txy, N) {              // numerical: largest and smallest sigma_x' and tau over N directions
+    let smax = -Infinity, smin = Infinity, tmax = -Infinity, thmax = 0;
+    for (let k = 0; k < N; k++) {
+      const th = -Math.PI / 2 + Math.PI * k / N, r = rotNum(sx, sy, txy, th);
+      if (r.sx1 > smax) { smax = r.sx1; thmax = th; }
+      if (r.sx1 < smin) smin = r.sx1;
+      if (r.t1 > tmax) tmax = r.t1;
+    }
+    return { smax, smin, tmax, thmax };
+  }
+  function jacobi(A0, tol = 1e-14, maxSweeps = 60) {   // numerical: cyclic Jacobi rotations on a symmetric 3x3
+    const A = A0.map((r) => r.slice()), V = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    const off = () => Math.hypot(A[0][1], A[0][2], A[1][2]);
+    const scale = Math.max(1e-300, Math.hypot(...A.flat()));
+    let sweeps = 0;
+    while (off() > tol * scale && sweeps < maxSweeps) {
+      sweeps++;
+      for (const [p, q] of [[0, 1], [0, 2], [1, 2]]) {
+        if (Math.abs(A[p][q]) < 1e-300) continue;
+        const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+        const t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        for (let k = 0; k < 3; k++) { const akp = A[k][p], akq = A[k][q]; A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq; }
+        for (let k = 0; k < 3; k++) { const apk = A[p][k], aqk = A[q][k]; A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk; }
+        for (let k = 0; k < 3; k++) { const vkp = V[k][p], vkq = V[k][q]; V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq; }
+      }
+    }
+    const idx = [0, 1, 2].sort((i, j) => A[j][j] - A[i][i]);
+    return { vals: idx.map((i) => A[i][i]), vecs: idx.map((i) => [V[0][i], V[1][i], V[2][i]]), sweeps };
+  }
+  function eig3closed(S) {                       // closed form: trigonometric solution of the characteristic cubic
+    const [[a, d, f], [, b, e], [, , c]] = S;
+    const p1 = d * d + e * e + f * f, q = (a + b + c) / 3;
+    if (p1 < 1e-30 * (a * a + b * b + c * c + 1e-300)) return [a, b, c].sort((x, y) => y - x);
+    const p2 = (a - q) ** 2 + (b - q) ** 2 + (c - q) ** 2 + 2 * p1, pp = Math.sqrt(p2 / 6);
+    const B = [[(a - q) / pp, d / pp, f / pp], [d / pp, (b - q) / pp, e / pp], [f / pp, e / pp, (c - q) / pp]];
+    const det = B[0][0] * (B[1][1] * B[2][2] - B[1][2] * B[2][1]) - B[0][1] * (B[1][0] * B[2][2] - B[1][2] * B[2][0]) + B[0][2] * (B[1][0] * B[2][1] - B[1][1] * B[2][0]);
+    const r = Math.min(1, Math.max(-1, det / 2)), ph = Math.acos(r) / 3;
+    const l1 = q + 2 * pp * Math.cos(ph), l3 = q + 2 * pp * Math.cos(ph + 2 * Math.PI / 3);
+    return [l1, 3 * q - l1 - l3, l3];
+  }
+  function principal3(st) {                      // st: {sx, sy, sz, txy, tyz, tzx}; closed form (Mohr when z is principal)
+    if (!st.tyz && !st.tzx) { const m = mohr(st.sx, st.sy, st.txy); return [m.s1, m.s2, st.sz || 0].sort((x, y) => y - x); }
+    return eig3closed([[st.sx, st.txy, st.tzx], [st.txy, st.sy, st.tyz], [st.tzx, st.tyz, st.sz]]);
+  }
+  const tensor3 = (st) => [[st.sx, st.txy, st.tzx || 0], [st.txy, st.sy, st.tyz || 0], [st.tzx || 0, st.tyz || 0, st.sz || 0]];
+  const vonMises = (p) => Math.sqrt(((p[0] - p[1]) ** 2 + (p[1] - p[2]) ** 2 + (p[2] - p[0]) ** 2) / 2);
+  const trescaEq = (p) => p[0] - p[2];          // 2 * absolute max shear
+
+  // ---------------- strain and rosettes (Beer §7.7, §7.9) ----------------
+  const strainAt = (ex, ey, g, th) => ex * Math.cos(th) ** 2 + ey * Math.sin(th) ** 2 + g * Math.sin(th) * Math.cos(th);   // Eq. 7.41
+  const ANGLES = { rect: [0, 45 * D, 90 * D], delta: [0, 60 * D, 120 * D] };
+  function rosClosed(type, ea, eb, ec) {
+    if (type === 'rect') return { ex: ea, ey: ec, g: 2 * eb - ea - ec };                       // Eq. 7.43
+    if (type === 'delta') return { ex: ea, ey: (2 * (eb + ec) - ea) / 3, g: 2 * (eb - ec) / Math.sqrt(3) };
+    return null;
+  }
+  function gauss3(A0, b0) {                      // Gaussian elimination with partial pivoting
+    const A = A0.map((r) => r.slice()), b = b0.slice(), n = 3;
+    for (let k = 0; k < n; k++) {
+      let piv = k; for (let i = k + 1; i < n; i++) if (Math.abs(A[i][k]) > Math.abs(A[piv][k])) piv = i;
+      [A[k], A[piv]] = [A[piv], A[k]]; [b[k], b[piv]] = [b[piv], b[k]];
+      if (Math.abs(A[k][k]) < 1e-12) return null;
+      for (let i = k + 1; i < n; i++) { const m = A[i][k] / A[k][k]; for (let j = k; j < n; j++) A[i][j] -= m * A[k][j]; b[i] -= m * b[k]; }
+    }
+    const x = [0, 0, 0];
+    for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let j = i + 1; j < n; j++) s -= A[i][j] * x[j]; x[i] = s / A[i][i]; }
+    return x;
+  }
+  const rowAx = (t) => [Math.cos(t) ** 2, Math.sin(t) ** 2, Math.sin(t) * Math.cos(t)];
+  const rowTr = (t) => [Math.sin(t) ** 2, Math.cos(t) ** 2, -Math.sin(t) * Math.cos(t)];
+  function rosNumeric(angles, eps, Kt = 0, nu0 = 0.285) {   // numerical: Eq. 7.60 (with the transverse-sensitivity model) by elimination
+    const c = 1 - nu0 * Kt, A = angles.map((t) => rowAx(t).map((v, i) => (v + Kt * rowTr(t)[i]) / c)), x = gauss3(A, eps);
+    return x ? { ex: x[0], ey: x[1], g: x[2] } : null;
+  }
+  function rosDet(angles) {
+    const A = angles.map(rowAx);
+    return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+  }
+  function ktForward(ex, ey, g, angles, beta = 0, Kt = 0, nu0 = 0.285) {   // what the gages indicate
+    return angles.map((t) => (strainAt(ex, ey, g, t + beta) + Kt * strainAt(ex, ey, g, t + beta + Math.PI / 2)) / (1 - nu0 * Kt));
+  }
+  function ktCorrectRect(ra, rb, rc, Kt, nu0 = 0.285) {    // closed form for a rectangular rosette
+    const c = 1 - nu0 * Kt, ea = c * (ra - Kt * rc) / (1 - Kt * Kt), ec = c * (rc - Kt * ra) / (1 - Kt * Kt);
+    return [ea, (c * rb - Kt * (ea + ec)) / (1 - Kt), ec];
+  }
+  function turn(ex, ey, g, b) {                  // components on axes turned by b (Eqs. 7.44, 7.45, 7.49)
+    const a = (ex + ey) / 2, d = (ex - ey) / 2, c = Math.cos(2 * b), s = Math.sin(2 * b);
+    return { ex: a + d * c + g / 2 * s, ey: a - d * c - g / 2 * s, g: -2 * d * s + g * c };
+  }
+  function hooke(ex, ey, g, E, nu) {             // plane stress (Beer §2.5, §2.7)
+    const k = E / (1 - nu * nu);
+    return { sx: k * (ex + nu * ey), sy: k * (ey + nu * ex), txy: E / (2 * (1 + nu)) * g };
+  }
+  function strainsOf(sx, sy, txy, E, nu) { return { ex: (sx - nu * sy) / E, ey: (sy - nu * sx) / E, g: 2 * (1 + nu) * txy / E }; }
+  // Reduce three readings: closed form (rectangular/delta formulas, then the Kt correction for rectangular), then turn back by beta
+  function rosetteReduce(p) {
+    const angles = p.ros === 'custom' ? [p.ta, p.tb, p.tc] : ANGLES[p.ros], Kt = p.ktcorr ? p.Kt : 0;
+    let cf = null;
+    if (p.ros !== 'custom') {
+      const r = p.ros === 'rect' && Kt ? ktCorrectRect(p.ea, p.eb, p.ec, Kt) : [p.ea, p.eb, p.ec];
+      cf = p.ros === 'rect' || !Kt ? rosClosed(p.ros, ...r) : null;
+    }
+    const nm = rosNumeric(angles, [p.ea, p.eb, p.ec], Kt);
+    if (!cf) cf = nm;
+    if (!cf) return null;
+    const t = turn(cf.ex, cf.ey, cf.g, -p.beta), tn = nm ? turn(nm.ex, nm.ey, nm.g, -p.beta) : null;
+    return { angles, raw: cf, cf: t, nm: tn, Kt };
+  }
+
+  // ---------------- tube (Beer §8.3, §7.6) and the thick cylinder ----------------
+  function tubeProps(Do, Di) {
+    const ro = Do / 2, ri = Di / 2, I = Math.PI * (ro ** 4 - ri ** 4) / 4;
+    return { ro, ri, t: ro - ri, A: Math.PI * (ro * ro - ri * ri), I, J: 2 * I, Qna: (ro ** 3 - ri ** 3) / 3 };
+  }
+  const Qclosed = (ro, ri, phi) => (ro ** 3 - ri ** 3) / 3 * Math.sin(phi);
+  function Qsimpson(ro, ri, phi, N) {            // numerical: 2-D composite Simpson of r^2 cos(psi) over the wall sector
+    const n = N + (N % 2), hr = (ro - ri) / n, hp = phi / n, w = (i) => (i === 0 || i === n ? 1 : i % 2 ? 4 : 2);
+    let s = 0;
+    for (let i = 0; i <= n; i++) for (let j = 0; j <= n; j++) { const r = ri + i * hr, ps = j * hp; s += w(i) * w(j) * r * r * Math.cos(ps); }
+    return s * hr * hp / 9;
+  }
+  function lameClosed(p, ri, ro, r) {
+    const A = p * ri * ri / (ro * ro - ri * ri), B = A * ro * ro;
+    return { sr: A - B / (r * r), st: A + B / (r * r), sx: A };
+  }
+  /* numerical: finite differences on the radial displacement, u'' + u'/r - u/r^2 = 0, sigma_r(ri) = -p, sigma_r(ro) = 0,
+     uniform axial strain ez fixed by the closed-end force p*pi*ri^2 (generalized plane strain); second-order everywhere. */
+  function lameFD(p, ri, ro, E, nu, N) {
+    const lam = E * nu / ((1 + nu) * (1 - 2 * nu)), mu = E / (2 * (1 + nu)), h = (ro - ri) / N, r = (i) => ri + i * h;
+    const solve = (pp, ez) => {
+      const n = N + 1, a = new Float64Array(n), b = new Float64Array(n), c = new Float64Array(n), d = new Float64Array(n);
+      for (let i = 1; i < N; i++) { const ri_ = r(i); a[i] = 1 / (h * h) - 1 / (2 * h * ri_); b[i] = -2 / (h * h) - 1 / (ri_ * ri_); c[i] = 1 / (h * h) + 1 / (2 * h * ri_); d[i] = 0; }
+      // row 0: (lam + 2mu) u' + lam u/r + lam ez = -p with u' = (-3u0 + 4u1 - u2)/(2h); its u2 entry is removed with row 1
+      const k0 = -(lam + 2 * mu) * 3 / (2 * h) + lam / r(0), k1 = (lam + 2 * mu) * 4 / (2 * h), k2 = -(lam + 2 * mu) / (2 * h), rhs = -pp - lam * ez;
+      { const m = k2 / c[1]; b[0] = k0 - m * a[1]; c[0] = k1 - m * b[1]; d[0] = rhs - m * d[1]; }
+      // row N: u' = (3uN - 4uN-1 + uN-2)/(2h)
+      const kN = (lam + 2 * mu) * 3 / (2 * h) + lam / r(N), kN1 = -(lam + 2 * mu) * 4 / (2 * h), kN2 = (lam + 2 * mu) / (2 * h), rN = 0 - lam * ez;
+      { const m = kN2 / a[N - 1]; a[N] = kN1 - m * b[N - 1]; b[N] = kN - m * c[N - 1]; d[N] = rN - m * d[N - 1]; }
+      // Thomas algorithm
+      const cp = new Float64Array(n), dp = new Float64Array(n), u = new Float64Array(n);
+      cp[0] = c[0] / b[0]; dp[0] = d[0] / b[0];
+      for (let i = 1; i < n; i++) { const den = b[i] - a[i] * cp[i - 1]; cp[i] = c[i] / den; dp[i] = (d[i] - a[i] * dp[i - 1]) / den; }
+      u[n - 1] = dp[n - 1];
+      for (let i = n - 2; i >= 0; i--) u[i] = dp[i] - cp[i] * u[i + 1];
+      const du = (i) => (i === 0 ? (-3 * u[0] + 4 * u[1] - u[2]) / (2 * h) : i === N ? (3 * u[N] - 4 * u[N - 1] + u[N - 2]) / (2 * h) : (u[i + 1] - u[i - 1]) / (2 * h));
+      const sz = (i) => lam * (du(i) + u[i] / r(i) + ez) + 2 * mu * ez;
+      let Fz = 0;
+      for (let i = 0; i <= N; i++) Fz += (i === 0 || i === N ? 0.5 : 1) * sz(i) * 2 * Math.PI * r(i) * h;   // trapezoid
+      return { u, du, sz, Fz };
+    };
+    const s0 = solve(p, 0), s1 = solve(0, 1);
+    const ez = (p * Math.PI * ri * ri - s0.Fz) / s1.Fz;
+    const s = solve(p, ez), du = s.du(N), u = s.u[N];
+    const ui = s.u[0], dui = s.du(0);
+    return { sr: lam * (du + u / ro + ez) + 2 * mu * du, st: lam * (du + u / ro + ez) + 2 * mu * u / ro, sx: s.sz(N), ez,
+      inner: { sr: lam * (dui + ui / ri + ez) + 2 * mu * dui, st: lam * (dui + ui / ri + ez) + 2 * mu * ui / ri, sx: s.sz(0) } };
+  }
+  /* Stresses in the local surface frame at angle phi from the top (toward the lever side): sx along the tube, sy around it,
+     txy, and the radial stress sz (zero at the outer surface, -p at the inner). opts.num: use Simpson Q and the FD cylinder. */
+  function tubeState(p, phi, opts = {}) {
+    const tp = tubeProps(p.Do, p.Di), r = p.surf === 'inner' ? tp.ri : tp.ro, F = p.F, T = F * p.aL;
+    const Q = opts.num ? Qsimpson(tp.ro, tp.ri, phi, opts.N || 40) : Qclosed(tp.ro, tp.ri, phi);
+    const sxb = F * p.Lb * r * Math.cos(phi) / tp.I, tauT = T * r / tp.J, tauV = F * Q / (tp.I * tp.t);
+    let sh, sa, sr;
+    if (p.wall === 'thin') { sh = p.p * tp.ri / tp.t; sa = p.p * tp.ri / (2 * tp.t); sr = p.surf === 'inner' ? -p.p : 0; }
+    else if (opts.num) { const fd = lameFD(p.p, tp.ri, tp.ro, MATERIALS[p.mat].E, MATERIALS[p.mat].nu, opts.Nfd || 40), q = p.surf === 'inner' ? fd.inner : fd; sh = q.st; sa = q.sx; sr = q.sr; }
+    else { const l = lameClosed(p.p, tp.ri, tp.ro, r); sh = l.st; sa = l.sx; sr = l.sr; }
+    return { sx: sxb + sa, sy: sh, txy: -(tauT + tauV), sz: sr, tyz: 0, tzx: 0, sxb, tauT, tauV, sh, sa, T, M: F * p.Lb, Q, tp };
+  }
+  function tubeConvergence(p, Ns = [4, 8, 16, 32, 64, 128, 256, 512]) {
+    const tp = tubeProps(p.Do, p.Di), mat = MATERIALS[p.mat], pp = p.p || 1e6;
+    const lc = lameClosed(pp, tp.ri, tp.ro, tp.ro), phi = Math.abs(p.phi) > 1e-6 ? Math.abs(p.phi) : Math.PI / 2, qc = Qclosed(tp.ro, tp.ri, phi);
+    const rows = Ns.map((N) => ({ N, err: Math.abs(lameFD(pp, tp.ri, tp.ro, mat.E, mat.nu, N).st - lc.st) / Math.abs(lc.st), errM: Math.abs(Qsimpson(tp.ro, tp.ri, phi, N) - qc) / Math.abs(qc) }));
+    const fit = (k) => { const q = rows.filter((r) => r[k] > 1e-13); return q.length >= 2 ? linSlope(q.map((r) => Math.log(1 / r.N)), q.map((r) => Math.log(r[k]))) : NaN; };
+    return { rows, slope: fit('err'), slopeM: fit('errM') };
+  }
+  /* Error of the sampled maximum, averaged over 16 positions of the sampling grid (the error of one grid depends on
+     how close a sample happens to fall to theta_p; the average falls smoothly as pi^2 R / (6 N^2)). */
+  function sweepConvergence(sx, sy, txy, Ns = [4, 8, 16, 32, 64, 128, 256, 512, 1024]) {
+    const m = mohr(sx, sy, txy), sc = Math.max(Math.abs(m.s1), Math.abs(m.s2), m.R, 1e-300);
+    const rows = Ns.map((N) => {
+      let e = 0;
+      for (let j = 0; j < 16; j++) {
+        let best = -Infinity;
+        for (let k = 0; k < N; k++) best = Math.max(best, rotNum(sx, sy, txy, -Math.PI / 2 + Math.PI * (k + j / 16) / N).sx1);
+        e += Math.abs(best - m.s1) / sc / 16;
+      }
+      return { N, err: Math.max(e, 1e-17) };
+    });
+    const q = rows.filter((r) => r.err > 1e-13);
+    return { rows, slope: q.length >= 2 ? linSlope(q.map((r) => Math.log(1 / r.N)), q.map((r) => Math.log(r.err))) : NaN };
+  }
+  function linSlope(x, y) { const n = x.length, mx = x.reduce((a, b) => a + b) / n, my = y.reduce((a, b) => a + b) / n; let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } return sxy / sxx; }
+
+  // ---------------- presets ----------------
+  const BASE = { mode: 'tube', mat: 'al', sx: 80e6, sy: -20e6, sz: 0, txy: 30e6, tyz: 0, tzx: 0, gen3: false, th: 0,
+    ros: 'rect', ta: 0, tb: 45 * D, tc: 90 * D, ea: 500e-6, eb: 200e-6, ec: -150e-6, Kt: 0, ktcorr: true, beta: 0, E: 68.46e9, nu: 0.3296,
+    Do: 38.1e-3, Di: 31.75e-3, F: 600, aL: 0.2, Lb: 0.25, p: 0, phi: 0, surf: 'outer', wall: 'lame', Nsw: 36, Nfd: 40 };
+  const P_ = (o) => Object.assign({}, BASE, o);
+  const tubeOf = (o) => P_(Object.assign({ mode: 'tube' }, o));
+  function rosFromTube(o, beta, Kt) {            // readings of a rectangular rosette on the tube state o (true E, nu of the page's material)
+    const s = tubeState(tubeOf(o), o.phi || 0), m = MATERIALS.al, e = strainsOf(s.sx, s.sy, s.txy, m.E, m.nu);
+    const r = ktForward(e.ex, e.ey, e.g, ANGLES.rect, beta, Kt);
+    return { ea: r[0], eb: r[1], ec: r[2] };
+  }
+  const PRESETS = {
+    partA: tubeOf({ aL: 0, phi: 0 }), partAK: tubeOf({ aL: 0, phi: 90 * D }),
+    partB: tubeOf({ phi: 0 }), partBK: tubeOf({ phi: 90 * D }),
+    partC: tubeOf({ F: 0, p: 8e6, phi: 0 }), partCc: tubeOf({ p: 8e6, phi: 0 }), partCcK: tubeOf({ p: 8e6, phi: 90 * D }),
+    rosHB: P_(Object.assign({ mode: 'rosette', Kt: 0.012, beta: 1.45 * D }, rosFromTube({ phi: 0 }, 1.45 * D, 0.012))),
+    rosKB: P_(Object.assign({ mode: 'rosette', Kt: 0.012, beta: -1.0 * D }, rosFromTube({ phi: 90 * D }, -1.0 * D, 0.012))),
+    crooked: P_(Object.assign({ mode: 'rosette', beta: 0 }, rosFromTube({ phi: 0 }, 5 * D, 0))),
+    ktbig: P_(Object.assign({ mode: 'rosette', Kt: 0.04, ktcorr: false }, rosFromTube({ phi: 0 }, 0, 0.04))),
+    uniax: P_({ mode: 'stress', sx: 100e6, sy: 0, txy: 0, th: 30 * D }),
+    pureshear: P_({ mode: 'stress', sx: 0, sy: 0, txy: 50e6, th: 0 }),
+    biax: P_({ mode: 'stress', sx: 60e6, sy: 60e6, txy: 0, th: 20 * D }),
+    gen3d: P_({ mode: 'stress', sx: 60e6, sy: -20e6, sz: 30e6, txy: 40e6, tyz: 25e6, tzx: -15e6, gen3: true }),
+    thick: tubeOf({ F: 0, p: 30e6, Do: 50e-3, Di: 25e-3 }),
+    design: tubeOf({ Do: 44.45e-3, Di: 34.89e-3, F: 1000, aL: 0.3, Lb: 0.3, p: 20e6, phi: 0, surf: 'inner' }),
+  };
+
+  return { MATERIALS, BASE, PRESETS, D, transform, mohr, rotNum, sweep, jacobi, eig3closed, principal3, tensor3, vonMises, trescaEq,
+           strainAt, ANGLES, rosClosed, gauss3, rosNumeric, rosDet, ktForward, ktCorrectRect, turn, hooke, strainsOf, rosetteReduce,
+           tubeProps, Qclosed, Qsimpson, lameClosed, lameFD, tubeState, tubeConvergence, sweepConvergence, linSlope };
+})();
+if (typeof module !== 'undefined') module.exports = Lab8Model;
+</script>
+
+<script id="sample-data" type="application/json">/*@@SAMPLE_DATA@@*/</script>
+<script>
+/*@@SIM_CORE_JS@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab8Model, S = SimCore, $ = (id) => document.getElementById(id), D = M.D;
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'partB';
+  const p = Object.assign({}, M.PRESETS.partB);
+  let R = null;
+
+  $('mat').innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; update(); }); };
+  mk('grp-stress', { id: 'sx', label: 'Normal stress on the x face', sym: 'σ<sub>x</sub>', q: 'stress', min: -400e6, max: 400e6, step: 0.01e6 });
+  mk('grp-stress', { id: 'sy', label: 'Normal stress on the y face', sym: 'σ<sub>y</sub>', q: 'stress', min: -400e6, max: 400e6, step: 0.01e6 });
+  mk('grp-stress', { id: 'txy', label: 'Shear stress on the x face, +y direction', sym: 'τ<sub>xy</sub>', q: 'stress', min: -300e6, max: 300e6, step: 0.01e6 });
+  mk('grp-stress', { id: 'sz', label: 'Normal stress on the z face (zero in plane stress)', sym: 'σ<sub>z</sub>', q: 'stress', min: -400e6, max: 400e6, step: 0.01e6 });
+  mk('grp-stress', { id: 'tyz', label: 'Shear stress τ_yz', sym: 'τ<sub>yz</sub>', q: 'stress', min: -300e6, max: 300e6, step: 0.01e6 });
+  mk('grp-stress', { id: 'tzx', label: 'Shear stress τ_zx', sym: 'τ<sub>zx</sub>', q: 'stress', min: -300e6, max: 300e6, step: 0.01e6 });
+  mk('grp-ros', { id: 'ta', label: 'Direction of gage a', sym: 'θ<sub>a</sub>', q: 'angle', min: 0, max: Math.PI, step: 0.5 * D });
+  mk('grp-ros', { id: 'tb', label: 'Direction of gage b', sym: 'θ<sub>b</sub>', q: 'angle', min: 0, max: Math.PI, step: 0.5 * D });
+  mk('grp-ros', { id: 'tc', label: 'Direction of gage c', sym: 'θ<sub>c</sub>', q: 'angle', min: 0, max: Math.PI, step: 0.5 * D });
+  mk('grp-ros', { id: 'ea', label: 'Reading of gage a', sym: 'ε<sub>a</sub>', q: 'microstrain', min: -5000e-6, max: 5000e-6, step: 1e-6 });
+  mk('grp-ros', { id: 'eb', label: 'Reading of gage b', sym: 'ε<sub>b</sub>', q: 'microstrain', min: -5000e-6, max: 5000e-6, step: 1e-6 });
+  mk('grp-ros', { id: 'ec', label: 'Reading of gage c', sym: 'ε<sub>c</sub>', q: 'microstrain', min: -5000e-6, max: 5000e-6, step: 1e-6 });
+  mk('grp-ros', { id: 'E', label: 'Modulus of elasticity', sym: 'E', q: 'modulus', min: 1e9, max: 400e9, step: 0.01e9 });
+  mk('grp-ros', { id: 'nu', label: "Poisson's ratio", sym: 'ν', q: 'none', min: 0, max: 0.49, step: 0.0001 });
+  mk('grp-ros', { id: 'Kt', label: 'Transverse sensitivity of the gages', sym: 'K<sub>t</sub>', q: 'percent', min: -0.05, max: 0.05, step: 0.0001 });
+  mk('grp-ros', { id: 'beta', label: 'Rosette turned by (ccw, seen from outside)', sym: 'β', q: 'angle', min: -15 * D, max: 15 * D, step: 0.01 * D });
+  mk('grp-tube', { id: 'Do', label: 'Outside diameter', sym: 'D<sub>o</sub>', q: 'length', min: 5e-3, max: 300e-3, step: 0.01e-3 });
+  mk('grp-tube', { id: 'Di', label: 'Inside diameter', sym: 'D<sub>i</sub>', q: 'length', min: 0, max: 299e-3, step: 0.01e-3 });
+  mk('grp-tube', { id: 'F', label: 'Load at the free end (downward)', sym: 'F', q: 'forceN', min: 0, max: 20000, step: 1 });
+  mk('grp-tube', { id: 'aL', label: 'Lever arm of the load (+ toward K)', sym: 'a<sub>L</sub>', q: 'length', min: -1, max: 1, step: 0.0001 });
+  mk('grp-tube', { id: 'Lb', label: 'Gage section to load line', sym: 'L<sub>b</sub>', q: 'length', min: 0.005, max: 3, step: 0.0001 });
+  mk('grp-tube', { id: 'p', label: 'Internal pressure (closed ends)', sym: 'p', q: 'pressure', min: 0, max: 200e6, step: 0.01e6 });
+  mk('grp-tube', { id: 'phi', label: 'Point: angle from the top toward K', sym: 'φ', q: 'angle', min: -Math.PI, max: Math.PI, step: 0.5 * D });
+  mk('grp-common', { id: 'th', label: 'Element turned by (ccw)', sym: 'θ', q: 'angle', min: -Math.PI / 2, max: Math.PI / 2, step: 0.1 * D });
+  mk('grp-num', { id: 'Nsw', label: 'Directions sampled in the sweep', sym: 'N', q: 'none', min: 4, max: 3600, log: true, int: true });
+  mk('grp-num', { id: 'Nfd', label: 'Finite-difference intervals through the wall', sym: 'N<sub>r</sub>', q: 'none', min: 4, max: 2000, log: true, int: true });
+  const modeSeg = S.segmented($('mode'), [['stress', 'Stress at a point'], ['rosette', 'Strain rosette'], ['tube', 'Tube, combined loads']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  for (const id of ['mat', 'ros', 'surf', 'wall']) $(id).addEventListener('change', (e) => { p[id] = e.target.value; update(); });
+  for (const id of ['gen3', 'ktcorr']) $(id).addEventListener('change', (e) => { p[id] = e.target.checked; update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(p[k]);
+    for (const id of ['mat', 'ros', 'surf', 'wall']) $(id).value = p[id];
+    $('gen3').checked = p.gen3; $('ktcorr').checked = p.ktcorr;
+    modeSeg.set(p.mode);
+  }
+  function applyPreset(k) {
+    preset = k; $('preset').value = k; Object.assign(p, M.PRESETS[k]);
+    const sk = { rosHB: ['B', 'H', 'betaH'], rosKB: ['B', 'K', 'betaK'] }[k];
+    if (sk && SAMPLE.rd) { const r = SAMPLE.rd[sk[0]][sk[1]]; Object.assign(p, { ea: r[0], eb: r[1], ec: r[2], beta: SAMPLE[sk[2]], Kt: SAMPLE.Kt, E: SAMPLE.E2, nu: SAMPLE.nu2 }); }
+    setAll(); update();
+  }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+    conv: new S.Plot($('plot-conv'), { xlabel: '', ylabel: 'Relative error', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+  const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+  const warn = (W) => { $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join(''); };
+  const near = (a, b, tol = 1e-3) => Math.abs(a - b) <= tol * Math.max(Math.abs(b), 1e-12);
+  const deg = (r) => r * 180 / Math.PI;
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  // =============================================================== Mohr's circle + element (custom SVG, equal axes)
+  let geo = null, dragging = false;
+  function drawDiagram(spec) {
+    const W0 = Math.round(Math.max(300, Math.min(1000, $('diagram').clientWidth || 900))), wide = W0 >= 620;
+    const Wm = wide ? Math.round(W0 * 0.6) : W0, Hm = wide ? Math.round(Math.min(400, W0 * 0.45)) : Math.round(W0 * 0.9);
+    const We = wide ? W0 - Wm : W0, He = wide ? Hm : Math.round(Math.min(W0 * 0.8, 360)), Ht = wide ? Hm : Hm + He;
+    const ex0 = wide ? Wm : 0, ey0 = wide ? 0 : Hm;
+    const { x, y, t, s3, unitQ, kind } = spec, cv = (v) => S.conv(unitQ, v);
+    const X = cv(x), Y = cv(y), Tt = cv(t), a = (X + Y) / 2, Rr = Math.hypot((X - Y) / 2, Tt), thp = 0.5 * Math.atan2(Tt, (X - Y) / 2);
+    const P1 = a + Rr, P2 = a - Rr, S3 = s3 === null || s3 === undefined ? null : cv(s3);
+    const lo = Math.min(P2, S3 ?? P2, 0), hi = Math.max(P1, S3 ?? P1, 0), Rbig = Math.max((hi - lo) / 2, Rr, 1e-12);
+    const mx = 34, my = 30, xr = (hi - lo) * 1.12 || 1, yr = 2 * Rbig * 1.15 || 1;
+    const k = Math.min((Wm - 2 * mx) / xr, (Hm - 2 * my) / yr);
+    const cx0 = Wm / 2 - k * (lo + hi) / 2, cy0 = Hm / 2;
+    const SX = (v) => cx0 + k * v, SY = (v) => cy0 - k * v;
+    geo = { SX, SY, k, a, thp, Rr, ex0, cx0, cy0, W0, Ht };
+    const sym = kind === 'strain' ? ['ε', 'γ/2'] : ['σ', 'τ'], un = S.unit(unitQ);
+    let s = `<rect x="0" y="0" width="${Wm}" height="${Hm}" style="fill:var(--panel)"/>`;
+    // axes
+    s += `<line x1="8" y1="${SY(0)}" x2="${Wm - 8}" y2="${SY(0)}" style="stroke:var(--muted);stroke-width:1"/>`;
+    const xa = Math.min(Math.max(SX(0), 10), Wm - 10);
+    s += `<line x1="${xa}" y1="8" x2="${xa}" y2="${Hm - 8}" style="stroke:var(--muted);stroke-width:1"/>`;
+    s += `<text x="${Wm - 10}" y="${SY(0) - 6}" text-anchor="end" style="fill:var(--muted);font-size:11px">${sym[0]} (${un})</text>`;
+    s += `<text x="${xa + 5}" y="18" style="fill:var(--muted);font-size:11px">${sym[1]}, clockwise ↑</text>`;
+    // three-dimensional circles
+    if (S3 !== null) {
+      for (const [u, v] of [[P1, S3], [P2, S3]]) s += `<circle cx="${SX((u + v) / 2)}" cy="${SY(0)}" r="${Math.abs(u - v) / 2 * k}" style="fill:none;stroke:var(--mutedline);stroke-width:1.2;stroke-dasharray:4 3"/>`;
+      s += `<circle cx="${SX(S3)}" cy="${SY(0)}" r="3.5" style="fill:var(--mutedline)"/><text x="${SX(S3) + 5}" y="${SY(0) + 15}" style="fill:var(--muted);font-size:11px">${spec.s3label || sym[0] + '₃'}</text>`;
+    }
+    s += `<circle cx="${SX(a)}" cy="${SY(0)}" r="${Rr * k}" style="fill:none;stroke:var(--theory);stroke-width:2.2"/>`;
+    // X, Y and the diameter
+    s += `<line x1="${SX(X)}" y1="${SY(-Tt)}" x2="${SX(Y)}" y2="${SY(Tt)}" style="stroke:var(--mutedline);stroke-width:1.2"/>`;
+    const lab = (vx, vy, txt, col = 'ink', dx = 7, dy = -7) => `<text x="${SX(vx) + dx}" y="${SY(vy) + dy}" style="fill:var(--${col});font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${txt}</text>`;
+    s += `<circle cx="${SX(X)}" cy="${SY(-Tt)}" r="3.5" style="fill:var(--ink)"/>${lab(X, -Tt, 'X')}<circle cx="${SX(Y)}" cy="${SY(Tt)}" r="3.5" style="fill:var(--ink)"/>${lab(Y, Tt, 'Y')}`;
+    // principal points and in-plane max shear
+    s += `<circle cx="${SX(P1)}" cy="${SY(0)}" r="3" style="fill:var(--theory)"/>${lab(P1, 0, 'A', 'theory', 5, 15)}<circle cx="${SX(P2)}" cy="${SY(0)}" r="3" style="fill:var(--theory)"/>${lab(P2, 0, 'B', 'theory', -14, 15)}`;
+    s += `${lab(a, Rr, 'D', 'theory', 5, -5)}${lab(a, -Rr, 'E', 'theory', 5, 14)}`;
+    // gage points (rosette)
+    for (const g of spec.gages || []) {
+      const ang = 2 * g.th - 2 * thp, gx = a + Rr * Math.cos(ang), gy = Rr * Math.sin(ang);
+      s += `<circle cx="${SX(gx)}" cy="${SY(gy)}" r="5" style="fill:var(--panel);stroke:var(--measured);stroke-width:2"/>${lab(gx, gy, g.label, 'measured', 7, 4)}`;
+      s += `<line x1="${SX(gx)}" y1="${SY(gy)}" x2="${SX(gx)}" y2="${SY(0)}" style="stroke:var(--measured);stroke-width:1;stroke-dasharray:2 3"/>`;
+    }
+    // rotated point X' (draggable) and Y', and the 2-theta arc
+    const ang = 2 * spec.th - 2 * thp, Xp = [a + Rr * Math.cos(ang), Rr * Math.sin(ang)], Yp = [a - Rr * Math.cos(ang), -Rr * Math.sin(ang)];
+    s += `<line x1="${SX(Xp[0])}" y1="${SY(Xp[1])}" x2="${SX(Yp[0])}" y2="${SY(Yp[1])}" style="stroke:var(--numeric);stroke-width:1.8"/>`;
+    if (Rr * k > 14 && Math.abs(spec.th) > 0.3 * D) {
+      const r0 = Math.min(Rr * k * 0.42, 34), a0 = -2 * thp, a1 = ang, sweepF = a1 > a0 ? 0 : 1, big = Math.abs(a1 - a0) > Math.PI ? 1 : 0;
+      const P = (an) => [SX(a) + r0 * Math.cos(an), SY(0) - r0 * Math.sin(an)];
+      const [x1, y1] = P(a0), [x2, y2] = P(a1), [xm, ym] = P((a0 + a1) / 2);
+      s += `<path d="M${x1} ${y1}A${r0} ${r0} 0 ${big} ${sweepF} ${x2} ${y2}" style="fill:none;stroke:var(--numeric);stroke-width:1.2"/><text x="${xm + 3}" y="${ym}" style="fill:var(--numeric);font-size:11px">2θ</text>`;
+    }
+    s += `<circle cx="${SX(Yp[0])}" cy="${SY(Yp[1])}" r="4" style="fill:var(--numeric)"/>${lab(Yp[0], Yp[1], "Y′", 'numeric')}`;
+    s += `<circle class="handle" cx="${SX(Xp[0])}" cy="${SY(Xp[1])}" r="9" style="fill:var(--panel);stroke:var(--numeric);stroke-width:3"/>${lab(Xp[0], Xp[1], "X′", 'numeric', 11, -9)}`;
+    // element (or rosette) panel
+    s += `<g transform="translate(${ex0} ${ey0})">${spec.kind === 'strain' ? rosetteSvg(We, He, spec) : elementSvg(We, He, spec)}</g>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} ${Ht}" role="img" aria-label="${esc(spec.aria)}">${s}</svg>`;
+  }
+  function arrow(x1, y1, x2, y2, col, w = 2) {
+    const L = Math.hypot(x2 - x1, y2 - y1);
+    if (L < 3) return '';
+    const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hl = Math.min(9, L * 0.45), hw = hl * 0.5;
+    return `<path d="M${x1} ${y1}L${x2 - ux * hl * 0.6} ${y2 - uy * hl * 0.6}" style="stroke:var(--${col});stroke-width:${w}"/><path d="M${x2} ${y2}L${x2 - ux * hl - uy * hw} ${y2 - uy * hl + ux * hw}L${x2 - ux * hl + uy * hw} ${y2 - uy * hl - ux * hw}Z" style="fill:var(--${col})"/>`;
+  }
+  // place a text label next to one of several arrows without covering arrows, the element, the inset or other labels.
+  // Each anchor is an arrow (A0 -> A1). Candidates ring the arrow's end and midpoint at growing distances, nearest first;
+  // each is slid inside the panel and scored by what it covers; the first clear one wins, the panel corners are last resorts.
+  function placeLabel(W, H, anchors, w, segs, boxes, poly) {
+    const box = (x, y, dx, dy) => {                      // label whose nearest edge is at (x, y), extending along (dx, dy)
+      const x0 = dx > 0.38 ? x : dx < -0.38 ? x - w : x - w / 2, yb = dy > 0.38 ? y + 10 : dy < -0.38 ? y - 3 : y + 4;
+      return [x0, yb - 9, x0 + w, yb + 3];
+    };
+    const cands = [];
+    for (const r of [11, 22, 34, 48, 64]) for (const { A0, A1 } of anchors) for (const P of [A1, [(A0[0] + A1[0]) / 2, (A0[1] + A1[1]) / 2]]) {
+      for (let k = 0; k < 16; k++) { const c = Math.cos(k * Math.PI / 8), sn_ = Math.sin(k * Math.PI / 8); cands.push([box(P[0] + c * r, P[1] + sn_ * r, c, sn_), 0]); }
+    }
+    cands.push([[4, H - 15, 4 + w, H - 3], 4], [[W - 4 - w, H - 15, W - 4, H - 3], 4], [[4, 26, 4 + w, 38], 4]);   // last resorts
+    const inPoly = (x, y) => { let pos = 0, neg = 0; for (let i = 0; i < poly.length; i++) { const a = poly[i], c = poly[(i + 1) % poly.length], cr = (c[0] - a[0]) * (y - a[1]) - (c[1] - a[1]) * (x - a[0]); if (cr > 0) pos++; else if (cr < 0) neg++; } return !(pos && neg); };
+    const score = (b) => {
+      let h = 0;
+      for (const [a, c] of segs) { const m = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / 2) + 1;
+        for (let i = 0; i <= m; i++) { const x = a[0] + (c[0] - a[0]) * i / m, y = a[1] + (c[1] - a[1]) * i / m; if (x > b[0] - 3 && x < b[2] + 3 && y > b[1] - 3 && y < b[3] + 3) h++; } }
+      for (let i = 0; i <= 6; i++) for (let j = 0; j <= 2; j++) if (inPoly(b[0] + (b[2] - b[0]) * i / 6, b[1] + (b[3] - b[1]) * j / 2)) h += 5;
+      for (const o of boxes) if (b[0] < o[2] + 2 && b[2] > o[0] - 2 && b[1] < o[3] + 2 && b[3] > o[1] - 2) h += 100;
+      return h;
+    };
+    let best = null, bestH = Infinity;
+    for (const [b0, pen] of cands) {
+      const dx = Math.max(0, 4 - b0[0]) - Math.max(0, b0[2] - (W - 4)), dy = Math.max(0, 22 - b0[1]) - Math.max(0, b0[3] - (H - 3));
+      const b = [b0[0] + dx, b0[1] + dy, b0[2] + dx, b0[3] + dy], h = score(b) + pen + (Math.abs(dx) + Math.abs(dy) > 40 ? 0.5 : 0);
+      if (h < bestH) { best = b; bestH = h; if (h === 0) break; }
+    }
+    boxes.push(best);
+    return best;
+  }
+  function elementSvg(W, H, spec) {
+    const cx = W / 2, cy = H / 2 + 6, half = Math.min(W, H) * 0.17, th = spec.th;
+    const r1 = M.transform(spec.x, spec.y, spec.t, th), big = Math.max(Math.abs(r1.sx1), Math.abs(r1.sy1), Math.abs(r1.t1), 1e-30), Lmax = Math.min(W, H) * 0.2;
+    const len = (v) => Math.abs(v) / big * Lmax;
+    const c = Math.cos(th), sn = Math.sin(th), ux = [c, -sn], uy = [-sn, -c];      // unit x' and y' in SVG coordinates (y down)
+    const pt = (u, v) => [cx + u * ux[0] + v * uy[0], cy + u * ux[1] + v * uy[1]];
+    const ax = Math.min(half * 2.4, cy - 40, W / 2 - 16), segs = [], boxes = [[0, 0, 210, 22]];   // obstacles; the caption at the top left
+    let s = `<line x1="${cx - ax}" y1="${cy}" x2="${cx + ax}" y2="${cy}" style="stroke:var(--grid);stroke-width:1"/><line x1="${cx}" y1="${cy + ax}" x2="${cx}" y2="${cy - ax}" style="stroke:var(--grid);stroke-width:1"/>`;
+    // axis names beside the positive ends of the fixed axes (below x, left of y), clear of arrows drawn along the axes
+    s += `<text x="${cx + ax - 2}" y="${cy + 14}" text-anchor="end" style="fill:var(--muted);font-size:11px">x</text><text x="${cx - 5}" y="${cy - ax + 9}" text-anchor="end" style="fill:var(--muted);font-size:11px">y</text>`;
+    boxes.push([cx + ax - 10, cy + 4, cx + ax, cy + 16], [cx - 13, cy - ax, cx - 4, cy - ax + 11]);
+    const corners = [pt(-half, -half), pt(half, -half), pt(half, half), pt(-half, half)];
+    s += `<path d="M${corners.map((q_) => q_.join(' ')).join('L')}Z" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.5"/>`;
+    for (let i = 0; i < 4; i++) segs.push([corners[i], corners[(i + 1) % 4]]);
+    const ends = { x: [], y: [], t: [] };
+    // normal stresses
+    for (const [sgn, v, axis] of [[1, r1.sx1, 'x'], [-1, r1.sx1, 'x'], [1, r1.sy1, 'y'], [-1, r1.sy1, 'y']]) {
+      const base = axis === 'x' ? pt(sgn * (half + 4), 0) : pt(0, sgn * (half + 4)), dir = axis === 'x' ? [sgn * ux[0], sgn * ux[1]] : [sgn * uy[0], sgn * uy[1]];
+      const L = len(v) < 3 ? 0 : len(v), tip = [base[0] + dir[0] * L, base[1] + dir[1] * L];
+      ends[axis].push({ A0: base, A1: tip, out: dir });
+      if (!L) continue;
+      const out = v > 0, p0 = out ? base : tip, p1 = out ? tip : base;
+      s += arrow(p0[0], p0[1], p1[0], p1[1], 'theory', 2.4);
+      segs.push([p0, p1]);
+    }
+    // shear stresses: +x' face in +y' (if positive), +y' face in +x', and the opposite faces reversed
+    if (len(r1.t1) >= 3) {
+      const L = Math.min(len(r1.t1), half * 1.6), sg = Math.sign(r1.t1), off = half + 8;
+      const sh = (faceU, faceV, du, dv) => {
+        const m = pt(faceU, faceV), e = [du * ux[0] + dv * uy[0], du * ux[1] + dv * uy[1]], a0 = [m[0] - e[0] * L / 2, m[1] - e[1] * L / 2], a1 = [m[0] + e[0] * L / 2, m[1] + e[1] * L / 2];
+        segs.push([a0, a1]); const o = [m[0] - cx, m[1] - cy], no = Math.hypot(o[0], o[1]) || 1;
+        ends.t.push({ A0: a0, A1: a1, out: [o[0] / no, o[1] / no] });   // label outside the face, beside the arrow
+        return arrow(a0[0], a0[1], a1[0], a1[1], 'numeric', 2);
+      };
+      s += sh(off, 0, 0, sg) + sh(0, off, sg, 0) + sh(-off, 0, 0, -sg) + sh(0, -off, -sg, 0);
+    } else { const a = pt(half + 8, 0); ends.t.push({ A0: a, A1: a, out: [ux[0], ux[1]] }); }
+    if (spec.tube) { const r = Math.min(W, H) * 0.12; boxes.push([W - 2 * r - 30, 8, W, 2 * r + 42]); }
+    const uq = spec.unitQ, txt = (b, t, col) => `<text x="${b[0].toFixed(1)}" y="${(b[3] - 3).toFixed(1)}" style="fill:var(--${col});font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${t}</text>`;
+    for (const [k, t, col] of [['x', `σx′ ${q(uq, r1.sx1, 3)}`, 'theory'], ['y', `σy′ ${q(uq, r1.sy1, 3)}`, 'theory'], ['t', `τx′y′ ${q(uq, r1.t1, 3)}`, 'numeric']]) {
+      s += txt(placeLabel(W, H, ends[k], t.length * 6.6, segs, boxes, corners), t, col);
+    }
+    s += `<text x="8" y="16" style="fill:var(--muted);font-size:11px">element turned θ = ${S.fmt(deg(th), 3)}° (ccw)</text>`;
+    if (spec.tube) s += tubeInset(W, H, spec.tube);
+    return s;
+  }
+  function tubeInset(W, H, tb) {
+    const r = Math.min(W, H) * 0.12, cx = W - r - 12, cy = r + 22, ri = r * tb.ri / tb.ro;
+    let s = `<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--panel-2);stroke:var(--ink)"/><circle cx="${cx}" cy="${cy}" r="${ri}" style="fill:var(--panel);stroke:var(--ink)"/>`;
+    // section seen from the free end looking back toward the clamp (-X): +Z (lever side) appears on the LEFT
+    const px = cx - r * Math.sin(tb.phi), py = cy - r * Math.cos(tb.phi);
+    s += `<circle cx="${px}" cy="${py}" r="4.5" style="fill:var(--numeric)"/><text x="${cx}" y="${cy + r + 13}" text-anchor="middle" style="fill:var(--muted);font-size:10px">from the free end</text>`;
+    s += `<text x="${cx}" y="${cy - r - 4}" text-anchor="middle" style="fill:var(--muted);font-size:10px">H</text><text x="${cx - r - 4}" y="${cy + 4}" text-anchor="end" style="fill:var(--muted);font-size:10px">K</text>`;
+    return s;
+  }
+  function rosetteSvg(W, H, spec) {
+    const cx = W / 2, cy = H / 2 + 8, L = Math.min(W, H) * 0.34;
+    let s = `<line x1="${cx - L * 1.25}" y1="${cy}" x2="${cx + L * 1.25}" y2="${cy}" style="stroke:var(--grid)"/><line x1="${cx}" y1="${cy + L * 1.25}" x2="${cx}" y2="${cy - L * 1.25}" style="stroke:var(--grid)"/>`;
+    s += `<text x="${cx + L * 1.25 - 2}" y="${cy - 4}" text-anchor="end" style="fill:var(--muted);font-size:11px">x</text><text x="${cx + 4}" y="${cy - L * 1.25 + 10}" style="fill:var(--muted);font-size:11px">y</text>`;
+    const dirLine = (th, col, w, dash, lab) => { const dx = Math.cos(th) * L, dy = -Math.sin(th) * L; return `<line x1="${cx - dx}" y1="${cy - dy}" x2="${cx + dx}" y2="${cy + dy}" style="stroke:var(--${col});stroke-width:${w};stroke-dasharray:${dash}"/>` + (lab ? `<text x="${cx + dx * 1.1}" y="${cy + dy * 1.1 + 4}" text-anchor="middle" style="fill:var(--${col});font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${lab}</text>` : ''); };
+    for (const g of spec.gages) {
+      s += dirLine(g.th, 'measured', 1.2, '', '');
+      const gx = Math.cos(g.th), gy = -Math.sin(g.th), nx = -gy, ny = gx, a0 = L * 0.35, a1 = L * 0.8, w = 5;
+      s += `<path d="M${cx + gx * a0 + nx * w} ${cy + gy * a0 + ny * w}L${cx + gx * a1 + nx * w} ${cy + gy * a1 + ny * w}L${cx + gx * a1 - nx * w} ${cy + gy * a1 - ny * w}L${cx + gx * a0 - nx * w} ${cy + gy * a0 - ny * w}Z" style="fill:none;stroke:var(--measured);stroke-width:1.6"/>`;
+      s += `<text x="${cx + gx * L * 0.98}" y="${cy + gy * L * 0.98 + 4}" text-anchor="middle" style="fill:var(--measured);font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${g.label}</text>`;
+    }
+    s += dirLine(spec.thpS, 'theory', 1.6, '6 4', '1') + dirLine(spec.thpS + Math.PI / 2, 'theory', 1.6, '6 4', '2');
+    s += `<text x="8" y="16" style="fill:var(--muted);font-size:11px">gages as bonded (β = ${S.fmt(deg(spec.beta), 3)}°); dashed: principal axes 1, 2</text>`;
+    return s;
+  }
+  // dragging X' sets theta
+  const diag = $('diagram');
+  const toSvg = (e) => { const svg = diag.querySelector('svg'); if (!svg) return null; const r = svg.getBoundingClientRect(), kk = svg.viewBox.baseVal.width / r.width; return [(e.clientX - r.left) * kk, (e.clientY - r.top) * kk]; };
+  diag.addEventListener('pointerdown', (e) => {
+    const P = toSvg(e); if (!P || !geo || P[0] > (geo.ex0 || geo.W0) || P[1] > (geo.ex0 ? geo.Ht : geo.cy0 * 2)) return;
+    const d = Math.hypot(P[0] - geo.SX(geo.a), P[1] - geo.SY(0));
+    if (Math.abs(d - geo.Rr * geo.k) > 26) return;
+    dragging = true; diag.setPointerCapture(e.pointerId); e.preventDefault(); moveTo(P);
+  });
+  diag.addEventListener('pointermove', (e) => { if (dragging) { const P = toSvg(e); if (P) moveTo(P); } });
+  const stop = () => { dragging = false; };
+  diag.addEventListener('pointerup', stop); diag.addEventListener('pointercancel', stop);
+  function moveTo(P) {
+    const ang = Math.atan2(-(P[1] - geo.SY(0)), P[0] - geo.SX(geo.a));
+    let th = geo.thp + ang / 2;
+    while (th > Math.PI / 2) th -= Math.PI;
+    while (th <= -Math.PI / 2) th += Math.PI;
+    p.th = Math.round(th / (0.1 * D)) * 0.1 * D; ctl.th.set(p.th); update();
+  }
+
+  // =============================================================== shared pieces
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    const scale = {};
+    for (const [, qq, c] of rows) scale[qq] = Math.max(scale[qq] || 0, Math.abs(c));
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v, kind]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-300);
+      let status;
+      if (kind === 'model') status = chip('info', 'different models');
+      else if (!Number.isFinite(d)) status = chip('info', '—');
+      else if (d < 1e-6 || Math.abs(v - c) < 1e-9 * scale[qq]) status = chip('ok', 'agree');
+      else if (d < 1e-2) status = chip('ok', 'agree (discretization)');
+      else if (d < 5e-2) status = chip('warn', 'coarse: refine N');
+      else status = chip('bad', 'check');
+      return `<tr><td>${n}</td><td class="v">${q(qq, c)}</td><td class="v">${q(qq, v)}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${status}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+  function drawConv(rows, xlabel, cap, refOrder, extra, labels) {
+    R.conv = { rows, xlabel };
+    plots.conv.o.xlabel = xlabel;
+    const ok = rows.filter((r) => r.err > 1e-15);
+    const series = [{ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: labels[0] }];
+    if (extra) series.push({ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.errM, 1e-16)), role: 'third', markers: true, r: 3, label: labels[1] });
+    if (ok.length && refOrder) series.push({ x: [ok[0].N, ok[ok.length - 1].N], y: [ok[0].err, ok[0].err * (ok[0].N / ok[ok.length - 1].N) ** refOrder], role: 'theory', width: 1, dash: '2 3', label: `reference: error ∝ N^−${refOrder}`, hover: false });
+    plots.conv.draw({ series, xlim: [Math.min(...rows.map((r) => r.N)) * 0.7, Math.max(...rows.map((r) => r.N)) * 1.4], ylim: [1e-16, 1], desc: 'Convergence of the numerical method.' });
+    $('cap-conv').innerHTML = cap;
+  }
+  const lim = (ys, pad = 0.1) => { const f = ys.filter(Number.isFinite); let lo = Math.min(0, ...f), hi = Math.max(0, ...f); const d = (hi - lo) || 1; return [lo - pad * d, hi + pad * d]; };
+  const thetas = Array.from({ length: 181 }, (_, i) => (-90 + i) * D);
+  // stress-mode readout rows shared by every mode (a plane state sx, sy, txy plus the third principal stress)
+  function stateRows(stt, qq, lab3) {
+    const m = M.mohr(stt.sx, stt.sy, stt.txy), r1 = M.transform(stt.sx, stt.sy, stt.txy, p.th), rn = M.rotNum(stt.sx, stt.sy, stt.txy, p.th);
+    const J = M.jacobi(M.tensor3(stt)), pc = M.principal3(stt), sw = M.sweep(stt.sx, stt.sy, stt.txy, p.Nsw);
+    const Jin = M.jacobi([[stt.sx, stt.txy, 0], [stt.txy, stt.sy, 0], [0, 0, 0]]);
+    const idx = [0, 1, 2].filter((i) => Math.abs(Jin.vecs[i][2]) < 0.5), inplaneMax = idx.map((i) => Jin.vals[i]);
+    const v = Jin.vecs[idx.reduce((a_, b_) => (Jin.vals[b_] > Jin.vals[a_] ? b_ : a_), idx[0])];
+    let thJ = Math.atan2(v[1], v[0]); while (thJ > Math.PI / 2) thJ -= Math.PI; while (thJ <= -Math.PI / 2) thJ += Math.PI;
+    const rows = [
+      [`σ_x′ on axes turned θ = ${S.fmt(deg(p.th), 3)}° (Eq. 7.5 vs R·S·Rᵀ)`, qq, r1.sx1, rn.sx1, 'exact'],
+      ['τ_x′y′ on the same axes (Eq. 7.6 vs R·S·Rᵀ)', qq, r1.t1, rn.t1, 'exact'],
+      ['σ_max in the plane (Eq. 7.14 vs Jacobi eigenvalues)', qq, m.s1, Math.max(...inplaneMax), 'exact'],
+      ['σ_min in the plane (Eq. 7.14 vs Jacobi eigenvalues)', qq, m.s2, Math.min(...inplaneMax), 'exact'],
+    ];
+    if (m.R > 1e-9 * Math.max(Math.abs(m.ave), 1)) rows.push(['θ_p to σ_max (Eq. 7.12 vs Jacobi eigenvector)', 'angle', m.thp, thJ, 'exact']);
+    rows.push([`σ_max by a sweep over ${p.Nsw} directions`, qq, m.s1, sw.smax, 'disc'], [`In-plane τ_max = R (Eq. 7.15) vs the sweep`, qq, m.R, sw.tmax, 'disc']);
+    ['σ₁', 'σ₂', 'σ₃'].forEach((nm, i) => rows.push([`${nm} in three dimensions (${stt.tyz || stt.tzx ? 'cubic' : 'Mohr with ' + lab3} vs Jacobi, ${J.sweeps} sweeps)`, qq, pc[i], J.vals[i], 'exact']));
+    rows.push(['Absolute τ_max = (σ₁ − σ₃)/2 (§7.4) vs Jacobi', qq, (pc[0] - pc[2]) / 2, (J.vals[0] - J.vals[2]) / 2, 'exact']);
+    rows.push(['τ_max: in-plane R vs absolute (σ₁ − σ₃)/2', qq, m.R, (pc[0] - pc[2]) / 2, 'model']);
+    return { rows, m, pc, J };
+  }
+  function failurePlot() {                // Tresca hexagon and von Mises ellipse a^2 - ab + b^2 = 1 in the (sigma_a, sigma_b)/sigma_Y plane
+    const tres = [[1, 0], [1, 1], [0, 1], [-1, 0], [-1, -1], [0, -1], [1, 0]], ex = [], ey = [];
+    for (let i = 0; i <= 160; i++) { const t = 2 * Math.PI * i / 160, u = Math.SQRT2 * Math.cos(t), v = Math.sqrt(2 / 3) * Math.sin(t); ex.push((u - v) / Math.SQRT2); ey.push((u + v) / Math.SQRT2); }
+    return { tres, ex, ey };
+  }
+
+  // =============================================================== update
+  function validate() {
+    const e = [];
+    if (p.mode === 'tube' && !(p.Di < p.Do)) e.push('The inside diameter must be smaller than the outside diameter.');
+    if (p.mode === 'rosette' && p.ros === 'custom' && Math.abs(M.rosDet([p.ta, p.tb, p.tc])) < 1e-3) e.push('Two of the gages are (nearly) parallel: three readings in only two independent directions cannot give three strain components. Spread the angles.');
+    return e;
+  }
+  function update() {
+    const md = p.mode;
+    $('panel-stress').hidden = md !== 'stress'; $('panel-ros').hidden = md !== 'rosette'; $('panel-tube').hidden = md !== 'tube';
+    for (const k of ['tyz', 'tzx']) ctl[k].el.hidden = !p.gen3;
+    for (const k of ['ta', 'tb', 'tc']) ctl[k].el.hidden = p.ros !== 'custom';
+    ctl.Nfd.el.hidden = md !== 'tube';
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    plots.conv.o.logx = true; plots.conv.o.logy = true;
+    if (md === 'stress') updateStress(); else if (md === 'rosette') updateRosette(); else updateTube();
+  }
+
+  // --------------------------------------------------------------- stress at a point
+  function updateStress() {
+    const stt = { sx: p.sx, sy: p.sy, sz: p.sz, txy: p.txy, tyz: p.gen3 ? p.tyz : 0, tzx: p.gen3 ? p.tzx : 0 }, mat = M.MATERIALS[p.mat];
+    R = { kind: 'stress', stt };
+    const { rows, m, pc } = stateRows(stt, 'stress', 'σ_z');
+    const zPrincipal = !stt.tyz && !stt.tzx;
+    $('h-diag').textContent = "Mohr's circle and the element";
+    drawDiagram({ kind: 'stress', x: stt.sx, y: stt.sy, t: stt.txy, s3: zPrincipal ? stt.sz : null, s3label: 'σz', th: p.th, unitQ: 'stress', aria: "Mohr's circle for the stress state with the rotated element; drag the point X′ to turn the element." });
+    $('diag-txt').textContent = zPrincipal ? 'z is a principal direction: three circles (Beer §7.4)' : 'general 3-D state: the in-plane circle is not a principal circle';
+    $('cap-diag').innerHTML = `Drag X′ around the circle (or use the θ slider): the element turns by θ while the point moves by 2θ in the same sense. ${zPrincipal ? 'Dashed circles: the other two planes through the principal axes (Beer Fig. 7.24, 7.26).' : 'With τ_yz or τ_zx present, the circle drawn is for the xy plane only; the principal stresses come from the cubic.'}`;
+    const vm = M.vonMises(pc);
+    $('stats').innerHTML = [st('σ<sub>max</sub>, σ<sub>min</sub> (in plane)', `${q('stress', m.s1)}, ${q('stress', m.s2)}`), st('θ<sub>p</sub> (to σ<sub>max</sub>, ccw)', q('angle', m.thp)),
+      st('In-plane τ<sub>max</sub> = R', q('stress', m.R)), st('σ₁, σ₂, σ₃', pc.map((v) => q('stress', v, 3)).join(', ')), st('Absolute τ<sub>max</sub>', q('stress', (pc[0] - pc[2]) / 2)),
+      st('Von Mises / Tresca safety factor', `${S.fmt(mat.sY / Math.max(vm, 1e-30), 3)} / ${S.fmt(mat.sY / Math.max(pc[0] - pc[2], 1e-30), 3)}`)].join('');
+    sweepPlot(stt, 'stress');
+    // plot 2: failure envelopes
+    const fp = failurePlot();
+    plots.p2.o.xlabel = 'σ_a / σ_Y'; plots.p2.o.ylabel = 'σ_b / σ_Y';
+    const pts = zPrincipal && Math.abs(stt.sz) < 1e-9 * Math.max(m.R, 1) ? [{ x: m.s1 / mat.sY, y: m.s2 / mat.sY, role: 'numeric', shape: 'ring', label: 'this state' }] : [];
+    plots.p2.draw({ series: [{ x: fp.tres.map((v) => v[0]), y: fp.tres.map((v) => v[1]), role: 'theory', label: 'Tresca (maximum shear, Beer Fig. 7.37)' }, { x: fp.ex, y: fp.ey, role: 'third', label: 'von Mises (Beer Fig. 7.38)' }],
+      points: pts, xlim: [-1.4, 1.4], ylim: [-1.4, 1.4], desc: 'Failure envelopes for plane stress with the current state.' });
+    $('h-p2').textContent = 'Yield criteria for plane stress (Beer §7.5)';
+    $('cap2').innerHTML = pts.length ? `Inside the hexagon: safe by the maximum-shear criterion; inside the ellipse: safe by von Mises. The point is (σ_max, σ_min)/σ_Y for ${mat.name}. Tresca uses the absolute maximum shear, so a state with both principal stresses of the same sign is limited by the larger one alone.` : 'The envelopes apply to plane stress (σ_z = 0, z principal); this state is three-dimensional, so only the safety factors in the stats are meaningful.';
+    renderReadout(rows, `Numerical: tensor rotation by matrix products, cyclic Jacobi rotations for the eigenvalues, and a sweep over ${p.Nsw} directions. They share no formula with Eqs. 7.5–7.15.`);
+    const cv = M.sweepConvergence(stt.sx, stt.sy, stt.txy);
+    drawConv(cv.rows, 'Directions sampled, N', `Largest σ_x′ found by sampling N directions, averaged over 16 positions of the grid: the error falls as N^−${S.fmt(cv.slope, 3)} (expected 2: σ_x′ is flat at its maximum, so a direction error δ costs only R(2δ)²/2). Jacobi needs ${M.jacobi(M.tensor3(stt)).sweeps} sweeps to reach round-off.`, 2, false, ['Relative error of the sampled σ_max']);
+    const W = [];
+    const same = pc[0] > 0 && pc[1] > 0 && Math.abs(pc[2]) < 1e-9 * Math.max(pc[0], 1) || pc[2] < 0 && pc[1] < 0 && Math.abs(pc[0]) < 1e-9 * Math.max(-pc[2], 1);
+    const ratio = (pc[0] - pc[2]) / 2 / Math.max(m.R, 1e-30);
+    W.push([ratio > 1.001 ? 'bad' : 'ok', ratio > 1.001 ? `Absolute τ_max is ${S.fmt(100 * (ratio - 1), 3)} % larger than the in-plane R: ${same ? 'both in-plane principal stresses have the same sign, so the largest circle passes through the origin (σ_z = 0)' : 'the third principal stress lies outside the in-plane circle'}. Design with the absolute value (Beer §7.4).` : 'In-plane τ_max equals the absolute maximum: the third principal stress lies between σ_max and σ_min.']);
+    W.push([vm > mat.sY ? 'bad' : vm > 0.8 * mat.sY ? 'warn' : 'ok', `Von Mises stress ${q('stress', vm, 3)} = ${S.fmt(100 * vm / mat.sY, 3)} % of σ_Y (${mat.name}); Tresca equivalent ${q('stress', pc[0] - pc[2], 3)}. Above σ_Y the material yields and stress no longer follows from strain by Hooke's law.`]);
+    if (m.R < 1e-6 * Math.max(Math.abs(m.ave), 1)) W.push(['warn', 'The in-plane circle has shrunk to a point: every direction in the plane is principal so θ_p has no unique value.']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('σ<sub>x′</sub> = σ<sub>ave</sub> + ½(σ<sub>x</sub> − σ<sub>y</sub>) cos 2θ + τ<sub>xy</sub> sin 2θ', 'equilibrium of a wedge cut at θ (Beer §7.1A, Eqs. 7.5–7.7).', 'θ counterclockwise from x; the same formulas hold for strain with τ → γ/2 (§7.7).', chip('ok', 'any material, any load'), `σ_x′ = ${q('stress', M.transform(stt.sx, stt.sy, stt.txy, p.th).sx1)}`),
+      card('σ<sub>max,min</sub> = σ<sub>ave</sub> ± R', 'eliminating θ: the points (σ_x′, τ_x′y′) lie on a circle (Eqs. 7.10–7.14).', 'R = √(((σ_x − σ_y)/2)² + τ_xy²); tan 2θ_p = 2τ_xy/(σ_x − σ_y).', chip('ok', 'plane stress'), `R = ${q('stress', m.R)}`),
+      card('τ<sub>max</sub> = (σ<sub>1</sub> − σ<sub>3</sub>)/2', 'three Mohr circles through the principal stresses (Beer §7.4).', 'in plane stress σ_z = 0 is one of the three; it governs when σ_max and σ_min have the same sign.', ratio > 1.001 ? chip('warn', 'larger than in-plane') : chip('ok', 'equals in-plane'), `τ_abs = ${q('stress', (pc[0] - pc[2]) / 2)}`),
+    ].join('');
+  }
+  function sweepPlot(stt, kind, gpts, extraNote) {
+    const isS = kind === 'stress', qq = isS ? 'stress' : 'microstrain', half = isS ? 1 : 0.5;
+    const c = thetas.map((t) => M.transform(stt.sx, stt.sy, stt.txy * half, t));       // strain: transform (ex, ey, g/2) like stress
+    const ns = Math.min(p.Nsw, 72), sth = Array.from({ length: ns }, (_, i) => -Math.PI / 2 + Math.PI * (i + 0.5) / ns), nr = sth.map((t) => M.rotNum(stt.sx, stt.sy, stt.txy * half, t));
+    const s1 = [{ x: thetas.map(deg), y: c.map((r) => S.conv(qq, r.sx1)), role: 'theory', label: isS ? 'σ_x′(θ), Eq. 7.5' : 'ε(θ), Eq. 7.41' },
+      { x: thetas.map(deg), y: c.map((r) => S.conv(qq, r.t1)), role: 'third', label: isS ? 'τ_x′y′(θ), Eq. 7.6' : 'γ_x′y′/2 (θ)' },
+      { x: sth.map(deg), y: nr.map((r) => S.conv(qq, r.sx1)), role: 'numeric', markers: true, r: 2.4, label: `${isS ? 'σ_x′' : 'ε'} by R·S·Rᵀ (${ns} directions)` }];
+    if (gpts) s1.unshift(...gpts);
+    const m = M.mohr(stt.sx, stt.sy, stt.txy * half);
+    plots.p1.o.xlabel = 'Direction θ, counterclockwise from x (°)'; plots.p1.o.ylabel = isS ? `Stress (${S.unit('stress')})` : `Strain (${S.unit('microstrain')})`;
+    plots.p1.draw({ series: s1, xlim: [-90, 90], ylim: lim(s1.flatMap((q_) => q_.y)), points: [{ x: deg(m.thp), y: S.conv(qq, m.s1), role: 'theory', shape: 'diamond', label: 'θ_p' }, { x: deg(p.th), y: S.conv(qq, M.transform(stt.sx, stt.sy, stt.txy * half, p.th).sx1), role: 'numeric', shape: 'ring', label: 'θ' }], desc: 'Normal and shear components against direction.' });
+    $('h-p1').textContent = isS ? 'Stress components on every plane' : 'Normal strain in every direction';
+    $('cap1').innerHTML = (isS ? 'The normal stress is largest at θ_p, where the shear stress is zero; the shear is largest 45° away.' : 'Each gage reads ε at its own direction: three readings fix the whole curve (Eq. 7.60), and the curve fixes the principal strains.') + (extraNote || '');
+  }
+
+  // --------------------------------------------------------------- rosette
+  function updateRosette() {
+    const red = M.rosetteReduce(p);
+    if (!red) { $('errors').hidden = false; $('errors').textContent = 'These gage directions do not determine the strain state.'; return; }
+    const e = red.cf, sr = M.hooke(e.ex, e.ey, e.g, p.E, p.nu), mat = M.MATERIALS[p.mat];
+    R = { kind: 'rosette', red, sr };
+    const ms = M.mohr(e.ex, e.ey, e.g / 2), angles = red.angles;
+    const corr = red.Kt ? (p.ros === 'rect' ? M.ktCorrectRect(p.ea, p.eb, p.ec, red.Kt) : M.ktForward(red.raw.ex, red.raw.ey, red.raw.g, angles, 0, 0)) : [p.ea, p.eb, p.ec];
+    const gages = angles.map((t, i) => ({ th: t + p.beta, label: 'abc'[i], val: corr[i] }));
+    $('h-diag').textContent = "Mohr's circle for strain and the rosette";
+    drawDiagram({ kind: 'strain', x: e.ex, y: e.ey, t: e.g / 2, s3: null, th: p.th, unitQ: 'microstrain', gages, thpS: ms.thp, beta: p.beta, aria: "Mohr's circle for strain with the three gage readings marked; the rosette is drawn as bonded." });
+    $('diag-txt').textContent = `${p.ros === 'rect' ? 'rectangular' : p.ros === 'delta' ? 'delta' : 'general'} rosette${p.beta ? `, turned ${S.fmt(deg(p.beta), 3)}°` : ''}${red.Kt ? `, K_t = ${S.fmt(100 * red.Kt, 3)} % corrected` : ''}`;
+    $('cap-diag').innerHTML = 'Each gage reading (open circle) is the abscissa of a point on the strain circle at twice the gage\'s angle from x. Turning the whole rosette turns all three points together: the circle, and so the principal strains, do not change; only the components on x and y do.';
+    const s1v = M.mohr(sr.sx, sr.sy, sr.txy);
+    $('stats').innerHTML = [st('ε<sub>x</sub>, ε<sub>y</sub>, γ<sub>xy</sub>', `${q('microstrain', e.ex, 4)}, ${q('microstrain', e.ey, 4)}, ${q('microstrain', e.g, 4)}`), st('ε<sub>max</sub>, ε<sub>min</sub>', `${q('microstrain', ms.s1)}, ${q('microstrain', ms.s2)}`),
+      st('θ<sub>p</sub> (to ε<sub>max</sub>, ccw from x)', q('angle', ms.thp)), st('σ<sub>x</sub>, σ<sub>y</sub>, τ<sub>xy</sub>', `${q('stress', sr.sx, 4)}, ${q('stress', sr.sy, 4)}, ${q('stress', sr.txy, 4)}`),
+      st('σ<sub>max</sub>, σ<sub>min</sub> (plane stress)', `${q('stress', s1v.s1)}, ${q('stress', s1v.s2)}`), st('γ<sub>max</sub> in plane', q('microstrain', 2 * ms.R))].join('');
+    const gpts = [{ x: gages.map((g) => deg(((g.th + Math.PI / 2) % Math.PI + Math.PI) % Math.PI - Math.PI / 2)), y: gages.map((g) => S.conv('microstrain', g.val)), role: 'measured', markers: true, r: 4.5, label: `Gage readings${red.Kt ? ' (K_t corrected)' : ''} at the gage directions` }];
+    sweepPlot({ sx: e.ex, sy: e.ey, txy: e.g }, 'strain', gpts);
+    // plot 2: what an unknown turn of the rosette does
+    const ds = Array.from({ length: 81 }, (_, i) => (-10 + i * 0.25) * D), S1 = Math.max(Math.abs(s1v.s1), Math.abs(s1v.s2), 1e-30);
+    const errs = ds.map((d) => { const ee = M.turn(e.ex, e.ey, e.g, d), ss = M.hooke(ee.ex, ee.ey, ee.g, p.E, p.nu), mm = M.mohr(ss.sx, ss.sy, ss.txy); return { sx: (ss.sx - sr.sx) / S1, t: (ss.txy - sr.txy) / S1, s1: (mm.s1 - s1v.s1) / S1 }; });
+    plots.p2.o.xlabel = 'Error in the assumed rosette angle (°)'; plots.p2.o.ylabel = 'Error, % of the largest principal stress';
+    const s2 = [{ x: ds.map(deg), y: errs.map((r) => 100 * r.sx), role: 'theory', label: 'σ_x (component along x)' }, { x: ds.map(deg), y: errs.map((r) => 100 * r.t), role: 'third', label: 'τ_xy' }, { x: ds.map(deg), y: errs.map((r) => 100 * r.s1), role: 'numeric', label: 'σ_max (invariant: zero)' }];
+    plots.p2.draw({ series: s2, xlim: [-10, 10], ylim: lim(s2.flatMap((z) => z.y)), desc: 'Error in the stress components caused by an error in the assumed rosette angle.' });
+    $('h-p2').textContent = 'If the rosette angle is wrong';
+    $('cap2').innerHTML = 'A rosette turned by an unknown angle gives the right principal stresses (they do not depend on the axes) but the wrong components on x and y, and principal directions wrong by the same angle. Part A of the lab measures the turn of each rosette so that Part B can correct for it.';
+    // readout
+    const rows = [];
+    if (red.nm) { rows.push(['ε_x (closed form vs Gaussian elimination of Eq. 7.60)', 'microstrain', e.ex, red.nm.ex, 'exact'], ['ε_y', 'microstrain', e.ey, red.nm.ey, 'exact'], ['γ_xy', 'microstrain', e.g, red.nm.g, 'exact']); }
+    const Js = M.jacobi([[e.ex, e.g / 2, 0], [e.g / 2, e.ey, 0], [0, 0, 0]]), inS = Js.vals.filter((_, i) => Math.abs(Js.vecs[i][2]) < 0.5);
+    rows.push(['ε_max (Eq. 7.51 vs Jacobi on the strain tensor)', 'microstrain', ms.s1, Math.max(...inS), 'exact'], ['ε_min', 'microstrain', ms.s2, Math.min(...inS), 'exact']);
+    const sw = M.sweep(e.ex, e.ey, e.g / 2, p.Nsw);
+    rows.push([`ε_max by a sweep over ${p.Nsw} directions`, 'microstrain', ms.s1, sw.smax, 'disc']);
+    rows.push(['σ_max from the principal strains (Hooke) vs Jacobi on the stress tensor', 'stress', p.E / (1 - p.nu * p.nu) * (ms.s1 + p.nu * ms.s2), s1v.s1, 'exact']);
+    if (p.Kt) { const r0 = M.rosetteReduce(Object.assign({}, p, { ktcorr: false })), sr0 = M.hooke(r0.cf.ex, r0.cf.ey, r0.cf.g, p.E, p.nu); rows.push(['σ_max: without vs with the K_t correction', 'stress', M.mohr(sr0.sx, sr0.sy, sr0.txy).s1, s1v.s1, 'model']); }
+    if (p.beta) { const r0 = M.rosetteReduce(Object.assign({}, p, { beta: 0 })), sr0 = M.hooke(r0.cf.ex, r0.cf.ey, r0.cf.g, p.E, p.nu); rows.push(['σ_x: rosette assumed straight vs turned back by β', 'stress', sr0.sx, sr.sx, 'model'], ['τ_xy: assumed straight vs turned back by β', 'stress', sr0.txy, sr.txy, 'model']); }
+    renderReadout(rows, 'Numerical: Gaussian elimination with pivoting on Eq. 7.60 (with the transverse-sensitivity model), Jacobi rotations, and a sweep over directions; the closed form is Eq. 7.43 (rectangular) or the delta formulas, with the K_t correction for a rectangular rosette.');
+    const cv = M.sweepConvergence(e.ex, e.ey, e.g / 2);
+    drawConv(cv.rows, 'Directions sampled, N', `Largest ε(θ) found by sampling N directions (16 grid positions): order ${S.fmt(cv.slope, 3)} (expected 2).`, 2, false, ['Relative error of the sampled ε_max']);
+    const W = [];
+    W.push([Math.abs(p.beta) > 3 * D ? 'warn' : 'ok', `Rosette turned by β = ${S.fmt(deg(p.beta), 3)}°: if this were ignored, σ_x would be off by ${q('stress', Math.abs(M.hooke(M.turn(e.ex, e.ey, e.g, p.beta).ex, M.turn(e.ex, e.ey, e.g, p.beta).ey, M.turn(e.ex, e.ey, e.g, p.beta).g, p.E, p.nu).sx - sr.sx), 3)} and θ_p by ${S.fmt(Math.abs(deg(p.beta)), 3)}°; σ_max would not change.`]);
+    W.push([Math.abs(p.Kt) > 0.02 && !p.ktcorr ? 'bad' : Math.abs(p.Kt) > 0.005 ? 'warn' : 'ok', `Transverse sensitivity K_t = ${S.fmt(100 * p.Kt, 3)} % ${p.ktcorr ? 'is corrected' : 'is NOT corrected'}; a gage also responds to strain across its grid, by K_t times that strain (relative to its calibration with ν₀ = 0.285).`]);
+    if (p.ros === 'custom') W.push([Math.abs(M.rosDet(angles)) < 0.1 ? 'warn' : 'ok', `Conditioning: det of Eq. 7.60 = ${S.fmt(M.rosDet(angles), 3)} (rectangular: 0.5, delta: 0.65); a small value amplifies reading errors.`]);
+    W.push([Math.max(Math.abs(sr.sx), Math.abs(sr.sy)) > mat.sY ? 'bad' : 'ok', 'Stress from strain uses Hooke\'s law for plane stress: valid only below yield and at a free surface (σ_z = 0).']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('ε(θ) = ε<sub>x</sub> cos²θ + ε<sub>y</sub> sin²θ + γ<sub>xy</sub> sin θ cos θ', 'geometry of small strain (Beer §7.7A, Eq. 7.41).', 'three gages give three equations for ε_x, ε_y, γ_xy (Eq. 7.60).', chip('ok', 'small strain'), `${angles.length} gages`),
+      card('γ<sub>xy</sub> = 2ε<sub>b</sub> − (ε<sub>a</sub> + ε<sub>c</sub>)', 'Eq. 7.41 at 0°, 45°, 90° (Beer Eq. 7.43, Fig. 7.64).', 'a along x, c along y, b on the bisector.', p.ros === 'rect' ? chip('ok', 'in use') : chip('info', 'not in use'), `γ_xy = ${q('microstrain', e.g)}`),
+      card('σ = E(ε + νε′)/(1 − ν²)', 'generalized Hooke\'s law with σ_z = 0 (Beer §2.5, §2.7).', 'principal directions of stress and strain coincide in an isotropic material.', chip('ok', 'elastic, isotropic'), `σ_max = ${q('stress', s1v.s1)}`),
+    ].join('');
+  }
+
+  // --------------------------------------------------------------- tube
+  function sampleTube() {
+    if ($('overlay').value !== 'auto' || !SAMPLE.rd || !near(p.Do, 38.1e-3, 0.01) || !near(p.Di, 31.75e-3, 0.01) || p.mat !== 'al' || p.surf !== 'outer') return null;
+    const part = near(p.F, 600, 0.02) && near(p.aL, 0.2, 0.02) && near(p.p, 8e6, 0.02) ? 'Cc' : near(p.F, 600, 0.02) && near(p.aL, 0.2, 0.02) && p.p < 1e4 ? 'B'
+      : near(p.F, 600, 0.02) && Math.abs(p.aL) < 0.002 && p.p < 1e4 ? 'A' : p.F < 1 && near(p.p, 8e6, 0.02) ? 'C' : null;
+    if (!part || !near(p.Lb, 0.25, 0.02)) return null;
+    const g = Math.abs(p.phi) < 5 * D ? 'H' : Math.abs(p.phi - Math.PI / 2) < 5 * D ? 'K' : null;
+    return { part, g, rd: g ? SAMPLE.rd[part][g] : null, meas: SAMPLE.meas[part] };
+  }
+  function updateTube() {
+    const mat = M.MATERIALS[p.mat], stt = M.tubeState(p, p.phi), num = M.tubeState(p, p.phi, { num: true, N: 40, Nfd: p.Nfd }), tp = stt.tp;
+    R = { kind: 'tube', stt };
+    const { rows, m, pc } = stateRows(stt, 'stress', p.surf === 'inner' ? 'σ_r = −p' : 'σ_r = 0');
+    $('h-diag').textContent = "Mohr's circle at the point on the tube";
+    drawDiagram({ kind: 'stress', x: stt.sx, y: stt.sy, t: stt.txy, s3: stt.sz, s3label: 'σr', th: p.th, unitQ: 'stress', tube: { phi: p.phi, ro: tp.ro, ri: tp.ri }, aria: "Mohr's circles for the stress at the chosen point of the tube, with the rotated element and the point marked on the cross-section." });
+    $('diag-txt').textContent = `${p.surf} surface, φ = ${S.fmt(deg(p.phi), 3)}° from the top toward K; M = ${q('moment', stt.M, 4)}, T = ${q('moment', stt.T, 4)}`;
+    $('cap-diag').innerHTML = `Local axes: x along the tube, y around it, 90° counterclockwise from x seen from outside (at the top H, y points away from the lever side). The radial direction is principal (σ_r = ${q('stress', stt.sz, 3)}), so the dashed circles complete the three-dimensional picture.`;
+    const e = M.strainsOf(stt.sx, stt.sy, stt.txy, mat.E, mat.nu), rd = M.ktForward(e.ex, e.ey, e.g, M.ANGLES.rect, 0, 0);
+    $('stats').innerHTML = [st('σ<sub>x</sub>, σ<sub>y</sub> (hoop), τ<sub>xy</sub>', `${q('stress', stt.sx, 4)}, ${q('stress', stt.sy, 4)}, ${q('stress', stt.txy, 4)}`),
+      st('Parts: Mc/I, Tc/J, VQ/It', `${q('stress', stt.sxb, 3)}, ${q('stress', stt.tauT, 3)}, ${q('stress', stt.tauV, 3)}`), st('σ₁, σ₂, σ₃', pc.map((v) => q('stress', v, 3)).join(', ')),
+      st('In-plane / absolute τ<sub>max</sub>', `${q('stress', m.R, 3)} / ${q('stress', (pc[0] - pc[2]) / 2, 3)}`), st('Von Mises; safety factor', `${q('stress', M.vonMises(pc), 3)}; ${S.fmt(mat.sY / M.vonMises(pc), 3)}`),
+      p.surf === 'outer' ? st('Ideal rosette readings a, b, c', rd.map((v) => q('microstrain', v, 4)).join(', ')) : st('Radial stress σ<sub>r</sub>', q('stress', stt.sz, 3))].join('');
+    const ov = sampleTube();
+    const gpts = ov && ov.rd ? [{ x: [0, 45, 90], y: ov.rd.map((v) => S.conv('microstrain', v)), role: 'measured', markers: true, r: 4.5, label: `Sample data: rosette ${ov.g} readings (raw)` }] : null;
+    if (p.surf === 'inner') sweepPlot(stt, 'stress', null, ' At the inner surface σ_r = −p is not zero, so this is the in-plane part of a three-dimensional state; no gage can be bonded here.');
+    else sweepPlot({ sx: e.ex, sy: e.ey, txy: e.g }, 'strain', gpts, ' On the tube the gages sit at 0°, 45° and 90°; the open circles are the raw sample readings, before the corrections for the rosette\'s turn and K_t.');
+    // plot 2: around the circumference
+    const phis = Array.from({ length: 145 }, (_, i) => (-180 + 2.5 * i) * D), cur = phis.map((f) => { const s = M.tubeState(p, f), pr = M.principal3(s); return { pr, vm: M.vonMises(pr), tabs: (pr[0] - pr[2]) / 2 }; });
+    const nphi = Array.from({ length: 13 }, (_, i) => (-180 + 30 * i + 15) * D), nn = nphi.map((f) => { const s = M.tubeState(p, f, { num: true, N: 40, Nfd: p.Nfd }); return M.jacobi(M.tensor3(s)).vals; });
+    const s2 = [{ x: phis.map(deg), y: cur.map((c) => S.conv('stress', c.pr[0])), role: 'theory', label: 'σ₁' }, { x: phis.map(deg), y: cur.map((c) => S.conv('stress', c.pr[2])), role: 'theory', dash: '5 3', width: 1.6, label: 'σ₃' },
+      { x: phis.map(deg), y: cur.map((c) => S.conv('stress', c.tabs)), role: 'third', label: 'absolute τ_max' }, { x: phis.map(deg), y: cur.map((c) => S.conv('stress', c.vm)), role: 'fourth', label: 'von Mises' },
+      { x: nphi.map(deg), y: nn.map((v) => S.conv('stress', v[0])), role: 'numeric', markers: true, r: 3, label: 'σ₁: Simpson Q, FD cylinder, Jacobi' }];
+    if (ov && ov.meas) s2.unshift({ x: [0, 90], y: [ov.meas.H.s1, ov.meas.K.s1].map((v) => S.conv('stress', v)), role: 'measured', markers: true, r: 4.5, label: 'Sample data: σ_max at H and K' });
+    plots.p2.o.xlabel = 'Point φ, from the top toward K (°)'; plots.p2.o.ylabel = `Stress (${S.unit('stress')})`;
+    plots.p2.draw({ series: s2, xlim: [-180, 180], ylim: lim(s2.flatMap((z) => z.y)), points: [{ x: deg(p.phi), y: S.conv('stress', pc[0]), role: 'numeric', shape: 'ring', label: 'this point' }], desc: 'Principal and equivalent stresses around the circumference.' });
+    $('h-p2').textContent = 'Around the circumference';
+    $('cap2').innerHTML = `Bending is largest at the top (φ = 0) and bottom; torsion is the same everywhere; transverse shear adds to torsion on the K side (φ = 90°) and subtracts on the other. The ${p.surf} surface is shown.`;
+    // readout
+    const fd = M.lameFD(p.p || 1e6, tp.ri, tp.ro, mat.E, mat.nu, p.Nfd), lc = M.lameClosed(p.p || 1e6, tp.ri, tp.ro, p.surf === 'inner' ? tp.ri : tp.ro), fds = p.surf === 'inner' ? fd.inner : fd;
+    const rws = [];
+    if (Math.abs(Math.sin(p.phi)) > 1e-6) rws.push([`Q of the wall from the top to φ (closed form vs Simpson, 40 intervals), in mm³ × 10⁻⁹`, 'none', stt.Q * 1e9, num.Q * 1e9, 'disc']);
+    rws.push([`Hoop stress at the ${p.surf} surface for p = ${q('pressure', p.p || 1e6, 3)} (Lamé vs finite differences, ${p.Nfd} intervals)`, 'stress', lc.st, fds.st, 'disc'],
+      ['Axial stress from the closed ends (Lamé vs finite differences)', 'stress', lc.sx, fds.sx, 'disc']);
+    rws.push(...rows);
+    if (p.p > 0) { const th_ = M.tubeState(Object.assign({}, p, { wall: p.wall === 'thin' ? 'lame' : 'thin' }), p.phi); rws.push([`Hoop stress: ${p.wall === 'thin' ? 'thin wall pr/t vs Lamé' : 'Lamé vs thin wall pr/t'}`, 'stress', stt.sh, th_.sh, 'model']); }
+    renderReadout(rws, `Numerical: Simpson quadrature of the wall's first moment, a second-order finite-difference solution of the thick cylinder (radial displacement with the closed-end condition), and Jacobi rotations for the principal stresses.`);
+    const cv = M.tubeConvergence(p);
+    drawConv(cv.rows, 'Intervals N', `Finite-difference hoop stress converges with order ${S.fmt(cv.slope, 3)} (expected 2); Simpson's Q with order ${S.fmt(cv.slopeM, 3)} (expected 4) until round-off.`, 2, true, ['Hoop stress, finite differences vs Lamé', 'Q, Simpson vs closed form']);
+    // warnings
+    const W = [], ratio = (pc[0] - pc[2]) / 2 / Math.max(m.R, 1e-30), thinErr = p.p > 0 ? (p.p * tp.ri / tp.t) / M.lameClosed(p.p, tp.ri, tp.ro, tp.ro).st - 1 : 0;
+    W.push([ratio > 1.01 ? 'bad' : 'ok', ratio > 1.01 ? `Absolute τ_max = ${q('stress', (pc[0] - pc[2]) / 2, 3)} is ${S.fmt(100 * (ratio - 1), 3)} % above the in-plane R = ${q('stress', m.R, 3)}: σ_max and σ_min have the same sign here (or σ_r lies outside the in-plane circle), so the in-plane circle is not the largest.` : 'In-plane τ_max equals the absolute maximum here (principal stresses of opposite sign).']);
+    if (p.p > 0) W.push([Math.abs(thinErr) > 0.05 ? 'bad' : Math.abs(thinErr) > 0.01 ? 'warn' : 'ok', `Thin-wall hoop stress p r_i/t is ${S.fmt(100 * thinErr, 3)} % ${thinErr > 0 ? 'above' : 'below'} the Lamé value at the outer surface (r_i/t = ${S.fmt(tp.ri / tp.t, 3)}); it equals the average hoop stress through the wall exactly.`]);
+    const vm = M.vonMises(pc);
+    W.push([vm > mat.sY ? 'bad' : vm > 0.6 * mat.sY ? 'warn' : 'ok', `Von Mises ${q('stress', vm, 3)} = ${S.fmt(100 * vm / mat.sY, 3)} % of σ_Y: the elastic formulas ${vm > mat.sY ? 'no longer apply' : 'apply'}.`]);
+    W.push([p.Lb < 2 * p.Do ? 'warn' : 'ok', `Gage section ${S.fmt(p.Lb / p.Do, 3)} diameters from the load (and it must be as far from the clamp): Saint-Venant's principle needs about two diameters for the beam formulas to hold.`]);
+    W.push([tp.t / tp.ro > 0.3 ? 'warn' : 'ok', `Transverse shear uses VQ/(It) averaged through the wall (§6.1); for a wall this thick (t/r_o = ${S.fmt(tp.t / tp.ro, 3)}) the exact distribution differs by a few percent. It is ${S.fmt(100 * stt.tauV / Math.max(stt.tauT + stt.tauV, 1e-30), 3)} % of the shear here.`]);
+    warn(W);
+    $('cards').innerHTML = [
+      card('σ<sub>x</sub> = Mc/I, τ = Tc/J + VQ/(It)', 'superposition of bending, torsion and transverse shear at one section (Beer §8.3, Ch. 3, 4, 6).', 'M = F L_b, T = F a_L, V = F; Q of the wall between the top and the point.', chip('ok', 'elastic, away from the ends'), `M = ${q('moment', stt.M)}, T = ${q('moment', stt.T)}`),
+      card('σ<sub>θ</sub> = pr/t, σ<sub>x</sub> = pr/2t', 'equilibrium of half a thin cylinder (Beer §7.6, Eqs. 7.30, 7.31).', 'r inner radius, t wall thickness; the average through the wall.', Math.abs(thinErr) > 0.05 ? chip('warn', `${S.fmt(100 * thinErr, 2)} % off at the surface`) : chip('ok', 'thin wall'), `pr/t = ${q('stress', p.p * tp.ri / tp.t)}`),
+      card('σ<sub>θ</sub> = A + B/r², σ<sub>r</sub> = A − B/r²', 'thick cylinder (Lamé): equilibrium of a ring element with compatible displacements.', 'A = p r_i²/(r_o² − r_i²), B = A r_o²; closed ends add σ_x = A.', chip('ok', 'any thickness'), `σ_θ(r_o) = ${q('stress', M.lameClosed(p.p, tp.ri, tp.ro, tp.ro).st)}`),
+    ].join('');
+  }
+
+  const EXPERIMENTS = [
+    ['Pressure makes the shear three-dimensional', 'Part C at H with the lever load: σ_max and σ_min are both tensile, and the absolute τ_max is about 1.5 times the in-plane value.', () => { applyPreset('partCc'); }],
+    ['Thin wall or thick?', 'A thick tube (D_o/D_i = 2) under pressure: compare pr/t with Lamé, and switch the surface to inner.', () => { applyPreset('thick'); }],
+    ['A crooked rosette', 'Readings from a rosette turned 5°: drag β to 5° and watch σ_x and τ_xy change while σ_max does not.', () => { applyPreset('crooked'); }],
+    ['Transverse sensitivity', 'Gages with K_t = 4 %: tick the correction and see how much the stresses move.', () => { applyPreset('ktbig'); }],
+    ['Equal biaxial stress', 'The in-plane circle shrinks to a point, yet the absolute τ_max is σ/2.', () => { applyPreset('biax'); }],
+    ['Pure shear at K', 'The side of the tube under torsion and transverse shear: principal stresses at ±45°.', () => { applyPreset('partBK'); }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); });
+
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'tube') {
+      const rows = Array.from({ length: 73 }, (_, i) => { const f = (-180 + 5 * i) * D, s = M.tubeState(p, f), pr = M.principal3(s); return [S.plain(deg(f)), ...[s.sx, s.sy, s.txy, pr[0], pr[1], pr[2], (pr[0] - pr[2]) / 2, M.vonMises(pr)].map((v) => S.plain(S.conv('stress', v)))]; });
+      S.exportCSV('lab08_tube_circumference.csv', S.toCSV(['phi_deg', ...['sigma_x', 'sigma_hoop', 'tau_xy', 'sigma_1', 'sigma_2', 'sigma_3', 'tau_abs_max', 'von_mises'].map((n) => `${n}_${u('stress')}`)], rows), panel);
+    } else if (R.kind === 'stress') {
+      const s = R.stt, rows = thetas.map((t) => { const r = M.transform(s.sx, s.sy, s.txy, t); return [S.plain(deg(t)), S.plain(S.conv('stress', r.sx1)), S.plain(S.conv('stress', r.sy1)), S.plain(S.conv('stress', r.t1))]; });
+      S.exportCSV('lab08_stress_vs_theta.csv', S.toCSV(['theta_deg', `sigma_x1_${u('stress')}`, `sigma_y1_${u('stress')}`, `tau_x1y1_${u('stress')}`], rows), panel);
+    } else {
+      const e = R.red.cf, rows = thetas.map((t) => { const r = M.transform(e.ex, e.ey, e.g / 2, t); return [S.plain(deg(t)), S.plain(S.conv('microstrain', r.sx1)), S.plain(S.conv('microstrain', 2 * r.t1))]; });
+      S.exportCSV('lab08_strain_vs_theta.csv', S.toCSV(['theta_deg', `epsilon_${u('microstrain')}`, `gamma_x1y1_${u('microstrain')}`], rows), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v, kind]) => [n, S.plain(S.conv(qq, c)), S.plain(S.conv(qq, v)), S.unit(qq), kind]);
+    S.exportCSV('lab08_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'comparison'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    const hasM = R.conv.rows.some((r) => r.errM !== undefined);
+    const head = [R.conv.xlabel.replace(/[^A-Za-z]+/g, '_').toLowerCase().replace(/_+$/, ''), 'relative_error'].concat(hasM ? ['relative_error_Q'] : []);
+    S.exportCSV('lab08_convergence.csv', S.toCSV(head, R.conv.rows.map((r) => [r.N, S.plain(r.err)].concat(hasM ? [S.plain(r.errM)] : []))), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('partB');
+})();
+
+</script>
+</body>
+</html>

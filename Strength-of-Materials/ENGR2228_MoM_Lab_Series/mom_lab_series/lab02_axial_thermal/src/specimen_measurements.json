@@ -1,0 +1,65 @@
+{
+ "A_width_mm": [
+  25.41,
+  25.39,
+  25.4
+ ],
+ "A_thickness_mm": [
+  6.36,
+  6.34,
+  6.35
+ ],
+ "B_rod_d_mm": [
+  12.7,
+  12.71,
+  12.7
+ ],
+ "B_tube_do_mm": [
+  25.41,
+  25.4,
+  25.4
+ ],
+ "B_tube_di_mm": [
+  19.04,
+  19.06,
+  19.05
+ ],
+ "B_rod_L_mm": 150.0,
+ "B_tube_L_mm": 149.96,
+ "C_bolt_d_mm": [
+  10.0,
+  10.01,
+  10.0
+ ],
+ "C_sleeve_do_mm": [
+  20.0,
+  20.01,
+  20.0
+ ],
+ "C_sleeve_di_mm": [
+  10.5,
+  10.51,
+  10.5
+ ],
+ "C_L_mm": 100.0,
+ "C_preload_N": 2000.0,
+ "gage_factor_set": 2.1,
+ "gage_factor_tolerance_pct": 1.0,
+ "gage_resolution_ue": 1,
+ "load_cell_accuracy_pct": 0.5,
+ "caliper_accuracy_mm": 0.02,
+ "bore_gage_accuracy_mm": 0.01,
+ "thermocouple_accuracy_C": 1.0,
+ "height_gage_accuracy_mm": 0.01,
+ "dial_resolution_mm": 0.001,
+ "gage_residual_thermal_ue_per_C": 0.5,
+ "handbook": {
+  "E_al_GPa": 68.9,
+  "nu_al": 0.33,
+  "E_st_GPa": 205.0,
+  "alpha_al": 2.36e-05,
+  "alpha_st": 1.17e-05,
+  "u_alpha": 3e-07,
+  "u_E_st_GPa": 3.0
+ }
+}

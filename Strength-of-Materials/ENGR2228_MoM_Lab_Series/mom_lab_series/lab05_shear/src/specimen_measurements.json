@@ -1,0 +1,100 @@
+{
+ "barA": {
+  "b_mm": [
+   25.43,
+   25.41,
+   25.42
+  ],
+  "h_mm": [
+   50.79,
+   50.77,
+   50.78
+  ],
+  "span_mm": 400.0,
+  "x_gage_mm": 100.0
+ },
+ "ibeam": {
+  "H_mm": [
+   101.62,
+   101.58,
+   101.6
+  ],
+  "B_mm": [
+   76.19,
+   76.21,
+   76.22
+  ],
+  "tf_mm": [
+   6.36,
+   6.34,
+   6.35,
+   6.36
+  ],
+  "tw_mm": [
+   4.801,
+   4.797,
+   4.803
+  ],
+  "gage_height_mm": [
+   50.98,
+   73.17,
+   91.93
+  ],
+  "span_web_mm": 900.0,
+  "x_gage_mm": 225.0,
+  "spans_mm": [
+   300.0,
+   450.0,
+   600.0,
+   900.0,
+   1200.0
+  ]
+ },
+ "layered": {
+  "b_mm": [
+   50.81,
+   50.83,
+   50.82
+  ],
+  "t_top_mm": [
+   12.71,
+   12.7,
+   12.72
+  ],
+  "t_bot_mm": [
+   12.69,
+   12.7,
+   12.68
+  ],
+  "span_mm": 600.0,
+  "bolts_mm": [
+   50.0,
+   150.0,
+   250.0,
+   350.0,
+   450.0,
+   550.0
+  ]
+ },
+ "caliper_accuracy_mm": 0.02,
+ "micrometer_accuracy_mm": 0.003,
+ "height_gage_accuracy_mm": 0.05,
+ "span_accuracy_mm": 0.5,
+ "gage_factor_tolerance_pct": 1.0,
+ "load_cell_accuracy_pct": 0.5,
+ "lvdt_accuracy_pct": 0.5,
+ "lvdt_resolution_mm": 0.001,
+ "slip_resolution_mm": 0.001,
+ "reference": {
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "nu_al": 0.33,
+  "u_nu_al": 0.003,
+  "G_al_GPa": 26.03,
+  "u_G_al_GPa": 0.12,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0,
+  "tauY_al_MPa": 150.8,
+  "u_tauY_al_MPa": 0.5
+ }
+}

@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Axial Members Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 2: axial deformation, statically indeterminate members and thermal stress. Closed-form compatibility solutions compared with a 1-D finite-element solver and an event-tracking load-path solver.">
+<style>
+/*@@SIM_CORE_CSS@@*/
+.modebar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 2 · Beer 8e §2.1G, 2.2–2.5, 2.10</div>
+      <h1>Axial deformation, redundant members and thermal stress</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> internal axial forces and stresses are tension positive; elongations are positive; a temperature rise ΔT is positive; in the bar model a load or displacement is positive toward +x (to the right). A press load P on the caps is entered as a compressive magnitude. <b>Blue solid</b> = closed-form (textbook) solution; <b>vermillion dashed / markers</b> = independent numerical solution; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="rodtube">Part B: steel rod in aluminum tube (gap)</option>
+          <option value="bolt">Part C: steel bolt clamping aluminum sleeve (heated)</option>
+          <option value="stepped">Stepped bar between two walls</option>
+          <option value="taper">Tapered bar, heated, with a gap</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel" id="panel-par">
+      <div class="group" id="grp-par">
+        <div class="group-title">Member 1 (rod or bolt) and member 2 (tube or sleeve)</div>
+        <div class="row2">
+          <div><label class="small" for="mat1">Member 1</label><select id="mat1"></select></div>
+          <div><label class="small" for="mat2">Member 2</label><select id="mat2"></select></div>
+        </div>
+        <div><div class="small" style="margin-bottom:4px">Ends of member 2</div><div id="contact"></div></div>
+      </div>
+    </section>
+    <section class="panel" id="panel-ser" hidden>
+      <div class="group" id="grp-ser">
+        <div class="group-title">Bar: segment 1 (may taper) and segment 2</div>
+        <div class="row2">
+          <div><label class="small" for="smat1">Segment 1</label><select id="smat1"></select></div>
+          <div><label class="small" for="smat2">Segment 2</label><select id="smat2"></select></div>
+        </div>
+        <div><label class="small" for="support">Right end</label>
+          <select id="support"><option value="fixed">Fixed to a rigid wall</option><option value="free">Free</option><option value="gap">Gap g to a rigid wall</option></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-load"><div class="group-title">Loads and temperature</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical solver</div></div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay">
+          <option value="auto">Matching part of sample_data.csv</option>
+          <option value="none">No sample data</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">Configuration</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: linear elastic bars, elongation = FL/(EA) + αΔT·L, equilibrium at every node and compatibility of displacements. Closed forms from Beer 8e §2.1G–2.3; the numerical solutions are a 1-D finite-element solver (series bar) and an event-tracking load-path solver (parallel members). Verified by <span class="num">tests/test_lab02_model.js</span> and <span class="num">tests/test_lab02_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 2 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 2 physics — pure functions, SI base units (N, m, Pa, K). Loaded unchanged by the Node tests. */
+const Lab2Model = (() => {
+  'use strict';
+  const MATERIALS = {
+    steel: { name: '1018 steel', E: 205e9, alpha: 11.7e-6, sy: 370e6 },
+    al: { name: '6061-T6 aluminum', E: 68.9e9, alpha: 23.6e-6, sy: 276e6 },
+    brass: { name: 'C360 brass', E: 97e9, alpha: 20.5e-6, sy: 310e6 },
+  };
+  const PRESETS = {
+    rodtube: { mode: 'parallel', mat1: 'steel', mat2: 'al', d1: 12.70e-3, do: 25.40e-3, di: 19.05e-3, L: 0.150, g: 40e-6, F0: 0, P: 30e3, dT: 0, contact: true, steps: 40 },
+    bolt: { mode: 'parallel', mat1: 'steel', mat2: 'al', d1: 10.00e-3, do: 20.00e-3, di: 10.50e-3, L: 0.100, g: 0, F0: 2000, P: 0, dT: 60, contact: false, steps: 40 },
+    stepped: { mode: 'series', smat1: 'steel', smat2: 'al', L1: 0.300, da: 25e-3, db: 25e-3, L2: 0.200, d2: 15e-3, PB: 40e3, dT: 0, support: 'fixed', g: 0.2e-3, N: 8 },
+    taper: { mode: 'series', smat1: 'al', smat2: 'al', L1: 0.400, da: 30e-3, db: 15e-3, L2: 0.100, d2: 15e-3, PB: 0, dT: 60, support: 'gap', g: 0.3e-3, N: 8 },
+  };
+  const A_circ = (d) => Math.PI * d * d / 4;
+  const A_tube = (o, i) => Math.PI * (o * o - i * i) / 4;
+
+  /* ---------------- parallel members between rigid caps ----------------
+     member 1: solid rod/bolt, length L; member 2: tube/sleeve, shorter than member 1 by g.
+     P = compressive press load on the caps. contact: member 2 carries compression only.
+     bonded (contact = false): F0 = preload in member 1 at dT = 0, set by an interference. */
+  function parMembers(p) {
+    const m1 = MATERIALS[p.mat1], m2 = MATERIALS[p.mat2];
+    const k1 = m1.E * A_circ(p.d1) / p.L;
+    const L2 = p.L - (p.contact ? p.g : 0);
+    const k2 = m2.E * A_tube(p.do, p.di) / L2;
+    const g = p.contact ? p.g : -p.F0 * (1 / k1 + 1 / k2);     // interference that gives preload F0
+    return { m1, m2, k1, k2, L2, g, A1: A_circ(p.d1), A2: A_tube(p.do, p.di) };
+  }
+  function parallelClosed(p, P = p.P, dT = p.dT) {
+    const q = parMembers(p);
+    const dA = q.m1.alpha * p.L - q.m2.alpha * q.L2;
+    let F1 = (-q.g - dT * dA - P / q.k2) / (1 / q.k1 + 1 / q.k2);
+    let F2 = -P - F1, open = false;
+    if (p.contact && F2 > 0) { F1 = -P; F2 = 0; open = true; }
+    const e1 = F1 / q.k1 + q.m1.alpha * dT * p.L;
+    return { F1, F2, e1, open, k1: q.k1, k2: q.k2, A1: q.A1, A2: q.A2,
+             Pgap: p.contact ? q.k1 * (p.g - dT * (q.m2.alpha * q.L2 - q.m1.alpha * p.L)) : NaN,
+             share: q.m2.E * q.A2 / (q.m1.E * q.A1 + q.m2.E * q.A2),
+             dFdT: (q.m2.alpha * q.L2 - q.m1.alpha * p.L) / (1 / q.k1 + 1 / q.k2) };
+  }
+  /* Independent numerical solution: march the load (and temperature) from zero in M increments.
+     At each increment solve the 1-DOF cap equilibrium with the members that are currently active;
+     when member 2 touches or lifts off inside an increment, locate the event by bisection. */
+  function parallelPath(p, M = p.steps, Pend = p.P, dTend = p.dT) {
+    const q = parMembers(p);
+    const path = { P: [], dT: [], F1: [], F2: [], u: [], events: [] };
+    // cap displacement u (shortening positive) relative to member 1's free length at dT
+    const state = (P, dT, active) => {
+      // member strains: member1 force = -k1*(u + a1*dT*L); member 2 force = -k2*(u + a2*dT*L2 - (L - L2)) when active
+      const t1 = q.m1.alpha * dT * p.L, t2 = q.m2.alpha * dT * q.L2;
+      const g2 = q.g;   // member 2 is shorter than member 1 by g2 (negative: interference that preloads)
+      // equilibrium of the cap: k1 (u + t1) + [active] k2 (u + t2 - g2) = P   (compressive member forces)
+      const u = active ? (P - q.k1 * t1 - q.k2 * (t2 - g2)) / (q.k1 + q.k2) : (P - q.k1 * t1) / q.k1;
+      const F1 = -q.k1 * (u + t1), F2 = active ? -q.k2 * (u + t2 - g2) : 0;
+      return { u, F1, F2 };
+    };
+    const wants = (P, dT, active) => {
+      if (!p.contact) return true;
+      if (active) return state(P, dT, true).F2 <= 0;          // stays in contact while compressive
+      const s = state(P, dT, false);                           // closes when the cap reaches member 2
+      return s.u + q.m2.alpha * dT * q.L2 - q.g >= 0;
+    };
+    let active = !p.contact || wants(0, 0, false);
+    const push = (P, dT) => { const s = state(P, dT, active); path.P.push(P); path.dT.push(dT); path.F1.push(s.F1); path.F2.push(s.F2); path.u.push(s.u); };
+    push(0, 0);
+    for (let k = 1; k <= M; k++) {
+      const t0 = (k - 1) / M, t1 = k / M;
+      const Pa = Pend * t1, Ta = dTend * t1;
+      if (p.contact && wants(Pa, Ta, active) !== active) {
+        let lo = t0, hi = t1;
+        for (let it = 0; it < 80; it++) { const mid = 0.5 * (lo + hi); if (wants(Pend * mid, dTend * mid, active) === active) lo = mid; else hi = mid; }
+        const te = 0.5 * (lo + hi);
+        push(Pend * te, dTend * te);
+        active = !active;
+        path.events.push({ t: te, P: Pend * te, dT: dTend * te, closed: active });
+        push(Pend * te, dTend * te);
+      }
+      push(Pa, Ta);
+    }
+    return path;
+  }
+
+  /* ---------------- series bar: fixed at x = 0, two segments ---------------- */
+  function serGeom(p) {
+    const m1 = MATERIALS[p.smat1], m2 = MATERIALS[p.smat2];
+    const dAt = (x) => x <= p.L1 ? p.da + (p.db - p.da) * x / p.L1 : p.d2;
+    return { m1, m2, dAt, L: p.L1 + p.L2 };
+  }
+  function seriesClosed(p) {
+    const s = serGeom(p);
+    const f1 = 4 * p.L1 / (Math.PI * s.m1.E * p.da * p.db);
+    const f2 = p.L2 / (s.m2.E * A_circ(p.d2));
+    const th = p.dT * (s.m1.alpha * p.L1 + s.m2.alpha * p.L2);
+    const dfree = p.PB * f1 + th;
+    let R = 0;
+    if (p.support === 'fixed') R = dfree / (f1 + f2);
+    else if (p.support === 'gap') R = Math.max(0, (dfree - p.g) / (f1 + f2));
+    const N1 = p.PB - R, N2 = -R;
+    // displacement field: u(x) = integral of N/(EA) + alpha dT
+    const u = (x) => {
+      if (x <= p.L1) {
+        const d = s.dAt(x);
+        const intA = Math.abs(p.db - p.da) < 1e-12 ? x / A_circ(p.da) : (4 / Math.PI) * (p.L1 / (p.db - p.da)) * (1 / p.da - 1 / d);
+        return N1 / s.m1.E * intA + s.m1.alpha * p.dT * x;
+      }
+      return u(p.L1) + (N2 / (s.m2.E * A_circ(p.d2)) + s.m2.alpha * p.dT) * (x - p.L1);
+    };
+    const sigma = (x) => (x <= p.L1 ? N1 : N2) / A_circ(s.dAt(x));
+    const dmin1 = Math.min(p.da, p.db);
+    return { R, N1, N2, f1, f2, th, dfree, u, sigma, uB: u(p.L1), uC: u(s.L), contact: p.support === 'fixed' || (p.support === 'gap' && dfree > p.g),
+             sigmaMax1: Math.abs(N1) / A_circ(dmin1), sigma2: N2 / A_circ(p.d2), L: s.L };
+  }
+  /* Independent numerical solution: linear 2-node bar finite elements, N per segment, area evaluated
+     at each element's midpoint, thermal load as equivalent nodal forces, tridiagonal solve. */
+  function seriesFE(p, N = p.N) {
+    const s = serGeom(p);
+    const xs = [];
+    for (let i = 0; i <= N; i++) xs.push(p.L1 * i / N);
+    for (let i = 1; i <= N; i++) xs.push(p.L1 + p.L2 * i / N);
+    const n = xs.length, ne = n - 1;
+    const kd = new Array(n).fill(0), ko = new Array(n).fill(0), F = new Array(n).fill(0);
+    const el = [];
+    for (let e = 0; e < ne; e++) {
+      const xm = 0.5 * (xs[e] + xs[e + 1]), h = xs[e + 1] - xs[e];
+      const m = xm <= p.L1 ? s.m1 : s.m2;
+      const EA = m.E * A_circ(s.dAt(xm)), k = EA / h, fth = EA * m.alpha * p.dT;
+      kd[e] += k; kd[e + 1] += k; ko[e] = -k;
+      F[e] -= fth; F[e + 1] += fth;
+      el.push({ k, fth, h, xm, A: A_circ(s.dAt(xm)), m });
+    }
+    F[N] += p.PB;                                             // node at the junction (x = L1)
+    const solve = (fixRight, uRight) => {
+      // unknowns u1..u_{n-1} (u0 = 0); optionally u_{n-1} prescribed
+      const last = fixRight ? n - 2 : n - 1;
+      const a = [], b = [], c = [], d = [];
+      for (let i = 1; i <= last; i++) {
+        a.push(i > 1 ? ko[i - 1] : 0); b.push(kd[i]); c.push(i < last ? ko[i] : 0);
+        let rhs = F[i];
+        if (fixRight && i === last) rhs -= ko[i] * uRight;
+        d.push(rhs);
+      }
+      // Thomas algorithm
+      const m = b.length, cp = new Array(m), dp = new Array(m);
+      cp[0] = c[0] / b[0]; dp[0] = d[0] / b[0];
+      for (let i = 1; i < m; i++) { const den = b[i] - a[i] * cp[i - 1]; cp[i] = c[i] / den; dp[i] = (d[i] - a[i] * dp[i - 1]) / den; }
+      const x = new Array(m); x[m - 1] = dp[m - 1];
+      for (let i = m - 2; i >= 0; i--) x[i] = dp[i] - cp[i] * x[i + 1];
+      const u = [0, ...x];
+      if (fixRight) u.push(uRight);
+      return u;
+    };
+    let u;
+    if (p.support === 'fixed') u = solve(true, 0);
+    else {
+      u = solve(false);
+      if (p.support === 'gap' && u[n - 1] > p.g) u = solve(true, p.g);
+    }
+    const Ne = el.map((e, i) => e.k * (u[i + 1] - u[i]) - e.fth);
+    const sig = Ne.map((Nv, i) => Nv / el[i].A);
+    const R = -Ne[ne - 1];                                    // wall force on the bar, + toward -x
+    return { x: xs, u, Ne, sig, xm: el.map((e) => e.xm), R, uB: u[N], uC: u[n - 1] };
+  }
+  function seriesConvergence(p, Ns = [1, 2, 4, 8, 16, 32, 64, 128]) {
+    // a taper is needed for discretization error; prismatic segments are exact for any N
+    const cf = seriesClosed(p);
+    const useR = p.support !== 'free' && cf.contact;
+    const ref = useR ? cf.R : cf.uC;
+    const rows = Ns.map((N) => { const fe = seriesFE(p, N); const v = useR ? fe.R : fe.uC; return { N, v, err: Math.abs(v - ref) / Math.max(Math.abs(ref), 1e-30) }; });
+    const pts = rows.filter((r) => r.err > 1e-11);
+    const slope = pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN;
+    return { rows, slope, quantity: useR ? 'wall reaction R' : 'end displacement' };
+  }
+  function linSlope(x, y) { const n = x.length; const mx = x.reduce((a, b) => a + b) / n, my = y.reduce((a, b) => a + b) / n; let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } return sxy / sxx; }
+
+  /* ---------------- limits of the model ---------------- */
+  function bucklingDT(d, L, alpha) { const r = d / 4; return Math.PI ** 2 * r * r / (alpha * (0.5 * L) ** 2); }
+  return { MATERIALS, PRESETS, A_circ, A_tube, parallelClosed, parallelPath, seriesClosed, seriesFE, seriesConvergence, bucklingDT, linSlope };
+})();
+if (typeof module !== 'undefined') module.exports = Lab2Model;
+</script>
+
+<script id="sample-data" type="application/json">/*@@SAMPLE_DATA@@*/</script>
+<script>
+/*@@SIM_CORE_JS@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab2Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'rodtube';
+  let p = Object.assign({}, M.PRESETS.stepped, M.PRESETS.rodtube);
+  let R = null;
+
+  // material selects
+  for (const id of ['mat1', 'mat2', 'smat1', 'smat2']) $(id).innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; update(); }); };
+  mk('grp-par', { id: 'd1', label: 'Member 1 diameter', sym: 'd<sub>1</sub>', q: 'length', min: 3e-3, max: 40e-3, step: 0.01e-3 });
+  mk('grp-par', { id: 'do', label: 'Member 2 outer diameter', sym: 'D<sub>o</sub>', q: 'length', min: 6e-3, max: 60e-3, step: 0.01e-3 });
+  mk('grp-par', { id: 'di', label: 'Member 2 inner diameter', sym: 'D<sub>i</sub>', q: 'length', min: 0, max: 55e-3, step: 0.01e-3 });
+  mk('grp-par', { id: 'L', label: 'Length', sym: 'L', q: 'length', min: 20e-3, max: 400e-3, step: 0.1e-3 });
+  mk('grp-par', { id: 'g', label: 'Gap: member 2 shorter by', sym: 'g', q: 'length', min: -0.1e-3, max: 0.5e-3, step: 0.001e-3, help: 'Contact ends only. A negative value is an interference fit.' });
+  mk('grp-par', { id: 'F0', label: 'Preload in member 1 at ΔT = 0', sym: 'F<sub>0</sub>', q: 'force', min: 0, max: 20e3, step: 10, help: 'Bonded ends only (bolt tightened against the sleeve).' });
+  mk('grp-ser', { id: 'L1', label: 'Segment 1 length', sym: 'L<sub>1</sub>', q: 'length', min: 20e-3, max: 600e-3, step: 0.5e-3 });
+  mk('grp-ser', { id: 'da', label: 'Segment 1 diameter at x = 0', sym: 'd<sub>a</sub>', q: 'length', min: 4e-3, max: 50e-3, step: 0.1e-3 });
+  mk('grp-ser', { id: 'db', label: 'Segment 1 diameter at x = L₁', sym: 'd<sub>b</sub>', q: 'length', min: 4e-3, max: 50e-3, step: 0.1e-3 });
+  mk('grp-ser', { id: 'L2', label: 'Segment 2 length', sym: 'L<sub>2</sub>', q: 'length', min: 5e-3, max: 600e-3, step: 0.5e-3 });
+  mk('grp-ser', { id: 'd2', label: 'Segment 2 diameter', sym: 'd<sub>2</sub>', q: 'length', min: 4e-3, max: 50e-3, step: 0.1e-3 });
+  mk('grp-ser', { id: 'gs', label: 'Gap to the right wall', sym: 'g', q: 'length', min: 0, max: 2e-3, step: 0.005e-3 });
+  mk('grp-load', { id: 'P', label: 'Press load on the caps (compression)', sym: 'P', q: 'force', min: 0, max: 100e3, step: 50 });
+  mk('grp-load', { id: 'PB', label: 'Load at the junction (+x)', sym: 'P<sub>B</sub>', q: 'force', min: -100e3, max: 100e3, step: 50 });
+  mk('grp-load', { id: 'dT', label: 'Temperature change', sym: 'ΔT', q: 'temperature', min: -60, max: 150, step: 0.5 });
+  mk('grp-num', { id: 'steps', label: 'Load increments (parallel solver)', sym: 'M', q: 'none', min: 2, max: 400, log: true, int: true });
+  mk('grp-num', { id: 'N', label: 'Elements per segment (bar solver)', sym: 'N', q: 'none', min: 1, max: 256, log: true, int: true });
+  p.gs = p.g;
+  const modeSeg = S.segmented($('mode'), [['parallel', 'Rod & tube / bolt & sleeve'], ['series', 'Bar between supports']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  const contactSeg = S.segmented($('contact'), [['contact', 'Contact only (press)'], ['bonded', 'Bonded (bolted)']], 'contact', (v) => { p.contact = v === 'contact'; update(); }, 'Ends of member 2');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  for (const id of ['mat1', 'mat2', 'smat1', 'smat2', 'support']) $(id).addEventListener('change', (e) => { p[id] = e.target.value; update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(k === 'gs' ? p.gs : p[k]);
+    for (const id of ['mat1', 'mat2', 'smat1', 'smat2', 'support']) $(id).value = p[id];
+    modeSeg.set(p.mode); contactSeg.set(p.contact ? 'contact' : 'bonded');
+  }
+  function applyPreset(k) {
+    preset = k;
+    $('preset').value = k;
+    const base = M.PRESETS[k];
+    Object.assign(p, base);
+    if (base.mode === 'series') p.gs = base.g; else p.g = base.g;
+    setAll(); update();
+  }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const fmtx = (v) => S.fmt(v, 3);
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    conv: new S.Plot($('plot-conv'), { xlabel: 'Elements per segment, N', ylabel: 'Relative error vs. closed form', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+
+  function validate() {
+    const e = [];
+    if (p.mode === 'parallel') {
+      if (!(p.di < p.do)) e.push('Member 2 inner diameter must be smaller than its outer diameter.');
+      if (p.contact && p.g >= p.L) e.push('The gap must be smaller than the length.');
+    } else if (p.mode === 'series' && p.support === 'gap' && !(p.gs >= 0)) e.push('The gap must be zero or positive.');
+    return e;
+  }
+
+  function update() {
+    $('panel-par').hidden = p.mode !== 'parallel';
+    $('panel-ser').hidden = p.mode !== 'series';
+    ctl.P.el.hidden = p.mode !== 'parallel'; ctl.PB.el.hidden = p.mode !== 'series';
+    ctl.steps.el.hidden = p.mode !== 'parallel'; ctl.N.el.hidden = p.mode !== 'series';
+    ctl.g.el.hidden = !(p.mode === 'parallel' && p.contact); ctl.F0.el.hidden = !(p.mode === 'parallel' && !p.contact);
+    ctl.gs.el.hidden = !(p.mode === 'series' && p.support === 'gap');
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    if (p.mode === 'parallel') updateParallel(); else updateSeries();
+  }
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+
+  // =============================================================== parallel members
+  function updateParallel() {
+    const cf = M.parallelClosed(p), path = M.parallelPath(p);
+    const last = path.P.length - 1;
+    R = { kind: 'parallel', cf, path };
+    const fu = S.unit('force');
+    $('diag-txt').textContent = p.contact ? 'caps pressed together; member 2 touches only in compression' : 'member 2 bolted between the caps (preloaded)';
+    drawParallelDiagram(cf);
+    $('stats').innerHTML = [st('Member 1 force F₁', q('force', cf.F1)), st('Member 2 force F₂', q('force', cf.F2)),
+      st('σ₁', q('stress', cf.F1 / cf.A1)), st('σ₂', q('stress', cf.F2 / cf.A2)),
+      st('Member 2 share of P', p.P > 0 ? S.fmt(100 * -cf.F2 / p.P, 3) + ' %' : '—'), st('State', cf.open ? 'gap open' : 'both carry load')].join('');
+    // plot 1: forces vs P (closed form curve, numerical path markers)
+    $('h-p1').textContent = 'Member forces as the press load rises';
+    const Pmax = Math.max(p.P, 1);
+    const Ps = Array.from({ length: 121 }, (_, i) => Pmax * i / 120);
+    const c1 = Ps.map((P) => M.parallelClosed(p, P, p.dT * P / Pmax));
+    const series = [
+      { x: Ps.map((v) => S.conv('force', v)), y: c1.map((c) => S.conv('force', c.F1)), role: 'theory', label: 'Closed form, member 1' },
+      { x: Ps.map((v) => S.conv('force', v)), y: c1.map((c) => S.conv('force', c.F2)), role: 'third', label: 'Closed form, member 2' },
+      { x: path.P.map((v) => S.conv('force', v)), y: path.F1.map((v) => S.conv('force', v)), role: 'numeric', markers: true, r: 2.6, label: 'Numerical load path, member 1' },
+      { x: path.P.map((v) => S.conv('force', v)), y: path.F2.map((v) => S.conv('force', v)), role: 'numeric', markers: true, r: 2.6, label: 'Numerical load path, member 2' },
+    ];
+    const ov = $('overlay').value === 'auto' && preset === 'rodtube' && SAMPLE.B ? SAMPLE.B : null;
+    if (ov) series.unshift({ x: ov.P.map((v) => S.conv('force', v)), y: ov.Ft.map((v) => S.conv('force', v)), role: 'measured', markers: true, label: 'Sample data: tube force from gages' });
+    const allY = [...series.flatMap((s) => s.y)];
+    plots.p1.o.xlabel = `Press load, P (${fu})`; plots.p1.o.ylabel = `Internal force, tension + (${fu})`;
+    plots.p1.draw({ series, xlim: [0, S.conv('force', Pmax)], ylim: [Math.min(0, ...allY) * 1.1, Math.max(0, ...allY) * 1.1 + 1e-9],
+      points: isFinite(cf.Pgap) && cf.Pgap > 0 && cf.Pgap < Pmax ? [{ x: S.conv('force', cf.Pgap), y: 0, role: 'theory', shape: 'ring', label: 'gap closes' }] : [],
+      desc: `Member forces versus press load. Member 2 starts to carry load at ${q('force', cf.Pgap)}.` });
+    $('cap1').innerHTML = p.contact ? `Until P reaches k₁g = ${q('force', cf.Pgap)} only member 1 carries load; after that member 2 takes ${S.fmt(100 * cf.share, 3)} % of each additional increment. The ratio F₂/P is not constant, so superposition of loads fails while the gap is open.`
+      : `Bonded members always share: F₁ + F₂ = −P. With P = 0 the bolt tension equals the sleeve compression.`;
+    // plot 2: forces vs temperature at the current P
+    $('h-p2').textContent = 'Member forces as the temperature changes';
+    const Ts = Array.from({ length: 121 }, (_, i) => -50 + 200 * i / 120);
+    const c2 = Ts.map((T) => M.parallelClosed(p, p.P, T));
+    const tu = S.unit('temperature');
+    const s2 = [
+      { x: Ts.map((v) => S.conv('temperature', v)), y: c2.map((c) => S.conv('force', c.F1)), role: 'theory', label: 'Closed form, member 1' },
+      { x: Ts.map((v) => S.conv('temperature', v)), y: c2.map((c) => S.conv('force', c.F2)), role: 'third', label: 'Closed form, member 2' },
+    ];
+    const pathT = M.parallelPath(Object.assign({}, p), p.steps, p.P, p.dT);
+    const ovC = $('overlay').value === 'auto' && preset === 'bolt' && SAMPLE.C ? SAMPLE.C : null;
+    if (ovC) s2.unshift({ x: ovC.dT.map((v) => S.conv('temperature', v)), y: ovC.Fb.map((v) => S.conv('force', v)), role: 'measured', markers: true, label: 'Sample data: bolt force from gage' });
+    const y2 = s2.flatMap((s) => s.y);
+    plots.p2.o.xlabel = `Temperature change, ΔT (${tu})`; plots.p2.o.ylabel = `Internal force, tension + (${fu})`;
+    plots.p2.draw({ series: s2, xlim: [S.conv('temperature', -50), S.conv('temperature', 150)], ylim: [Math.min(0, ...y2) * 1.1 - 1e-9, Math.max(0, ...y2) * 1.1 + 1e-9],
+      points: [{ x: S.conv('temperature', p.dT), y: S.conv('force', pathT.F1[pathT.F1.length - 1]), role: 'numeric', shape: 'diamond', label: 'numerical at current ΔT' }],
+      desc: `Member forces versus temperature change; bolt force changes by ${q('force', cf.dFdT)} per kelvin while both members carry load.` });
+    $('cap2').innerHTML = `While both members carry load, member 1's force changes by (α₂L₂ − α₁L₁)/(1/k₁ + 1/k₂) = ${q('force', cf.dFdT)} per ${tu}. A member with the larger α is held back by the other, so it goes into compression.`;
+    // readout
+    const nF1 = path.F1[last], nF2 = path.F2[last];
+    const ev = path.events.find((e) => e.closed);
+    const rows = [
+      ['Member 1 force at the current load, F₁', 'force', cf.F1, nF1],
+      ['Member 2 force at the current load, F₂', 'force', cf.F2, nF2],
+      ['Equilibrium check, F₁ + F₂ + P', 'force', 0, nF1 + nF2 + p.P],
+    ];
+    if (p.contact && ev) rows.splice(0, 0, ['Load at which member 2 engages, k₁[g − ΔT(α₂L₂ − α₁L₁)]', 'force', M.parallelClosed(p, ev.P, ev.dT).Pgap, ev.P]);
+    const dT1 = 1;
+    const pa = M.parallelPath(Object.assign({}, p, { P: p.P }), 50, p.P, p.dT), pb = M.parallelPath(Object.assign({}, p), 50, p.P, p.dT + dT1);
+    if (!cf.open) rows.push(['Change of F₁ per kelvin, (α₂L₂ − α₁L₁)/(1/k₁ + 1/k₂)', 'force', cf.dFdT, (pb.F1[pb.F1.length - 1] - pa.F1[pa.F1.length - 1]) / dT1]);
+    renderReadout(rows, 'Numerical: load path marched in M increments, contact events located by bisection; it never uses the closed-form formulas.');
+    renderConvParallel(cf);
+    renderWarnParallel(cf);
+    renderCards('parallel', cf);
+  }
+
+  function drawParallelDiagram(cf) {
+    const W = Math.round(Math.max(360, Math.min(900, $('diagram').clientWidth || 900))), H = 220;
+    const s = (W - 120) / Math.max(p.L, 1e-3), x0 = 60, cy = H / 2;
+    const r1 = Math.min(60, p.d1 / 2 * s * 0.5 + 6), ro = Math.min(90, p.do / 2 * s * 0.5 + 12), ri = Math.min(ro - 4, p.di / 2 * s * 0.5 + 8);
+    const L2px = (p.L - (p.contact ? p.g : 0)) * s;
+    const gapPx = p.contact ? Math.max(0, p.L * s - L2px) : 0;
+    const col2 = cf.open ? 'var(--mutedline)' : 'var(--third)';
+    const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Two members between rigid caps. Member 1 force ${q('force', cf.F1)}, member 2 force ${q('force', cf.F2)}.">
+      <rect x="${x0 - 14}" y="${cy - ro - 18}" width="14" height="${2 * ro + 36}" style="fill:var(--panel-2);stroke:var(--ink)"/>
+      <rect x="${x0 + p.L * s}" y="${cy - ro - 18}" width="14" height="${2 * ro + 36}" style="fill:var(--panel-2);stroke:var(--ink)"/>
+      <rect x="${x0}" y="${cy - ro}" width="${L2px}" height="${ro - ri}" style="fill:var(--panel);stroke:${col2};stroke-width:2"/>
+      <rect x="${x0}" y="${cy + ri}" width="${L2px}" height="${ro - ri}" style="fill:var(--panel);stroke:${col2};stroke-width:2"/>
+      <rect x="${x0}" y="${cy - r1}" width="${p.L * s}" height="${2 * r1}" style="fill:var(--panel-2);stroke:var(--theory);stroke-width:2"/>
+      ${gapPx > 1 ? `<text x="${x0 + L2px + gapPx / 2}" y="${cy - ro - 4}" text-anchor="middle" style="fill:var(--fail-ink);font-size:12px">gap ${q('length', p.g, 3)} (not to scale)</text>` : ''}
+      ${p.contact && p.P > 0 ? `<path d="M${x0 - 54} ${cy}L${x0 - 18} ${cy}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x0 - 16} ${cy}L${x0 - 28} ${cy - 7}L${x0 - 28} ${cy + 7}Z" style="fill:var(--numeric)"/>
+        <path d="M${x0 + p.L * s + 68} ${cy}L${x0 + p.L * s + 32} ${cy}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x0 + p.L * s + 30} ${cy}L${x0 + p.L * s + 42} ${cy - 7}L${x0 + p.L * s + 42} ${cy + 7}Z" style="fill:var(--numeric)"/>
+        <text x="${x0 - 36}" y="${cy - 12}" text-anchor="middle" style="fill:var(--numeric);font-size:13px;font-weight:600">P</text>` : ''}
+      <text x="${x0 + p.L * s / 2}" y="${cy + 5}" text-anchor="middle" style="fill:var(--theory);font-size:13px;font-weight:600">member 1: ${q('force', cf.F1, 3)}</text>
+      <text x="${x0 + L2px / 2}" y="${cy + ro + 18}" text-anchor="middle" style="fill:${col2};font-size:13px;font-weight:600">member 2: ${q('force', cf.F2, 3)}</text>
+    </svg>`;
+    $('diagram').innerHTML = svg;
+  }
+
+  function renderConvParallel(cf) {
+    // the load-path solver is exact between events; its only discretization is event location
+    const Ms = [1, 2, 3, 5, 8, 13, 21, 34];
+    const errs = Ms.map((m) => { const pa = M.parallelPath(Object.assign({}, p), m); const n = pa.F2.length - 1; return Math.abs(pa.F2[n] - cf.F2) / Math.max(1, Math.abs(cf.F2), Math.abs(cf.F1)); });
+    plots.conv.o.xlabel = 'Load increments, M';
+    plots.conv.draw({ series: [{ x: Ms, y: errs.map((e) => Math.max(e, 1e-16)), role: 'numeric', markers: true, r: 3, label: 'Relative error in F₂ at the final load' }],
+      xlim: [0.8, 50], ylim: [1e-17, 1], desc: 'Error of the load-path solver against the closed form for several increment counts: at round-off for every M.' });
+    $('cap-conv').innerHTML = `The load-path solver is piecewise exact: between contact events the members are linear, so the answer does not depend on the number of increments M (errors at round-off, about 10⁻¹⁵). What M controls is how finely the path is drawn and how the contact event is bracketed before bisection. Switch to <b>Bar between supports</b> with a taper to see a genuine discretization error that falls as N⁻².`;
+    R.conv = { kind: 'parallel', rows: Ms.map((m, i) => ({ M: m, err: errs[i] })) };
+  }
+
+  function renderWarnParallel(cf) {
+    const W = [];
+    const s1 = cf.F1 / cf.A1, s2 = cf.F2 / cf.A2;
+    const m1 = M.MATERIALS[p.mat1], m2 = M.MATERIALS[p.mat2];
+    if (Math.abs(s1) > m1.sy) W.push(['bad', `Member 1 stress ${q('stress', s1)} exceeds its yield strength ${q('stress', m1.sy)}: the linear model no longer applies.`]);
+    if (Math.abs(s2) > m2.sy) W.push(['bad', `Member 2 stress ${q('stress', s2)} exceeds its yield strength ${q('stress', m2.sy)}.`]);
+    if (p.contact && cf.open && p.P > 0) W.push(['warn', 'Member 2 has not engaged: all load is on member 1 and the load-sharing formula does not apply yet.']);
+    if (p.contact && !cf.open && p.g > 0) W.push(['warn', `The textbook sharing formula (no gap) predicts F₂ = ${q('force', -cf.share * p.P)}; with the gap it is ${q('force', cf.F2)} (${S.fmt(100 * (-cf.share * p.P - cf.F2) / cf.F2, 3)} % different).`]);
+    if (!p.contact && cf.F1 < 0) W.push(['bad', 'The bolt would be in compression: the joint has separated in reality, so the bonded model is wrong here.']);
+    if (!W.length) W.push(['ok', 'Both members are elastic and the configuration matches the model assumptions.']);
+    $('warnings').innerHTML = W.map(([c, t]) => `<li>${chip(c, c === 'ok' ? 'valid' : c === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join('');
+  }
+
+  // =============================================================== series bar
+  function updateSeries() {
+    const pp = Object.assign({}, p, { g: p.gs });
+    const cf = M.seriesClosed(pp), fe = M.seriesFE(pp);
+    R = { kind: 'series', cf, fe };
+    $('diag-txt').textContent = p.support === 'fixed' ? 'fixed at both ends (statically indeterminate)' : p.support === 'free' ? 'fixed at the left, free at the right' : `gap ${q('length', p.gs, 3)} to the right wall`;
+    drawSeriesDiagram(cf);
+    $('stats').innerHTML = [st('Wall reaction R', q('force', cf.R)), st('N in segment 1', q('force', cf.N1)), st('N in segment 2', q('force', cf.N2)),
+      st('Largest |σ|, segment 1', q('stress', cf.sigmaMax1)), st('σ in segment 2', q('stress', cf.sigma2)), st('End displacement', q('length', cf.uC))].join('');
+    const L = cf.L, xs = Array.from({ length: 201 }, (_, i) => L * i / 200);
+    const lu = S.unit('length');
+    $('h-p1').textContent = 'Normal stress along the bar';
+    plots.p1.o.xlabel = `Position, x (${lu})`; plots.p1.o.ylabel = `Normal stress, σ (${S.unit('stress')})`;
+    const sx = xs.map((x) => S.conv('stress', cf.sigma(x)));
+    const fs = fe.sig.map((v) => S.conv('stress', v));
+    plots.p1.draw({ series: [
+      { x: xs.map((x) => S.conv('length', x)), y: sx, role: 'theory', label: 'Closed form, N/A(x)' },
+      { x: fe.xm.map((x) => S.conv('length', x)), y: fs, role: 'numeric', markers: true, r: 2.6, label: `FE element stresses (N = ${p.N} per segment)` },
+    ], xlim: [0, S.conv('length', L)], ylim: [Math.min(0, ...sx, ...fs) * 1.15 - 1e-9, Math.max(0, ...sx, ...fs) * 1.15 + 1e-9],
+      segs: [{ x0: S.conv('length', p.L1), y0: -1e9, x1: S.conv('length', p.L1), y1: 1e9, role: 'mutedline', dash: '3 3', width: 1 }],
+      desc: `Normal stress along the bar; largest magnitude ${q('stress', Math.max(Math.abs(cf.sigmaMax1), Math.abs(cf.sigma2)))}.` });
+    $('cap1').innerHTML = `In a taper the force is constant but the area shrinks, so σ = N/A(x) grows toward the narrow end. Each FE element uses the area at its midpoint.`;
+    $('h-p2').textContent = 'Axial displacement along the bar';
+    plots.p2.o.xlabel = `Position, x (${lu})`; plots.p2.o.ylabel = `Displacement, u (${lu})`;
+    const ux = xs.map((x) => S.conv('length', cf.u(x)));
+    const fu = fe.u.map((v) => S.conv('length', v));
+    plots.p2.draw({ series: [
+      { x: xs.map((x) => S.conv('length', x)), y: ux, role: 'theory', label: 'Closed form u(x)' },
+      { x: fe.x.map((x) => S.conv('length', x)), y: fu, role: 'numeric', markers: true, r: 2.6, label: 'FE nodal displacements' },
+    ], xlim: [0, S.conv('length', L)], ylim: [Math.min(0, ...ux, ...fu) * 1.15 - 1e-12, Math.max(0, ...ux, ...fu) * 1.15 + 1e-12],
+      desc: `Displacement along the bar; end displacement ${q('length', cf.uC)}.` });
+    $('cap2').innerHTML = `Compatibility: the displacement at the right end must equal ${p.support === 'fixed' ? 'zero (fixed wall)' : p.support === 'gap' ? 'the gap g once the bar touches the wall' : 'whatever the free bar does'}. The slope of u(x) is the total strain, N/(EA) + αΔT.`;
+    const rows = [
+      ['Wall reaction, R', 'force', cf.R, fe.R],
+      ['Displacement at the junction, u_B', 'length', cf.uB, fe.uB],
+      ['End displacement, u_C', 'length', cf.uC, fe.uC],
+      ['Stress in segment 2', 'stress', cf.sigma2, fe.sig[fe.sig.length - 1]],
+    ];
+    renderReadout(rows, 'Numerical: 1-D bar finite elements (area at element midpoints); exact for prismatic segments, approximate for the taper.');
+    renderConvSeries(pp);
+    renderWarnSeries(cf);
+    renderCards('series', cf);
+  }
+
+  function drawSeriesDiagram(cf) {
+    const W = Math.round(Math.max(360, Math.min(900, $('diagram').clientWidth || 900))), H = 200;
+    const L = cf.L, x0 = 50, s = (W - 130) / L, cy = H / 2;
+    const dmax = Math.max(p.da, p.db, p.d2), ys = 70 / dmax;
+    const xB = x0 + p.L1 * s, xC = x0 + L * s;
+    const seg1 = `M${x0} ${cy - p.da / 2 * ys}L${xB} ${cy - p.db / 2 * ys}L${xB} ${cy + p.db / 2 * ys}L${x0} ${cy + p.da / 2 * ys}Z`;
+    const col1 = p.smat1 === 'steel' ? 'var(--theory)' : p.smat1 === 'al' ? 'var(--third)' : 'var(--fourth)';
+    const col2 = p.smat2 === 'steel' ? 'var(--theory)' : p.smat2 === 'al' ? 'var(--third)' : 'var(--fourth)';
+    const gapPx = p.support === 'gap' ? 14 : 0;
+    const wallR = p.support === 'free' ? '' : `<rect x="${xC + gapPx}" y="${cy - 60}" width="14" height="120" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    const arrow = p.PB !== 0 ? (() => { const d = Math.sign(p.PB); return `<path d="M${xB} ${cy - 56}L${xB + d * 40} ${cy - 56}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${xB + d * 46} ${cy - 56}L${xB + d * 34} ${cy - 63}L${xB + d * 34} ${cy - 49}Z" style="fill:var(--numeric)"/><text x="${xB}" y="${cy - 66}" text-anchor="middle" style="fill:var(--numeric);font-size:13px;font-weight:600">P_B = ${q('force', p.PB, 3)}</text>`; })() : '';
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Two-segment bar, wall reaction ${q('force', cf.R)}.">
+      <rect x="${x0 - 14}" y="${cy - 60}" width="14" height="120" style="fill:var(--panel-2);stroke:var(--ink)"/>${wallR}
+      <path d="${seg1}" style="fill:var(--panel-2);stroke:${col1};stroke-width:2"/>
+      <rect x="${xB}" y="${cy - p.d2 / 2 * ys}" width="${p.L2 * s}" height="${p.d2 * ys}" style="fill:var(--panel-2);stroke:${col2};stroke-width:2"/>
+      ${arrow}
+      <text x="${(x0 + xB) / 2}" y="${cy + 70}" text-anchor="middle" style="fill:${col1};font-size:12px">${M.MATERIALS[p.smat1].name}</text>
+      <text x="${(xB + xC) / 2}" y="${cy + 70}" text-anchor="middle" style="fill:${col2};font-size:12px">${M.MATERIALS[p.smat2].name}</text>
+      ${p.dT !== 0 ? `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--fail-ink);font-size:12px">ΔT = ${q('temperature', p.dT, 3)}</text>` : ''}
+    </svg>`;
+  }
+
+  function renderConvSeries(pp) {
+    const c = M.seriesConvergence(pp);
+    R.conv = { kind: 'series', rows: c.rows, slope: c.slope, quantity: c.quantity };
+    const tapered = Math.abs(p.da - p.db) > 1e-9;
+    plots.conv.o.xlabel = 'Elements per segment, N';
+    plots.conv.draw({ series: [{ x: c.rows.map((r) => r.N), y: c.rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: `Error in ${c.quantity}` },
+      ...(tapered ? [{ x: [1, 128], y: [c.rows[0].err, c.rows[0].err / 128 ** 2], role: 'theory', width: 1, dash: '2 3', label: 'reference: error ∝ N⁻²', hover: false }] : [])],
+      xlim: [0.8, 160], ylim: [1e-17, 1], desc: `Convergence of the bar finite elements: observed order ${S.fmt(-c.slope, 2)}.` });
+    $('cap-conv').innerHTML = tapered
+      ? `Observed order of accuracy: ${S.fmt(c.slope, 3)} (expected 2). With the area taken at each element's midpoint, the flexibility of the taper is integrated by the midpoint rule, whose error falls as N⁻². Prismatic segments are exact for any N.`
+      : `Both segments are prismatic, so the finite-element answer is exact for any N (errors at round-off). Make segment 1 taper (d<sub>a</sub> ≠ d<sub>b</sub>) to see a discretization error that converges at second order.`;
+  }
+
+  function renderWarnSeries(cf) {
+    const W = [];
+    const m1 = M.MATERIALS[p.smat1], m2 = M.MATERIALS[p.smat2];
+    if (cf.sigmaMax1 > m1.sy) W.push(['bad', `Segment 1 stress ${q('stress', cf.sigmaMax1)} exceeds yield (${q('stress', m1.sy)}): the linear model no longer applies.`]);
+    if (Math.abs(cf.sigma2) > m2.sy) W.push(['bad', `Segment 2 stress ${q('stress', Math.abs(cf.sigma2))} exceeds yield (${q('stress', m2.sy)}).`]);
+    if (cf.N1 < 0 || cf.N2 < 0) {
+      const dTc = Math.min(M.bucklingDT(Math.min(p.da, p.db, p.d2), cf.L, Math.max(m1.alpha, m2.alpha)));
+      const Pcr = Math.PI ** 2 * Math.min(m1.E, m2.E) * Math.PI * Math.min(p.da, p.db, p.d2) ** 4 / 64 / (0.5 * cf.L) ** 2;
+      const Nc = Math.max(-cf.N1, -cf.N2);
+      if (Nc > Pcr) W.push(['bad', `Compressive force ${q('force', Nc)} exceeds the Euler load ${q('force', Pcr)} of the thinnest section over the whole length (fixed–fixed): the bar buckles before this, and a 1-D straight-bar model cannot see it (Lab 9).`]);
+      else W.push(['warn', `Part of the bar is in compression (${q('force', Nc)}); it stays straight only while this is below about ${q('force', Pcr)} (Euler, fixed–fixed, thinnest section).`]);
+    }
+    const ang = Math.atan(Math.abs(p.da - p.db) / (2 * p.L1)) * 180 / Math.PI;
+    if (ang > 10) W.push(['warn', `Taper half-angle ${S.fmt(ang, 3)}°: the 1-D model assumes uniform stress over each cross-section, which degrades for steep tapers.`]);
+    const step = Math.max(p.db, p.d2) / Math.min(p.db, p.d2);
+    if (step > 1.05) W.push(['warn', `Diameter step ratio ${S.fmt(step, 3)} at the junction: within about one diameter of the step the real stress is not uniform (Saint-Venant, stress concentration §2.11), which the 1-D model ignores.`]);
+    if (p.support === 'gap' && !cf.contact) W.push(['ok', 'The gap has not closed: the bar is statically determinate.']);
+    if (!W.length) W.push(['ok', 'All members are elastic and prismatic: the model assumptions hold.']);
+    $('warnings').innerHTML = W.map(([c, t]) => `<li>${chip(c, c === 'ok' ? 'valid' : c === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join('');
+  }
+
+  // =============================================================== shared renderers
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    const scale = Math.max(...rows.map((r) => Math.abs(r[2]))) || 1;
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-9 * scale, 1e-300);
+      const ok = Number.isFinite(d) && (d < 1e-6 || Math.abs(v - c) < 1e-9 * scale);
+      const tol = R.kind === 'series' && Math.abs(p.da - p.db) > 1e-9 && !ok && d < 0.05;
+      return `<tr><td>${n}</td><td class="v">${q(qq, c)}</td><td class="v">${q(qq, v)}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${ok ? chip('ok', 'agree') : tol ? chip('warn', 'taper: discretization') : chip('bad', 'check')}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+
+  function renderCards(kind, cf) {
+    const cards = [];
+    const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+    if (kind === 'parallel') {
+      cards.push(card('<i>δ</i> = <i>FL</i>/(<i>EA</i>) + <i>α</i>Δ<i>T L</i>', 'Hooke\'s law integrated over a prismatic member, plus free thermal strain (§2.1G, §2.3).', 'Valid while the member is elastic and the stress is uniform over the section.',
+        chip('ok', 'used for both'), `k₁ = EA/L = ${q('force', cf.k1 * 1e-3, 4)}/mm`));
+      cards.push(card('<i>F</i>₁ + <i>F</i>₂ = −<i>P</i>,&nbsp; <i>δ</i>₁ = <i>δ</i>₂ + (<i>L</i>₂ − <i>L</i>₁)', 'equilibrium of a cap and compatibility of the two members (§2.2).', 'Two equations for two unknown forces: the problem is statically indeterminate to first degree.',
+        cf.open ? chip('warn', 'gap open: F₂ = 0') : chip('ok', 'both members active'), `F₁ = ${q('force', cf.F1)}, F₂ = ${q('force', cf.F2)}`));
+      cards.push(card('Δ<i>F</i>₂/Δ<i>P</i> = <i>E</i>₂<i>A</i>₂ / (<i>E</i>₁<i>A</i>₁ + <i>E</i>₂<i>A</i>₂)', 'the two equations above with both members active and equal lengths.', 'The stiffer member takes the larger share; holds only after any gap has closed.',
+        p.contact && cf.open ? chip('bad', 'not yet valid') : chip('ok', 'valid'), `share = ${S.fmt(100 * cf.share, 4)} %`));
+      cards.push(card('d<i>F</i>₁/d<i>T</i> = (<i>α</i>₂<i>L</i>₂ − <i>α</i>₁<i>L</i>₁) / (1/<i>k</i>₁ + 1/<i>k</i>₂)', 'compatibility with free thermal expansion added to each member (§2.3).', 'The thermal mismatch is shared in proportion to the members\' flexibilities.',
+        cf.open ? chip('warn', 'gap open') : chip('ok', 'valid'), `${q('force', cf.dFdT)} per kelvin`));
+    } else {
+      cards.push(card('<i>δ</i> = Σ <i>N<sub>i</sub>L<sub>i</sub></i>/(<i>E<sub>i</sub>A<sub>i</sub></i>)', 'Hooke\'s law summed over prismatic segments (§2.1G).', 'Each segment must be prismatic with uniform stress.', Math.abs(p.da - p.db) > 1e-9 ? chip('warn', 'segment 1 tapers') : chip('ok', 'prismatic'), `f₂ = ${S.fmt(cf.f2 * 1e9, 4)} mm/MN`));
+      cards.push(card('<i>δ</i> = ∫ <i>N</i> d<i>x</i>/(<i>E A</i>(<i>x</i>)) = 4<i>NL</i>/(π<i>E d<sub>a</sub>d<sub>b</sub></i>)', 'integrating Hooke\'s law along a cone (§2.1G).', 'Exact for a cone under the 1-D assumption; the FE midpoint rule approaches it as N⁻².', chip('ok', '1-D theory'), `f₁ = ${S.fmt(cf.f1 * 1e9, 4)} mm/MN`));
+      cards.push(card('<i>δ</i><sub>free</sub> − <i>R</i>(<i>f</i>₁ + <i>f</i>₂) = 0 or <i>g</i>', 'compatibility at the wall (§2.2): remove the redundant support, then restore it.', 'Superposition of the load, thermal and reaction cases; valid while linear.', cf.contact ? chip('ok', 'redundant active') : chip('info', 'determinate'), `δ_free = ${q('length', cf.dfree)}, R = ${q('force', cf.R)}`));
+      cards.push(card('<i>σ</i> = −<i>EαΔT</i> (fully restrained)', 'zero total strain: N/(EA) + αΔT = 0 for a single prismatic bar between walls (§2.3).', 'Independent of length and area, so long thin bars reach it too, and may buckle first.', chip('info', 'reference'), `−EαΔT = ${q('stress', -M.MATERIALS[p.smat1].E * M.MATERIALS[p.smat1].alpha * p.dT)}`));
+    }
+    $('cards').innerHTML = cards.join('');
+  }
+
+  // =============================================================== experiments
+  const EXPERIMENTS = [
+    ['Superposition fails with a gap', 'Rod in tube: compare P = 10 kN with P = 20 kN. The tube force more than doubles.', () => { applyPreset('rodtube'); p.P = 20e3; }],
+    ['Gap never closes', 'Rod in tube with g = 0.4 mm: the rod yields before the tube is touched.', () => { applyPreset('rodtube'); p.g = 0.4e-3; p.P = 60e3; }],
+    ['Heat the joint until it separates', 'Bolt and sleeve swapped (aluminum bolt, steel sleeve), heated: the preload is lost.', () => { applyPreset('bolt'); p.mat1 = 'al'; p.mat2 = 'steel'; p.dT = 120; }],
+    ['Heat a restrained bar until it buckles', 'Stepped bar fixed at both ends, slender, heated by 120 °C.', () => { applyPreset('stepped'); p.PB = 0; p.dT = 120; p.L1 = 0.6; p.L2 = 0.6; p.da = p.db = 8e-3; p.d2 = 6e-3; }],
+    ['Steep taper', 'Taper from 50 mm to 6 mm over 60 mm: the 1-D assumption is stretched.', () => { applyPreset('taper'); p.L1 = 0.06; p.da = 50e-3; p.db = 6e-3; p.support = 'fixed'; }],
+    ['Refine a taper', 'Tapered bar with N = 1: compare the FE reaction with the closed form, then raise N.', () => { applyPreset('taper'); p.N = 1; p.support = 'fixed'; }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); setAll(); update(); });
+
+  // =============================================================== export
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'parallel') {
+      const rows = R.path.P.map((P, k) => [S.plain(S.conv('force', P)), S.plain(S.conv('temperature', R.path.dT[k])), S.plain(S.conv('force', R.path.F1[k])), S.plain(S.conv('force', R.path.F2[k])), S.plain(S.conv('length', R.path.u[k]))]);
+      S.exportCSV('lab02_load_path.csv', S.toCSV([`P_${u('force')}`, `dT_${u('temperature')}`, `F1_${u('force')}`, `F2_${u('force')}`, `cap_shortening_${u('length')}`], rows), panel);
+    } else {
+      const rows = R.fe.x.map((x, k) => [S.plain(S.conv('length', x)), S.plain(S.conv('length', R.fe.u[k])), S.plain(S.conv('length', R.cf.u(x))), k < R.fe.sig.length ? S.plain(S.conv('stress', R.fe.sig[k])) : '']);
+      S.exportCSV('lab02_bar.csv', S.toCSV([`x_${u('length')}`, `u_FE_${u('length')}`, `u_closed_${u('length')}`, `sigma_element_${u('stress')}`], rows), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v]) => [n, S.plain(S.conv(qq, c)), S.plain(S.conv(qq, v)), S.unit(qq)]);
+    S.exportCSV('lab02_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    const rows = R.conv.rows.map((r) => [r.N || r.M, S.plain(r.err)]);
+    S.exportCSV('lab02_convergence.csv', S.toCSV([R.conv.kind === 'series' ? 'elements_per_segment' : 'load_increments', 'relative_error'], rows), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('rodtube');
+})();
+</script>
+</body>
+</html>

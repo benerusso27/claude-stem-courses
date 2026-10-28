@@ -1,0 +1,54 @@
+{
+ "d_mm": {
+  "steel": [
+   6.351,
+   6.349,
+   6.35,
+   6.352,
+   6.348,
+   6.35
+  ],
+  "al": [
+   6.353,
+   6.351,
+   6.352,
+   6.354,
+   6.35,
+   6.352
+  ],
+  "ci": [
+   6.349,
+   6.347,
+   6.348,
+   6.35,
+   6.346,
+   6.348
+  ]
+ },
+ "L_gage_mm": 50.8,
+ "u_L_gage_mm": 0.05,
+ "L_reduced_mm": 76.2,
+ "micrometer_accuracy_mm": 0.003,
+ "torque_accuracy_pct": 0.5,
+ "troptometer_accuracy_pct": 0.5,
+ "fracture": {
+  "steel": "flat, perpendicular to the axis; smeared circular marks",
+  "al": "flat, perpendicular to the axis",
+  "ci": "45\u00b0 helix; granular grey surface"
+ },
+ "reference": {
+  "E_steel_GPa": 205.0,
+  "u_E_steel_GPa": 3.0,
+  "nu_steel": 0.29,
+  "u_nu_steel": 0.01,
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "nu_al": 0.33,
+  "u_nu_al": 0.003,
+  "sigUT_ci_MPa": 214.0,
+  "u_sigUT_ci_MPa": 15.0,
+  "G_ci_GPa": 41.0,
+  "sigY_steel_MPa": 297.0,
+  "sigY_al_MPa": 274.0
+ }
+}

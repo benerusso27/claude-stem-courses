@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transverse Shear Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 5: shearing stresses in beams (τ = VQ/It), shear deformation (Timoshenko beam) and built-up beams with flexible connectors. Closed forms compared with strip integration, finite differences and finite elements.">
+<style>
+/*@@SIM_CORE_CSS@@*/
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 5 · Beer 8e §6.1–6.4</div>
+      <h1>Transverse shear: τ = VQ/It, shear deformation and built-up beams</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> V and M as in Fig. 5.6: on the left free body V acts downward and M counterclockwise; M &gt; 0 sags the beam. On a cross-section τ<sub>xy</sub> is positive when it acts in +y on a face whose outward normal is +x, so V = −∫τ<sub>xy</sub> dA: a positive V gives τ<sub>xy</sub> &lt; 0, and this page reports the magnitude τ = VQ/(It). Deflection y is positive upward (Beer Ch. 9); the page reports the downward deflection δ = −y. Tension positive. <b>Blue solid</b> = closed-form (textbook) solution; <b>vermillion dashed / markers</b> = independent numerical solution; <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Configuration</div>
+        <div id="mode"></div>
+        <label class="group-title" for="preset" style="margin-top:6px">Preset</label>
+        <select id="preset">
+          <option value="rectUp">Lab Part A: bar upright (b/h = 0.5)</option>
+          <option value="rectFlat">Lab Part A: bar flat (b/h = 2)</option>
+          <option value="ibeamWeb">Lab Part B: I-beam web shear</option>
+          <option value="ibeamSpan">Lab Part B: I-beam deflection, 900 mm span</option>
+          <option value="layered">Lab Part C: two bars, six bolts</option>
+          <option value="design">D1: bolted beam, uniform load</option>
+          <option value="tee">T-section</option>
+          <option value="box">Box section</option>
+          <option value="circle">Solid circle</option>
+          <option value="cantilever">Short rectangular cantilever</option>
+        </select>
+      </div>
+    </section>
+    <section class="panel" id="panel-sec">
+      <div class="group" id="grp-sec">
+        <div class="group-title">Cross-section</div>
+        <div class="row2">
+          <div><label class="small" for="shape">Shape</label>
+            <select id="shape"><option value="rect">Rectangle b × h</option><option value="ibeam">I-section</option><option value="tee">T-section</option><option value="box">Box</option><option value="circle">Solid circle</option></select></div>
+          <div><label class="small" for="mat">Material</label><select id="mat"></select></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel" id="panel-layer">
+      <div class="group" id="grp-layer">
+        <div class="group-title">Two layers and their connection</div>
+        <div><label class="small" for="conn">Connection</label>
+          <select id="conn"><option value="loose">Loose (no connection)</option><option value="bolts">Bolts (discrete springs)</option><option value="glue">Glue layer</option></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-load">
+        <div class="group-title">Span and loading</div>
+        <div id="support-wrap"><label class="small" for="support">Supports</label>
+          <select id="support"><option value="simple">Simple span, central load</option><option value="cantilever">Cantilever, end load</option></select></div>
+        <div id="load-wrap"><label class="small" for="load">Load</label>
+          <select id="load"><option value="point">Central point load P</option><option value="udl">Uniform load w</option></select></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="grp-num"><div class="group-title">Numerical solver</div>
+        <div id="integ-wrap"><div class="small" style="margin-bottom:4px">Shear term in the finite elements</div><div id="integ"></div></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay"><option value="auto">Matching part of sample_data.csv</option><option value="none">No sample data</option></select>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curves</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+    <section class="panel diagram" aria-labelledby="h-diag">
+      <div class="panel-head"><h2 id="h-diag">Configuration</h2><span class="small muted" id="diag-txt"></span></div>
+      <div id="diagram"></div>
+      <div class="stats" id="stats"></div>
+    </section>
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-p1"><div class="panel-head"><h2 id="h-p1"></h2></div><div id="plot1"></div><p class="plot-caption" id="cap1"></p></section>
+      <section class="panel" aria-labelledby="h-p2"><div class="panel-head"><h2 id="h-p2"></h2></div><div id="plot2"></div><p class="plot-caption" id="cap2"></p></section>
+    </div>
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted" id="readout-note"></span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2"><div><div id="plot-conv"></div></div><div><p class="plot-caption" id="cap-conv"></p></div></div>
+    </section>
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2></div>
+      <div class="cards" id="cards"></div>
+    </section>
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+<footer class="foot">
+  <p>Model: elementary shear formula τ = VQ/(It) (Beer §6.1–6.4) with strip integration of Q; Saint-Venant flexure solution for a rectangle (series vs. finite differences); Timoshenko beam (energy shear factor) vs. finite elements; two-layer partial-interaction beam (closed form vs. finite differences and discrete springs). Verified by <span class="num">tests/test_lab05_model.js</span> and <span class="num">tests/test_lab05_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 5 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 5 physics — pure functions, SI base units (N, m, Pa). Loaded unchanged by the Node tests. */
+const Lab5Model = (() => {
+  'use strict';
+  const MATERIALS = {
+    al: { name: '6061-T6 aluminum', E: 68.9e9, nu: 0.33 },
+    steel: { name: '1018 steel', E: 205e9, nu: 0.29 },
+  };
+  const Gof = (m) => m.E / (2 * (1 + m.nu));
+  const BASE = { mode: 'section', shape: 'rect', mat: 'al', b: 25.4e-3, h: 50.8e-3, B: 76.2e-3, H: 101.6e-3, tf: 6.35e-3, tw: 4.8e-3, d: 50e-3,
+    V: 7.5e3, Ns: 200, Nfd: 32, support: 'simple', L: 0.9, P: 20e3, Nel: 16, integ: 'reduced',
+    t1: 12.7e-3, t2: 12.7e-3, load: 'point', w: 8e3, conn: 'bolts', kb: 40e6, s1: 0.1, s2: 0.1, e: 0.3, Gg: 1.2e9, tg: 0.15e-3, Nl: 400 };
+  const P_ = (o) => Object.assign({}, BASE, o);
+  const PRESETS = {
+    rectUp: P_({ mode: 'section', shape: 'rect', b: 25.4e-3, h: 50.8e-3, V: 7.5e3 }),
+    rectFlat: P_({ mode: 'section', shape: 'rect', b: 50.8e-3, h: 25.4e-3, V: 3.75e3 }),
+    ibeamWeb: P_({ mode: 'section', shape: 'ibeam', V: 10e3 }),
+    ibeamSpan: P_({ mode: 'beam', shape: 'ibeam', support: 'simple', L: 0.9, P: 20e3 }),
+    layered: P_({ mode: 'layer', b: 50.8e-3, t1: 12.7e-3, t2: 12.7e-3, L: 0.6, load: 'point', P: 2.5e3, conn: 'bolts', kb: 40e6, s1: 0.1, s2: 0.1, e: 0.3, Nl: 400 }),
+    design: P_({ mode: 'layer', b: 0.1, t1: 0.05, t2: 0.05, L: 2.4, load: 'udl', w: 8e3, conn: 'bolts', kb: 66.9e6, s1: 0.07, s2: 0.21, e: 0.8, Nl: 400 }),
+    tee: P_({ mode: 'section', shape: 'tee', B: 100e-3, H: 120e-3, tf: 12e-3, tw: 8e-3, V: 20e3 }),
+    box: P_({ mode: 'section', shape: 'box', B: 80e-3, H: 120e-3, tf: 6e-3, tw: 4e-3, V: 20e3 }),
+    circle: P_({ mode: 'section', shape: 'circle', d: 50e-3, V: 20e3 }),
+    cantilever: P_({ mode: 'beam', shape: 'rect', b: 25.4e-3, h: 50.8e-3, support: 'cantilever', L: 0.15, P: 5e3, Nel: 8 }),
+  };
+
+  // ---------------- sections: horizontal layers {y0, y1, b} measured upward from the bottom ----------------
+  function layersOf(p) {
+    if (p.shape === 'rect') return [{ y0: 0, y1: p.h, b: p.b }];
+    if (p.shape === 'ibeam') return [{ y0: 0, y1: p.tf, b: p.B }, { y0: p.tf, y1: p.H - p.tf, b: p.tw }, { y0: p.H - p.tf, y1: p.H, b: p.B }];
+    if (p.shape === 'tee') return [{ y0: 0, y1: p.H - p.tf, b: p.tw }, { y0: p.H - p.tf, y1: p.H, b: p.B }];
+    if (p.shape === 'box') return [{ y0: 0, y1: p.tf, b: p.B }, { y0: p.tf, y1: p.H - p.tf, b: 2 * p.tw }, { y0: p.H - p.tf, y1: p.H, b: p.B }];
+    return null;
+  }
+  const depthOf = (p) => (p.shape === 'rect' ? p.h : p.shape === 'circle' ? p.d : p.H);
+  /* Closed form (Beer §6.1–6.4): exact layer sums for A, ȳ, I; Q(y) = Σ b[(y1 − ȳ)² − (max(y0, y) − ȳ)²]/2 over the
+     area above y; τ = VQ/(Ib); energy shear factor f_s = (A/I²)∫Q²/b dy from exact polynomial antiderivatives. */
+  function sectionClosed(p) {
+    if (p.shape === 'circle') {
+      const c = p.d / 2, A = Math.PI * c * c, I = Math.PI * c ** 4 / 4;
+      const Q = (y) => { const u = y - c; return u * u >= c * c ? 0 : (2 / 3) * (c * c - u * u) ** 1.5; };
+      const bAt = (y) => { const u = y - c; return u * u >= c * c ? 0 : 2 * Math.sqrt(c * c - u * u); };
+      return { A, ybar: c, I, H: p.d, Q, bAt, tau: (y, V) => V * (c * c - (y - c) ** 2) / (3 * I), tauNA: (V) => 4 * V / (3 * A), tauMax: (V) => 4 * V / (3 * A),
+        fs: 10 / 9, QNA: 2 * c ** 3 / 3, bNA: 2 * c, layers: null };
+    }
+    const Ls = layersOf(p);
+    let A = 0, Ay = 0;
+    for (const l of Ls) { const a = l.b * (l.y1 - l.y0); A += a; Ay += a * (l.y0 + l.y1) / 2; }
+    const ybar = Ay / A;
+    let I = 0;
+    for (const l of Ls) { const hh = l.y1 - l.y0; I += l.b * hh ** 3 / 12 + l.b * hh * ((l.y0 + l.y1) / 2 - ybar) ** 2; }
+    const H = Ls[Ls.length - 1].y1;
+    const Q = (y) => { let s = 0; for (const l of Ls) { if (l.y1 <= y) continue; const lo = Math.max(l.y0, y); s += l.b * ((l.y1 - ybar) ** 2 - (lo - ybar) ** 2) / 2; } return s; };
+    const layerAt = (y) => Ls.find((l) => y >= l.y0 && y < l.y1) || Ls[Ls.length - 1];
+    const bAt = (y) => layerAt(y).b;
+    // f_s: within layer i, Q = D − b u²/2 with u = y − ȳ and D = Q(top of layer) + b u1²/2
+    let J = 0, tmax = 0;
+    for (const l of Ls) {
+      const u0 = l.y0 - ybar, u1 = l.y1 - ybar, D = Q(l.y1) + l.b * u1 * u1 / 2, b = l.b;
+      const F = (u) => D * D * u - D * b * u ** 3 / 3 + b * b * u ** 5 / 20;
+      J += (F(u1) - F(u0)) / b;
+      const uc = u0 <= 0 && u1 >= 0 ? 0 : Math.abs(u0) < Math.abs(u1) ? u0 : u1;
+      tmax = Math.max(tmax, (D - b * uc * uc / 2) / b);
+    }
+    const bNA = bAt(ybar);
+    return { A, ybar, I, H, Q, bAt, layers: Ls, tau: (y, V) => V * Q(y) / (I * bAt(y)), tauNA: (V) => V * Q(ybar) / (I * bNA), tauMax: (V) => V * tmax / I,
+      fs: A / (I * I) * J, QNA: Q(ybar), bNA };
+  }
+  /* Independent numerical solution: N_s strips through the depth (strips that straddle a width change are split);
+     A, ȳ, I by summation; Q at each strip's mid-height = first moment of every strip above plus the upper half-strip. */
+  function sectionNumeric(p, Ns) {
+    const H = depthOf(p), h = H / Ns, strips = [];
+    if (p.shape === 'circle') {
+      const c = p.d / 2;
+      for (let i = 0; i < Ns; i++) { const ym = (i + 0.5) * h, u = ym - c; strips.push({ y0: i * h, y1: (i + 1) * h, b: 2 * Math.sqrt(Math.max(0, c * c - u * u)) }); }
+    } else {
+      const Ls = layersOf(p);
+      for (let i = 0; i < Ns; i++) { const ya = i * h, yb = (i + 1) * h; for (const l of Ls) { const lo = Math.max(ya, l.y0), hi = Math.min(yb, l.y1); if (hi > lo) strips.push({ y0: lo, y1: hi, b: l.b }); } }
+    }
+    let A = 0, Ay = 0;
+    for (const s of strips) { const a = s.b * (s.y1 - s.y0); A += a; Ay += a * (s.y0 + s.y1) / 2; }
+    const ybar = Ay / A;
+    let I = 0;
+    for (const s of strips) I += s.b * (s.y1 - s.y0) * ((s.y0 + s.y1) / 2 - ybar) ** 2;
+    const prof = new Array(strips.length);
+    let above = 0, J = 0;
+    for (let k = strips.length - 1; k >= 0; k--) {
+      const s = strips[k], dy = s.y1 - s.y0, ym = (s.y0 + s.y1) / 2;
+      const Qm = above + s.b * (dy / 2) * (ym + dy / 4 - ybar);
+      prof[k] = { y: ym, Q: Qm, b: s.b };
+      if (s.b > 0) J += Qm * Qm / s.b * dy;
+      above += s.b * dy * (ym - ybar);
+    }
+    // Q at the neutral axis: the strips above ȳ plus the part of the strip that contains it
+    let QNA = 0;
+    for (const s of strips) { if (s.y0 >= ybar) QNA += s.b * (s.y1 - s.y0) * ((s.y0 + s.y1) / 2 - ybar); else if (s.y1 > ybar) QNA += s.b * (s.y1 - ybar) * ((s.y1 + ybar) / 2 - ybar); }
+    return { A, ybar, I, H, prof, fs: A / (I * I) * J, QNA, n: strips.length };
+  }
+  function stripConvergence(p, Ns = [4, 8, 16, 32, 64, 128, 256, 512]) {
+    const c = sectionClosed(p);
+    const rows = Ns.map((N) => { const n = sectionNumeric(p, N); return { N, err: Math.abs(n.I - c.I) / c.I }; });
+    const pts = rows.filter((r) => r.err > 1e-13);
+    return { rows, slope: pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN };
+  }
+
+  /* ---------------- wide rectangle: Saint-Venant flexure (Timoshenko & Goodier) ----------------
+     τ_yz(x, 0) = Vc²/(2I) + φ_x(x, 0), where ∇²φ = (ν/(1+ν))(V/I) x in the section and φ = 0 on its edge.
+     Closed form: cosine series in y. Returns τ/(VQ/Ib) at x = ξ b/2. */
+  function rectSeries(b, h, nu, xi, nT = 4000) {
+    const c = h / 2, x = Math.abs(xi) * b / 2;
+    let s = 0;
+    for (let n = 0; n < nT; n++) {
+      const a = (2 * n + 1) * Math.PI / h, cn = 4 * (n % 2 ? -1 : 1) / ((2 * n + 1) * Math.PI), z = a * b / 2;
+      const r = z > 30 ? z * Math.exp(a * (x - b / 2)) * (1 + Math.exp(-2 * a * x)) : z * Math.cosh(a * x) / Math.sinh(z);
+      s += cn / (a * a) * (r - 1);
+    }
+    return 1 + (2 / (c * c)) * (nu / (1 + nu)) * s;
+  }
+  /* Independent numerical solution: 5-point finite differences for ∇²φ = x on an nx × ny grid (conjugate gradients),
+     φ_x by central differences inside and a second-order one-sided difference at the edge. */
+  function rectFD(b, h, nu, N) {
+    const nx = Math.max(4, 2 * Math.round(N / 2)), ny = Math.max(4, 2 * Math.round(nx * h / b / 2));
+    const hx = b / nx, hy = h / ny, mx = nx - 1, my = ny - 1, n = mx * my;
+    const id = (i, j) => (j - 1) * mx + (i - 1);
+    const xi = (i) => -b / 2 + i * hx;
+    const Aop = (v, out) => {           // −∇² (positive definite)
+      for (let j = 1; j <= my; j++) for (let i = 1; i <= mx; i++) {
+        const k = id(i, j), c0 = v[k];
+        const L = i > 1 ? v[k - 1] : 0, Rr = i < mx ? v[k + 1] : 0, D = j > 1 ? v[k - mx] : 0, U = j < my ? v[k + mx] : 0;
+        out[k] = (2 * c0 - L - Rr) / (hx * hx) + (2 * c0 - D - U) / (hy * hy);
+      }
+    };
+    const f = new Float64Array(n);
+    for (let j = 1; j <= my; j++) for (let i = 1; i <= mx; i++) f[id(i, j)] = -xi(i);       // −∇²φ = −x
+    const x = new Float64Array(n), r = Float64Array.from(f), pp = Float64Array.from(f), Ap = new Float64Array(n);
+    let rr = r.reduce((s, v) => s + v * v, 0);
+    const r0 = Math.sqrt(rr);
+    let it = 0;
+    for (; it < 20000 && Math.sqrt(rr) > 1e-13 * r0; it++) {
+      Aop(pp, Ap);
+      let pAp = 0; for (let k = 0; k < n; k++) pAp += pp[k] * Ap[k];
+      const al = rr / pAp;
+      let rn = 0;
+      for (let k = 0; k < n; k++) { x[k] += al * pp[k]; r[k] -= al * Ap[k]; rn += r[k] * r[k]; }
+      const be = rn / rr; rr = rn;
+      for (let k = 0; k < n; k++) pp[k] = r[k] + be * pp[k];
+    }
+    const j0 = ny / 2;
+    const phi = (i) => (i <= 0 || i >= nx ? 0 : x[id(i, j0)]);
+    const c = h / 2, fac = (2 / (c * c)) * (nu / (1 + nu));
+    const xs = [], ratio = [];
+    for (let i = 0; i <= nx; i++) {
+      let d;
+      if (i === 0) d = (-3 * phi(0) + 4 * phi(1) - phi(2)) / (2 * hx);
+      else if (i === nx) d = (3 * phi(nx) - 4 * phi(nx - 1) + phi(nx - 2)) / (2 * hx);
+      else d = (phi(i + 1) - phi(i - 1)) / (2 * hx);
+      xs.push(xi(i)); ratio.push(1 + fac * d);
+    }
+    return { xs, ratio, edge: ratio[nx], center: ratio[nx / 2], nx, ny, iters: it };
+  }
+  function fdConvergence(b, h, nu, Ns = [8, 16, 32, 64]) {
+    const ref = rectSeries(b, h, nu, 1);
+    const rows = Ns.map((N) => { const f = rectFD(b, h, nu, N); return { N: f.nx, v: f.edge, err: Math.abs(f.edge - ref) / ref }; });
+    return { rows, ref, slope: linSlope(rows.map((r) => Math.log(1 / r.N)), rows.map((r) => Math.log(Math.max(r.err, 1e-16)))) };
+  }
+
+  /* ---------------- shear deformation: Timoshenko beam ----------------
+     Closed form (simple span, central load P; or cantilever, end load P): δ = δ_bending + δ_shear with
+     δ_shear = f_s P L/(4GA) or f_s P L/(GA). Cowper's shear coefficient for a rectangle, k = 10(1+ν)/(12+11ν). */
+  function timoClosed(p) {
+    const sc = sectionClosed(p), m = MATERIALS[p.mat], G = Gof(m), EI = m.E * sc.I, GAs = G * sc.A / sc.fs, P = p.P, L = p.L;
+    let bend, shear, wfun, L5;
+    if (p.support === 'simple') {
+      bend = P * L ** 3 / (48 * EI); shear = P * L / (4 * GAs); L5 = Math.sqrt(228 * EI / GAs);
+      wfun = (x) => { const u = Math.min(x, L - x); return { b: P * u * (3 * L * L - 4 * u * u) / (48 * EI), s: P * u / (2 * GAs) }; };
+    } else {
+      bend = P * L ** 3 / (3 * EI); shear = P * L / GAs; L5 = Math.sqrt(57 * EI / GAs);
+      wfun = (x) => ({ b: P * x * x * (3 * L - x) / (6 * EI), s: P * x / GAs });
+    }
+    const kC = p.shape === 'rect' ? 10 * (1 + m.nu) / (12 + 11 * m.nu) : null;
+    return { sec: sc, EI, GA: G * sc.A, GAs, G, bend, shear, total: bend + shear, frac: shear / (bend + shear), L5, wfun, kCowper: kC, depth: sc.H };
+  }
+  /* Independent numerical solution: two-node Timoshenko beam elements (w, θ per node), bending by θ', shear γ = w' − θ
+     integrated with one Gauss point ("reduced", converges O(h²)) or two ("full", locks for slender beams). Banded solver. */
+  function timoFE(p, Nel, integ) {
+    const t = timoClosed(p), n = p.support === 'simple' ? 2 * Math.max(1, Math.round(Nel / 2)) : Math.max(1, Math.round(Nel));
+    const le = p.L / n, nd = 2 * (n + 1), hb = 3;
+    const K = Array.from({ length: nd }, () => new Float64Array(2 * hb + 1));     // K[i][j - i + hb]
+    const add = (i, j, v) => { K[i][j - i + hb] += v; };
+    const gps = integ === 'full' ? [[-1 / Math.sqrt(3), 0.5], [1 / Math.sqrt(3), 0.5]] : [[0, 1]];
+    for (let e = 0; e < n; e++) {
+      const dof = [2 * e, 2 * e + 1, 2 * e + 2, 2 * e + 3], k = Array.from({ length: 4 }, () => new Float64Array(4));
+      const kb = t.EI / le;
+      k[1][1] += kb; k[1][3] -= kb; k[3][1] -= kb; k[3][3] += kb;
+      for (const [g, wgt] of gps) {
+        const Bs = [-1 / le, -(1 - g) / 2, 1 / le, -(1 + g) / 2];
+        for (let a = 0; a < 4; a++) for (let c = 0; c < 4; c++) k[a][c] += t.GAs * le * wgt * Bs[a] * Bs[c];
+      }
+      for (let a = 0; a < 4; a++) for (let c = 0; c < 4; c++) add(dof[a], dof[c], k[a][c]);
+    }
+    const F = new Float64Array(nd);
+    const fixed = p.support === 'simple' ? [0, 2 * n] : [0, 1];
+    F[p.support === 'simple' ? 2 * (n / 2) : 2 * n] = p.P;
+    for (const f of fixed) { for (let j = Math.max(0, f - hb); j <= Math.min(nd - 1, f + hb); j++) { K[f][j - f + hb] = 0; K[j][f - j + hb] = 0; } K[f][hb] = 1; F[f] = 0; }
+    // banded Gaussian elimination (symmetric positive definite, no pivoting)
+    for (let i = 0; i < nd; i++) {
+      for (let r = i + 1; r <= Math.min(nd - 1, i + hb); r++) {
+        const f = K[r][i - r + hb] / K[i][hb];
+        if (!f) continue;
+        for (let c = i; c <= Math.min(nd - 1, i + hb); c++) K[r][c - r + hb] -= f * K[i][c - i + hb];
+        F[r] -= f * F[i];
+      }
+    }
+    const u = new Float64Array(nd);
+    for (let i = nd - 1; i >= 0; i--) { let s = F[i]; for (let c = i + 1; c <= Math.min(nd - 1, i + hb); c++) s -= K[i][c - i + hb] * u[c]; u[i] = s / K[i][hb]; }
+    const xs = [], ws = [];
+    for (let i = 0; i <= n; i++) { xs.push(i * le); ws.push(u[2 * i]); }
+    return { xs, ws, delta: p.support === 'simple' ? u[2 * (n / 2)] : u[2 * n], n };
+  }
+  function feConvergence(p, integ, Ns = [2, 4, 8, 16, 32, 64, 128, 256]) {
+    const t = timoClosed(p);
+    const rows = Ns.map((N) => { const f = timoFE(p, N, integ); return { N: f.n, err: Math.abs(f.delta - t.total) / t.total }; });
+    const pts = rows.filter((r) => r.err > 1e-13);
+    return { rows, slope: pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN };
+  }
+  // span at which the finite-element shear part (δ_FE − δ_bending) is 5 % of δ_FE: bisection on L (independent check of L5)
+  function feL5(p, Nel) {
+    const f = (L) => { const q = Object.assign({}, p, { L }); const t = timoClosed(q); const d = timoFE(q, Nel, 'reduced').delta; return (d - t.bend) / d - 0.05; };
+    let lo = 0.1 * depthOf(p), hi = 200 * depthOf(p);
+    for (let k = 0; k < 80; k++) { const m = Math.sqrt(lo * hi); if (f(m) > 0) lo = m; else hi = m; }
+    return Math.sqrt(lo * hi);
+  }
+
+  /* ---------------- built-up beam: two layers with a flexible connection (partial interaction) ----------------
+     Layers: top (t1) and bottom (t2), width b, same E. N = tension in the bottom layer (equal compression in the top);
+     slip s = u(bottom of top layer) − u(top of bottom layer); connection stiffness k per unit length (shear flow per unit
+     slip), so dN/dx = −k s. Compatibility and equilibrium give N'' − α²N = −βM with α² = k(1/EA* + r²/EI₀), β = kr/EI₀,
+     N(0) = N(L) = 0; curvature κ = (M − rN)/EI₀. */
+  function layerGeom(p) {
+    const E = MATERIALS[p.mat].E, A1 = p.b * p.t1, A2 = p.b * p.t2;
+    const EAs = 1 / (1 / (E * A1) + 1 / (E * A2)), EI0 = E * p.b * (p.t1 ** 3 + p.t2 ** 3) / 12, r = (p.t1 + p.t2) / 2;
+    const Ht = p.t1 + p.t2, ybar = (A2 * p.t2 / 2 + A1 * (p.t2 + p.t1 / 2)) / (A1 + A2);
+    const Ifull = p.b * (p.t1 ** 3 + p.t2 ** 3) / 12 + A1 * (p.t2 + p.t1 / 2 - ybar) ** 2 + A2 * (p.t2 / 2 - ybar) ** 2;
+    return { E, A1, A2, EAs, EI0, r, EIfull: EI0 + EAs * r * r, Ifull, ybar, Ht, Qint: A1 * (p.t2 + p.t1 / 2 - ybar) };
+  }
+  const kOf = (p) => (p.conn === 'loose' ? 0 : p.conn === 'glue' ? p.Gg * p.b / p.tg : p.kb / p.s1);
+  const Mof = (p, x) => (p.load === 'point' ? p.P / 2 * Math.min(x, p.L - x) : p.w * x * (p.L - x) / 2);
+  const Vof = (p, x) => (p.load === 'point' ? (x < p.L / 2 ? p.P / 2 : -p.P / 2) : p.w * (p.L / 2 - x));
+  function newmarkClosed(p, kOverride) {
+    const g = layerGeom(p), L = p.L, k = kOverride !== undefined ? kOverride : kOf(p);
+    const a2 = k * (1 / g.EAs + g.r * g.r / g.EI0), a = Math.sqrt(a2), be = k * g.r / g.EI0, z = a * L / 2, r = g.r, EI0 = g.EI0;
+    const sech = z > 700 ? 0 : 1 / Math.cosh(z);
+    let delta, slip0, N, sl;
+    if (p.load === 'point') {
+      const P = p.P;
+      if (z < 0.05) delta = (P * L ** 3 / 48 - r * be * P / 2 * ((2 / 15) * (L / 2) ** 5 - (17 / 315) * (L / 2) ** 7 * a2)) / EI0;
+      else delta = ((1 - r * be / a2) * P * L ** 3 / 48 + r * be * P / 2 * (L / (2 * a2 * a2) - Math.tanh(z) / (a2 * a2 * a))) / EI0;
+      slip0 = k === 0 ? r * P * L * L / (16 * EI0) : z < 1e-4 ? r * P * L * L / (16 * EI0) * (1 - 5 * z * z / 12) : r * P / (2 * EI0 * a2) * (1 - sech);
+      const shc = (x) => (z > 30 ? Math.exp(a * (x - L / 2)) - Math.exp(-a * (x + L / 2)) : Math.sinh(a * x) / Math.cosh(z));
+      const chc = (x) => (z > 30 ? Math.exp(a * (x - L / 2)) + Math.exp(-a * (x + L / 2)) : Math.cosh(a * x) / Math.cosh(z));
+      N = (x) => { const u = Math.min(x, L - x); return k === 0 ? 0 : z < 1e-4 ? 0 : be / a2 * P * u / 2 - be * P / (2 * a2 * a) * shc(u); };
+      sl = (x) => { const u = Math.min(x, L - x), sg = x < L / 2 ? -1 : 1;
+        const s = k === 0 || z < 1e-4 ? r * P / (2 * EI0) * (L * L / 4 - u * u) / 2 : r * P / (2 * EI0 * a2) * (1 - chc(u));
+        return sg * s; };
+    } else {
+      const w = p.w;
+      if (z < 0.05) delta = (5 * w * L ** 4 / 384 - r * be * w * ((61 / 720) * (L / 2) ** 6 - (277 / 8064) * (L / 2) ** 8 * a2)) / EI0;
+      else delta = (5 * w * L ** 4 / 384 - r * ((be / a2) * (5 * w * L ** 4 / 384 - w * L * L / (8 * a2)) + be * w / (a2 * a2 * a2) * (1 - sech))) / EI0;
+      const chm = (x) => (z > 30 ? Math.exp(a * (Math.abs(x - L / 2) - L / 2)) * (1 + Math.exp(-2 * a * Math.abs(x - L / 2))) / (1 + Math.exp(-2 * z)) : Math.cosh(a * (x - L / 2)) / Math.cosh(z));
+      const shm = (x) => (z > 30 ? Math.sign(x - L / 2) * Math.exp(a * (Math.abs(x - L / 2) - L / 2)) * (1 - Math.exp(-2 * a * Math.abs(x - L / 2))) / (1 + Math.exp(-2 * z)) : Math.sinh(a * (x - L / 2)) / Math.cosh(z));
+      N = (x) => (k === 0 || z < 1e-4 ? 0 : be / a2 * (Mof(p, x) - w / a2) + be * w / (a2 * a2) * chm(x));
+      sl = (x) => (k === 0 || z < 1e-4 ? -(r * w / (2 * EI0)) * (L ** 3 / 12 - L * x * x / 2 + x ** 3 / 3)
+        : -(be / a2 * w * (L / 2 - x) + be * w / (a2 * a) * shm(x)) / k);
+      slip0 = Math.abs(sl(0));
+    }
+    const EIeff = p.load === 'point' ? p.P * L ** 3 / (48 * delta) : 5 * p.w * L ** 4 / (384 * delta);
+    return { g, k, alpha: a, beta: be, z, delta, slip0, N, slip: sl, EIeff, eta: (EIeff - g.EI0) / (g.EIfull - g.EI0),
+      deltaLoose: p.load === 'point' ? p.P * L ** 3 / (48 * g.EI0) : 5 * p.w * L ** 4 / (384 * g.EI0),
+      deltaFull: p.load === 'point' ? p.P * L ** 3 / (48 * g.EIfull) : 5 * p.w * L ** 4 / (384 * g.EIfull) };
+  }
+  /* Independent numerical solution (smeared connection): second-order finite differences for N'' − α²N = −βM on n
+     intervals (Thomas algorithm); δ = ∫κ m dx by the trapezoid rule (m = unit-load moment); end slip −N'(0)/k. */
+  function newmarkFD(p, n, kOverride) {
+    // kOverride: a number (uniform k) or a function k(x) (bolts at varying spacing, smeared locally)
+    const g = layerGeom(p), L = p.L, nn = 2 * Math.max(2, Math.round(n / 2)), h = L / nn;
+    const kf = typeof kOverride === 'function' ? kOverride : (() => { const kk = kOverride !== undefined ? kOverride : kOf(p); return () => kk; })();
+    const c1 = 1 / g.EAs + g.r * g.r / g.EI0, k = kf(0);
+    const xs = Array.from({ length: nn + 1 }, (_, i) => i * h), N = new Float64Array(nn + 1);
+    if (k > 0) {
+      const m = nn - 1, aa = new Float64Array(m), bb = new Float64Array(m), cc = new Float64Array(m), dd = new Float64Array(m);
+      for (let i = 0; i < m; i++) { const ki = kf(xs[i + 1]); aa[i] = 1; cc[i] = 1; bb[i] = -(2 + ki * c1 * h * h); dd[i] = -ki * g.r / g.EI0 * h * h * Mof(p, xs[i + 1]); }
+      for (let i = 1; i < m; i++) { const f = aa[i] / bb[i - 1]; bb[i] -= f * cc[i - 1]; dd[i] -= f * dd[i - 1]; }
+      N[m] = dd[m - 1] / bb[m - 1];
+      for (let i = m - 2; i >= 0; i--) N[i + 1] = (dd[i] - cc[i] * N[i + 2]) / bb[i];
+    }
+    const kap = xs.map((x, i) => (Mof(p, x) - g.r * N[i]) / g.EI0);
+    let delta = 0, th = 0;
+    for (let i = 0; i < nn; i++) {
+      const m0 = Math.min(xs[i], L - xs[i]) / 2, m1 = Math.min(xs[i + 1], L - xs[i + 1]) / 2;
+      delta += h / 2 * (kap[i] * m0 + kap[i + 1] * m1);
+      if (xs[i + 1] <= L / 2 + 1e-12) th += h / 2 * (kap[i] + kap[i + 1]);
+    }
+    const slip0 = k > 0 ? Math.abs((-3 * N[0] + 4 * N[1] - N[2]) / (2 * h) / k) : g.r * th;
+    return { xs, N: Array.from(N), delta, slip0, kap };
+  }
+  function layerConvergence(p, Ns = [8, 16, 32, 64, 128, 256, 512, 1024]) {
+    const c = newmarkClosed(p);
+    const rows = Ns.map((n) => { const f = newmarkFD(p, n); return { N: n, err: Math.abs(f.delta - c.delta) / c.delta }; });
+    const pts = rows.filter((r) => r.err > 1e-13);
+    return { rows, slope: pts.length >= 2 ? linSlope(pts.map((r) => Math.log(1 / r.N)), pts.map((r) => Math.log(r.err))) : NaN };
+  }
+  // bolt pattern: first bolt s1/2 from each support; spacing s1 within the end zones of length e, s2 in the middle; symmetric
+  function boltPattern(p) {
+    const L = p.L, half = [];
+    let x = p.s1 / 2;
+    while (x < L / 2 - 1e-9 && half.length < 2000) { half.push(x); x += x + 1e-9 < p.e ? p.s1 : p.s2; }
+    const full = half.concat(half.slice().reverse().map((v) => L - v).filter((v) => Math.abs(v - half[half.length - 1]) > 1e-9));
+    const spacing = (v) => (Math.min(v, L - v) + 1e-9 < p.e ? p.s1 : p.s2);
+    return { xs: full.sort((a, b) => a - b), spacing };
+  }
+  /* Model comparison: discrete springs (each bolt a spring k_b). Between bolts N is constant and
+     s' = −N/EA* + r(M − rN)/EI₀ (integrated exactly by Simpson's rule); at a bolt N drops by k_b s. Shooting on the
+     unknown end slip makes N(L) = 0. */
+  function boltsDiscrete(p) {
+    const g = layerGeom(p), L = p.L, bp = boltPattern(p), c1 = 1 / g.EAs + g.r * g.r / g.EI0;
+    const pts = Array.from(new Set([0, L / 2, L, ...bp.xs].map((v) => Math.round(v * 1e12) / 1e12))).sort((a, b) => a - b);
+    const isBolt = (x) => bp.xs.some((v) => Math.abs(v - x) < 1e-9);
+    const run = (s0) => {
+      let N = 0, s = s0;
+      const segs = [], F = [], sp = [{ x: 0, s: s0 }];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1];
+        segs.push({ a, b, N });
+        const Mi = (b - a) / 6 * (Mof(p, a) + 4 * Mof(p, (a + b) / 2) + Mof(p, b));
+        s = s - N * c1 * (b - a) + g.r / g.EI0 * Mi;
+        sp.push({ x: b, s });
+        if (isBolt(b)) { const f = p.kb * s; F.push({ x: b, F: f }); N -= f; }
+      }
+      return { N, segs, F, sp };
+    };
+    const r0 = run(0), r1 = run(1), s0 = -r0.N / (r1.N - r0.N), R = run(s0);
+    const mfun = (x) => Math.min(x, L - x) / 2;
+    let delta = 0;
+    for (const sg of R.segs) {
+      const f = (x) => (Mof(p, x) - g.r * sg.N) / g.EI0 * mfun(x);
+      delta += (sg.b - sg.a) / 6 * (f(sg.a) + 4 * f((sg.a + sg.b) / 2) + f(sg.b));
+    }
+    return { delta, slip0: Math.abs(s0), forces: R.F, slipProfile: R.sp, segs: R.segs, n: bp.xs.length, xs: bp.xs, spacing: bp.spacing, residual: R.N };
+  }
+  // Beer §6.1 estimate of the connector force: q = VQ/I of the fully composite section, times the bolt spacing
+  function beerBoltForces(p) {
+    const g = layerGeom(p), bp = boltPattern(p);
+    return bp.xs.map((x) => ({ x, F: Math.abs(Vof(p, x)) * g.Qint / g.Ifull * bp.spacing(x) }));
+  }
+  function linSlope(x, y) { const n = x.length; const mx = x.reduce((a, b) => a + b) / n, my = y.reduce((a, b) => a + b) / n; let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } return sxy / sxx; }
+
+  return { MATERIALS, PRESETS, Gof, layersOf, depthOf, sectionClosed, sectionNumeric, stripConvergence, rectSeries, rectFD, fdConvergence,
+           timoClosed, timoFE, feConvergence, feL5, layerGeom, kOf, Mof, Vof, newmarkClosed, newmarkFD, layerConvergence, boltPattern,
+           boltsDiscrete, beerBoltForces, linSlope };
+})();
+if (typeof module !== 'undefined') module.exports = Lab5Model;
+</script>
+
+<script id="sample-data" type="application/json">/*@@SAMPLE_DATA@@*/</script>
+<script>
+/*@@SIM_CORE_JS@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab5Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let preset = 'rectUp';
+  const p = Object.assign({}, M.PRESETS.rectUp);
+  let R = null;
+
+  $('mat').innerHTML = Object.entries(M.MATERIALS).map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; update(); }); };
+  mk('grp-sec', { id: 'b', label: 'Width', sym: 'b', q: 'length', min: 2e-3, max: 400e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'h', label: 'Depth', sym: 'h', q: 'length', min: 2e-3, max: 600e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'B', label: 'Flange width', sym: 'B', q: 'length', min: 5e-3, max: 400e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'H', label: 'Overall depth', sym: 'H', q: 'length', min: 10e-3, max: 600e-3, step: 0.1e-3 });
+  mk('grp-sec', { id: 'tf', label: 'Flange thickness', sym: 't<sub>f</sub>', q: 'length', min: 0.5e-3, max: 60e-3, step: 0.05e-3 });
+  mk('grp-sec', { id: 'tw', label: 'Web (wall) thickness', sym: 't<sub>w</sub>', q: 'length', min: 0.5e-3, max: 60e-3, step: 0.01e-3 });
+  mk('grp-sec', { id: 'd', label: 'Diameter', sym: 'd', q: 'length', min: 2e-3, max: 400e-3, step: 0.1e-3 });
+  mk('grp-layer', { id: 't1', label: 'Top layer thickness', sym: 't<sub>1</sub>', q: 'length', min: 1e-3, max: 200e-3, step: 0.01e-3 });
+  mk('grp-layer', { id: 't2', label: 'Bottom layer thickness', sym: 't<sub>2</sub>', q: 'length', min: 1e-3, max: 200e-3, step: 0.01e-3 });
+  mk('grp-layer', { id: 'kb', label: 'Bolt slip modulus (per bolt)', sym: 'k<sub>b</sub>', q: 'stiffness', min: 1e5, max: 1e10, log: true, sig: 4 });
+  mk('grp-layer', { id: 's1', label: 'Bolt spacing near the supports', sym: 's<sub>1</sub>', q: 'length', min: 10e-3, max: 2, log: true });
+  mk('grp-layer', { id: 's2', label: 'Bolt spacing in the middle', sym: 's<sub>2</sub>', q: 'length', min: 10e-3, max: 2, log: true });
+  mk('grp-layer', { id: 'e', label: 'Length of each end zone', sym: 'e', q: 'length', min: 0, max: 5, step: 0.001 });
+  mk('grp-layer', { id: 'Gg', label: 'Glue shear modulus', sym: 'G<sub>g</sub>', q: 'modulus', min: 1e6, max: 30e9, log: true });
+  mk('grp-layer', { id: 'tg', label: 'Glue thickness', sym: 't<sub>g</sub>', q: 'length', min: 0.01e-3, max: 5e-3, log: true });
+  mk('grp-load', { id: 'V', label: 'Shear force', sym: 'V', q: 'force', min: 0, max: 500e3, step: 10 });
+  mk('grp-load', { id: 'L', label: 'Span', sym: 'L', q: 'length', min: 20e-3, max: 10, log: true });
+  mk('grp-load', { id: 'P', label: 'Point load', sym: 'P', q: 'force', min: 0, max: 500e3, step: 10 });
+  mk('grp-load', { id: 'w', label: 'Uniform load', sym: 'w', q: 'force', min: 0, max: 200e3, step: 10, help: 'Per unit length (kN/m in SI).' });
+  mk('grp-num', { id: 'Ns', label: 'Strips through the depth', sym: 'N<sub>s</sub>', q: 'none', min: 2, max: 1000, log: true, int: true });
+  mk('grp-num', { id: 'Nfd', label: 'Finite-difference cells across the width', sym: 'N<sub>fd</sub>', q: 'none', min: 4, max: 96, log: true, int: true });
+  mk('grp-num', { id: 'Nel', label: 'Beam finite elements', sym: 'N<sub>e</sub>', q: 'none', min: 2, max: 256, log: true, int: true });
+  mk('grp-num', { id: 'Nl', label: 'Finite-difference intervals along the beam', sym: 'n', q: 'none', min: 8, max: 4000, log: true, int: true });
+  const modeSeg = S.segmented($('mode'), [['section', 'Section'], ['beam', 'Shear deformation'], ['layer', 'Built-up beam']], p.mode, (v) => { p.mode = v; update(); }, 'Configuration');
+  const integSeg = S.segmented($('integ'), [['reduced', 'Reduced (1 point)'], ['full', 'Full (2 points)']], p.integ, (v) => { p.integ = v; update(); }, 'Shear integration');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+  for (const id of ['shape', 'mat', 'conn', 'support', 'load']) $(id).addEventListener('change', (e) => { p[id] = e.target.value; update(); });
+  $('overlay').addEventListener('change', () => update());
+  function setAll() {
+    for (const k of Object.keys(ctl)) ctl[k].set(p[k]);
+    for (const id of ['shape', 'mat', 'conn', 'support', 'load']) $(id).value = p[id];
+    modeSeg.set(p.mode); integSeg.set(p.integ);
+  }
+  function applyPreset(k) { preset = k; $('preset').value = k; Object.assign(p, M.PRESETS[k]); setAll(); update(); }
+  $('preset').addEventListener('change', (e) => applyPreset(e.target.value));
+
+  const fmtx = (v) => S.fmt(v, 3);
+  const plots = {
+    p1: new S.Plot($('plot1'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    p2: new S.Plot($('plot2'), { xlabel: '', ylabel: '', aspect: 0.72, xfmt: fmtx, yfmt: fmtx }),
+    conv: new S.Plot($('plot-conv'), { xlabel: '', ylabel: 'Relative error', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 2) }),
+  };
+  const q = (qq, v, sig = 4) => S.fmtQ(qq, v, sig);
+  const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+  const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+  const lim = (ys, pad = 0.12) => { const f = ys.filter(Number.isFinite); let lo = Math.min(0, ...f), hi = Math.max(0, ...f); const d = (hi - lo) || 1; return [lo - pad * d, hi + pad * d]; };
+  const thin = (arr, n = 40) => (arr.length <= n ? arr : arr.filter((_, i) => i % Math.ceil(arr.length / n) === 0 || i === arr.length - 1));
+  const card = (eq, from, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${from}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+  const warn = (W) => { $('warnings').innerHTML = W.map(([cl, t]) => `<li>${chip(cl, cl === 'ok' ? 'valid' : cl === 'warn' ? 'approx.' : 'fails')}<span>${t}</span></li>`).join(''); };
+  const near = (a, b, tol = 1e-4) => Math.abs(a - b) <= tol * Math.max(Math.abs(b), 1e-12);
+
+  function validate() {
+    const e = [];
+    if (p.mode !== 'layer' && (p.shape === 'ibeam' || p.shape === 'box') && !(2 * p.tf < p.H && (p.shape === 'box' ? 2 * p.tw < p.B : p.tw <= p.B))) e.push('Check the dimensions: flanges thinner than half the depth, and the web (or both walls) narrower than the flange.');
+    if (p.mode !== 'layer' && p.shape === 'tee' && !(p.tf < p.H && p.tw <= p.B)) e.push('Check the T dimensions: flange thinner than the depth and web no wider than the flange.');
+    if (p.mode === 'layer' && p.conn === 'bolts' && p.s1 > p.L) e.push('The bolt spacing must be smaller than the span.');
+    return e;
+  }
+  function update() {
+    const md = p.mode;
+    $('panel-sec').hidden = md === 'layer';
+    $('panel-layer').hidden = md !== 'layer';
+    $('support-wrap').hidden = md !== 'beam';
+    $('load-wrap').hidden = md !== 'layer';
+    $('integ-wrap').hidden = md !== 'beam';
+    const sh = p.shape, isR = sh === 'rect', isC = sh === 'circle', isF = !isR && !isC;
+    ctl.b.el.hidden = !((md !== 'layer' && isR) || md === 'layer'); ctl.h.el.hidden = md === 'layer' || !isR;
+    ctl.B.el.hidden = ctl.H.el.hidden = ctl.tf.el.hidden = ctl.tw.el.hidden = md === 'layer' || !isF;
+    ctl.d.el.hidden = md === 'layer' || !isC;
+    const bolts = p.conn === 'bolts', glue = p.conn === 'glue';
+    ctl.kb.el.hidden = ctl.s1.el.hidden = ctl.s2.el.hidden = ctl.e.el.hidden = !bolts; ctl.Gg.el.hidden = ctl.tg.el.hidden = !glue;
+    ctl.V.el.hidden = md !== 'section'; ctl.L.el.hidden = md === 'section';
+    ctl.P.el.hidden = md === 'section' || (md === 'layer' && p.load === 'udl'); ctl.w.el.hidden = !(md === 'layer' && p.load === 'udl');
+    ctl.Ns.el.hidden = md !== 'section'; ctl.Nfd.el.hidden = !(md === 'section' && isR); ctl.Nel.el.hidden = md !== 'beam'; ctl.Nl.el.hidden = md !== 'layer';
+    const errs = validate();
+    $('errors').hidden = !errs.length; $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    if (md === 'section') updateSection(); else if (md === 'beam') updateBeam(); else updateLayer();
+  }
+
+  function renderReadout(rows, note) {
+    $('readout-note').textContent = note;
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Difference</th><th scope="col">Status</th></tr>';
+    const scale = {};
+    for (const [, qq, c] of rows) scale[qq] = Math.max(scale[qq] || 0, Math.abs(c));
+    $('readout').innerHTML = th + rows.map(([n, qq, c, v, kind]) => {
+      const d = Math.abs(v - c) / Math.max(Math.abs(c), 1e-300);
+      let status;
+      if (kind === 'model') status = chip('info', 'different models');
+      else if (d < 1e-6 || Math.abs(v - c) < 1e-9 * scale[qq]) status = chip('ok', 'agree');
+      else if (d < 1e-2) status = chip('ok', 'agree (discretization)');
+      else if (d < 5e-2) status = chip('warn', 'coarse: refine N');
+      else status = chip('bad', 'check');
+      return `<tr><td>${n}</td><td class="v">${q(qq, c)}</td><td class="v">${q(qq, v)}</td><td class="v">${Number.isFinite(d) ? S.fmt(100 * d, 2) + ' %' : '—'}</td><td>${status}</td></tr>`;
+    }).join('');
+    R.readoutRows = rows;
+  }
+  function drawConv(rows, slope, xlabel, cap, refOrder) {
+    R.conv = { rows, xlabel };
+    plots.conv.o.xlabel = xlabel;
+    const ok = rows.filter((r) => r.err > 1e-15);
+    const series = [{ x: rows.map((r) => r.N), y: rows.map((r) => Math.max(r.err, 1e-16)), role: 'numeric', markers: true, r: 3, label: 'Relative error vs the closed form' }];
+    if (ok.length && refOrder) series.push({ x: [ok[0].N, ok[ok.length - 1].N], y: [ok[0].err, ok[0].err * (ok[0].N / ok[ok.length - 1].N) ** refOrder], role: 'theory', width: 1, dash: '2 3', label: `reference: error ∝ N^−${refOrder}`, hover: false });
+    plots.conv.draw({ series, xlim: [Math.min(...rows.map((r) => r.N)) * 0.7, Math.max(...rows.map((r) => r.N)) * 1.4], ylim: [1e-16, 1], desc: 'Convergence of the numerical solution.' });
+    $('cap-conv').innerHTML = cap.replace('@ORDER@', Number.isFinite(slope) ? S.fmt(slope, 3) : '—');
+  }
+
+  // =============================================================== section
+  function drawSectionSvg(sc) {
+    const W = Math.round(Math.max(320, Math.min(900, $('diagram').clientWidth || 900))), narrow = W < 600, Hh = narrow ? 240 : 200;
+    const H = sc.H, bmax = p.shape === 'circle' ? p.d : Math.max(...sc.layers.map((l) => l.b));
+    const scl = Math.min(160 / H, (narrow ? 170 : 220) / bmax), cx = narrow ? W / 2 - 20 : 140, yb = 180;
+    let s = '';
+    if (p.shape === 'circle') s += `<circle cx="${cx}" cy="${yb - p.d / 2 * scl}" r="${p.d / 2 * scl}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`;
+    else for (const l of sc.layers) {
+      if (p.shape === 'box' && l.b === 2 * p.tw) { for (const sx of [-1, 1]) s += `<rect x="${cx + sx * (p.B / 2 - p.tw / 2) * scl - p.tw / 2 * scl}" y="${yb - l.y1 * scl}" width="${p.tw * scl}" height="${(l.y1 - l.y0) * scl}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`; continue; }
+      s += `<rect x="${cx - l.b * scl / 2}" y="${yb - l.y1 * scl}" width="${l.b * scl}" height="${(l.y1 - l.y0) * scl}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`;
+    }
+    s += `<path d="M${cx - bmax * scl / 2 - 16} ${yb - sc.ybar * scl}L${cx + bmax * scl / 2 + 16} ${yb - sc.ybar * scl}" style="stroke:var(--numeric);stroke-dasharray:5 3;stroke-width:1.4"/><text x="${cx + bmax * scl / 2 + 20}" y="${yb - sc.ybar * scl + 4}" style="fill:var(--numeric);font-size:12px">NA</text>`;
+    const tx = narrow ? 8 : cx * 2 + 30;
+    s += `<text x="${tx}" y="${narrow ? 206 : 60}" style="fill:var(--ink);font-size:13px">I = ${q('inertia', sc.I, 4)}, A = ${q('area', sc.A, 4)}</text>`;
+    s += `<text x="${tx}" y="${narrow ? 226 : 84}" style="fill:var(--ink);font-size:13px">Q at the NA = ${q('volume3', sc.QNA, 4)}</text>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Cross-section with its neutral axis">${s}</svg>`;
+  }
+  function updateSection() {
+    const sc = M.sectionClosed(p), num = M.sectionNumeric(p, p.Ns), V = p.V, isR = p.shape === 'rect';
+    R = { kind: 'section', sc, num };
+    const nu = M.MATERIALS[p.mat].nu;
+    $('diag-txt').textContent = isR ? `b/h = ${S.fmt(p.b / p.h, 4)}` : `form factor f_s = ${S.fmt(sc.fs, 4)}`;
+    drawSectionSvg(sc);
+    const tNA = sc.tauNA(V);
+    $('stats').innerHTML = [st('τ at the neutral axis, VQ/(It)', q('stress', tNA)), st('Largest τ (elementary)', q('stress', sc.tauMax(V))), st('Average V/A', q('stress', V / sc.A)),
+      st('τ<sub>max</sub> / (V/A)', S.fmt(sc.tauMax(V) / (V / sc.A), 4)), st('Shear form factor f<sub>s</sub>', S.fmt(sc.fs, 5)),
+      p.shape === 'ibeam' ? st('V / (web area)', q('stress', V / ((p.H - 2 * p.tf) * p.tw))) : st('Q at the NA', q('volume3', sc.QNA))].join('');
+    // plot 1: τ through the depth
+    const yc = [], tc = [];
+    if (sc.layers) for (const l of sc.layers) { for (let i = 0; i <= 40; i++) { const y = l.y0 + (l.y1 - l.y0) * i / 40; yc.push(y); tc.push(V * sc.Q(y) / (sc.I * l.b)); } }
+    else for (let i = 0; i <= 200; i++) { const y = p.d * i / 200; yc.push(y); tc.push(sc.tau(y, V)); }
+    const pr = thin(num.prof, 50);
+    const s1 = [
+      { x: tc.map((v) => S.conv('stress', v)), y: yc.map((v) => S.conv('length', v)), role: 'theory', label: 'Closed form, VQ/(It)' },
+      { x: pr.map((r) => S.conv('stress', V * r.Q / (num.I * r.b))), y: pr.map((r) => S.conv('length', r.y)), role: 'numeric', markers: true, r: 2.2, label: `Strip integration of Q (N_s = ${p.Ns})` },
+    ];
+    const ov = $('overlay').value === 'auto' ? SAMPLE[preset] : null;
+    if (ov && ov.web && Math.abs(p.V - ov.V) < 1) s1.unshift({ x: ov.web.tau.map((v) => S.conv('stress', v)), y: ov.web.y.map((v) => S.conv('length', v)), role: 'measured', markers: true, label: 'Sample data: τ = Gγ from the web gage pairs' });
+    if (ov && ov.edge && Math.abs(p.V - ov.V) < 1) s1.unshift({ x: [S.conv('stress', ov.edge.tau)], y: [S.conv('length', p.h / 2)], role: 'measured', markers: true, label: 'Sample data: τ at the faces (gage pairs)' });
+    plots.p1.o.logx = plots.p1.o.logy = false;
+    plots.p1.o.xlabel = `Shearing stress, τ (${S.unit('stress')})`; plots.p1.o.ylabel = `Height above the bottom (${S.unit('length')})`;
+    plots.p1.draw({ series: s1, xlim: lim(s1.flatMap((s) => s.x), 0.1), ylim: [0, S.conv('length', sc.H)], desc: 'Shearing stress through the depth.' });
+    $('h-p1').textContent = 'Shearing stress through the depth';
+    $('cap1').innerHTML = `τ = VQ/(It) is largest at the neutral axis${p.shape === 'ibeam' ? '; in the I-section it is nearly uniform in the web and jumps down where the width changes to the flange width' : ''}. Q is the first moment about the neutral axis of the area above the level considered.`;
+    // plot 2
+    let rows = [
+      ['Moment of inertia I: exact layer sums vs strips', 'inertia', sc.I, num.I, 'disc'],
+      ['First moment Q at the neutral axis', 'volume3', sc.QNA, num.QNA, 'disc'],
+      ['τ at the neutral axis, VQ/(It)', 'stress', tNA, V * num.QNA / (num.I * sc.bNA), 'disc'],
+      ['Shear form factor f_s = (A/I²)∫Q²/b dy', 'none', sc.fs, num.fs, 'disc'],
+    ];
+    if (isR) {
+      const fd = M.rectFD(p.b, p.h, nu, p.Nfd);
+      const xi = Array.from({ length: 81 }, (_, i) => -1 + 2 * i / 80);
+      const ser = xi.map((x) => M.rectSeries(p.b, p.h, nu, x));
+      R.fd = fd; R.ser = { xi, ser };
+      const s2 = [
+        { x: xi.map((x) => S.conv('length', x * p.b / 2)), y: ser, role: 'theory', label: 'Elasticity, series solution (closed form)' },
+        { x: fd.xs.map((x) => S.conv('length', x)), y: fd.ratio, role: 'numeric', markers: true, r: 2.4, label: `Finite differences (${fd.nx} × ${fd.ny} cells)` },
+        { x: [-p.b / 2, p.b / 2].map((x) => S.conv('length', x)), y: [1, 1], role: 'mutedline', width: 1, dash: '4 3', label: 'Elementary: VQ/(Ib), uniform across the width', hover: false },
+      ];
+      if (ov && ov.edge && Math.abs(p.V - ov.V) < 1) s2.unshift({ x: [-p.b / 2, p.b / 2].map((x) => S.conv('length', x)), y: [ov.edge.ratioBack, ov.edge.ratioFront], role: 'measured', markers: true, label: 'Sample data: the two faces' });
+      plots.p2.o.xlabel = `Position across the width, z (${S.unit('length')})`; plots.p2.o.ylabel = 'τ / (VQ/Ib) on the neutral axis';
+      const yy = s2.flatMap((s) => s.y);
+      plots.p2.draw({ series: s2, xlim: [S.conv('length', -p.b / 2), S.conv('length', p.b / 2)], ylim: [Math.min(0.7, ...yy) - 0.05, Math.max(...yy) * 1.08], desc: 'Shearing stress across the width on the neutral axis.' });
+      $('h-p2').textContent = 'Across the width, on the neutral axis';
+      $('cap2').innerHTML = `The elementary formula assumes τ is uniform across the width. Poisson's effect makes it larger at the faces: at b/h = ${S.fmt(p.b / p.h, 3)} and ν = ${nu} the face value is ${S.fmt(100 * (fd.edge - 1), 3)} % above VQ/(Ib) (finite differences), ${S.fmt(100 * (ser[80] - 1), 3)} % (series).`;
+      rows.push(['Face (z = ±b/2) value τ/(VQ/Ib): series vs finite differences', 'none', ser[80], fd.edge, 'disc']);
+      rows.push(['Center (z = 0) value τ/(VQ/Ib)', 'none', ser[40], fd.center, 'disc']);
+      rows.push(['τ at the faces: elementary VQ/(Ib) vs elasticity', 'stress', tNA, tNA * ser[80], 'model']);
+    } else {
+      const s2 = [
+        { x: tc.map((v, i) => S.conv('shearflow', v * sc.bAt(Math.min(yc[i], sc.H - 1e-12)))), y: yc.map((v) => S.conv('length', v)), role: 'theory', label: 'Closed form, q = VQ/I' },
+        { x: pr.map((r) => S.conv('shearflow', V * r.Q / num.I)), y: pr.map((r) => S.conv('length', r.y)), role: 'numeric', markers: true, r: 2.2, label: 'Strip integration' },
+      ];
+      plots.p2.o.xlabel = `Shear flow, q = τt (${S.unit('shearflow')})`; plots.p2.o.ylabel = `Height above the bottom (${S.unit('length')})`;
+      plots.p2.draw({ series: s2, xlim: lim(s2.flatMap((s) => s.x), 0.1), ylim: [0, S.conv('length', sc.H)], desc: 'Shear flow through the depth.' });
+      $('h-p2').textContent = 'Shear flow through the depth';
+      $('cap2').innerHTML = 'The shear flow q = VQ/I is continuous through the depth even where τ jumps: τ = q/t changes only because the width t changes.';
+      if (p.shape === 'circle') rows.push(['Largest τ: 4V/(3A) vs strips', 'stress', 4 * V / (3 * sc.A), Math.max(...num.prof.map((r) => V * r.Q / (num.I * r.b))), 'disc']);
+      if (p.shape === 'ibeam') rows.push(['τ in the web: VQ/(I t_w) vs the approximation V/(web area)', 'stress', tNA, V / ((p.H - 2 * p.tf) * p.tw), 'model']);
+    }
+    renderReadout(rows, 'Numerical: N_s strips through the depth (strips that straddle a width change are split); A, ȳ, I and Q are sums over strips; it never uses the layer formulas.');
+    if (isR) {
+      const cv = M.fdConvergence(p.b, p.h, nu);
+      drawConv(cv.rows, cv.slope, 'Finite-difference cells across the width', 'Error in the face value of τ/(VQ/Ib) vs the series solution. Observed order @ORDER@: second-order differences everywhere, including the one-sided derivative at the face.', 2);
+      R.conv.what = 'fd';
+    } else {
+      const cv = M.stripConvergence(p);
+      drawConv(cv.rows, cv.slope, 'Strips through the depth, N_s', p.shape === 'circle' ? 'Error in I vs πd⁴/64. Observed order @ORDER@: the width √(c² − y²) has infinite slope at the top and bottom, which slows the midpoint rule below second order.' : 'Error in I vs the exact layer sum. Observed order @ORDER@ (midpoint rule: 2).', p.shape === 'circle' ? 1.5 : 2);
+    }
+    const W = [];
+    if (isR && p.b / p.h > 0.5) W.push([p.b / p.h > 1 ? 'bad' : 'warn', `b/h = ${S.fmt(p.b / p.h, 3)}: the shearing stress is not uniform across the width; at the faces it is ${S.fmt(100 * (M.rectSeries(p.b, p.h, nu, 1) - 1), 3)} % above VQ/(Ib).`]);
+    if (isR && p.b / p.h <= 0.5) W.push(['ok', `Narrow rectangle (b/h = ${S.fmt(p.b / p.h, 3)}): VQ/(Ib) is within ${S.fmt(100 * (M.rectSeries(p.b, p.h, nu, 1) - 1), 2)} % of the face value (Beer §6.1B).`]);
+    if (p.shape === 'ibeam' || p.shape === 'box' || p.shape === 'tee') W.push(['warn', 'In the flanges, VQ/(Ib) is a width-average of a stress that is mostly horizontal (shear flow along the flange, §6.4); the vertical τ there is small and the formula is not meaningful at the flange tips.']);
+    if (p.shape === 'circle') W.push(['warn', 'For a circle VQ/(Ib) gives the average across each chord; the true τ is not parallel to V near the boundary (§6.1C).']);
+    warn(W);
+    $('cards').innerHTML = [
+      card('<i>τ</i> = <i>VQ</i>/(<i>It</i>)', 'equilibrium of the part of a beam element above a cut parallel to the neutral surface (§6.1A–B).', 'Q = first moment of the area above the cut about the NA; t = width at the cut; average over the width.', isR && p.b / p.h > 0.5 ? chip('warn', 'approximate') : chip('ok', 'valid'), `τ at the NA = ${q('stress', tNA)}`),
+      card('<i>q</i> = <i>VQ</i>/<i>I</i>', 'the same equilibrium, per unit length of beam (§6.1A, §6.4).', 'Shear flow carried by a glued joint, nails or bolts at that level.', chip('ok', 'valid'), `q at the NA = ${q('shearflow', V * sc.QNA / sc.I)}`),
+      card('<i>f</i><sub>s</sub> = (<i>A</i>/<i>I</i>²)∫<i>Q</i>²/<i>b</i> d<i>y</i>', 'shear strain energy of τ = VQ/(Ib) (Appendix D of the handout).', 'Enters the shear deflection f_s V L/(GA); 6/5 for a rectangle, 10/9 for a circle.', chip('ok', 'model'), `f_s = ${S.fmt(sc.fs, 5)}`),
+    ].join('');
+  }
+
+  // =============================================================== shear deformation
+  function updateBeam() {
+    const t = M.timoClosed(p), fe = M.timoFE(p, p.Nel, p.integ), depth = M.depthOf(p);
+    R = { kind: 'beam', t, fe };
+    $('diag-txt').textContent = `L/h = ${S.fmt(p.L / depth, 4)}`;
+    const W0 = Math.round(Math.max(320, Math.min(900, $('diagram').clientWidth || 900))), x0 = 30, scx = (W0 - 60) / p.L, y = 80;
+    let s = `<rect x="${x0}" y="${y - 10}" width="${p.L * scx}" height="20" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.4"/>`;
+    if (p.support === 'simple') s += `<path d="M${x0} ${y + 10}l-9 16h18z" style="fill:var(--panel-2);stroke:var(--ink)"/><circle cx="${x0 + p.L * scx}" cy="${y + 18}" r="8" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    else s += `<rect x="${x0 - 12}" y="${y - 40}" width="12" height="80" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    const xl = p.support === 'simple' ? x0 + p.L * scx / 2 : x0 + p.L * scx;
+    s += `<path d="M${xl} ${y - 60}L${xl} ${y - 14}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${xl} ${y - 11}l-6 -12h12z" style="fill:var(--numeric)"/><text x="${xl}" y="${y - 64}" text-anchor="middle" style="fill:var(--numeric);font-size:12px">P = ${q('force', p.P, 3)}</text>`;
+    s += `<text x="${x0 + p.L * scx / 2}" y="${y + 50}" text-anchor="middle" style="fill:var(--muted);font-size:12px">L = ${q('length', p.L, 4)}</text>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} 150" role="img" aria-label="Beam, supports and load">${s}</svg>`;
+    $('stats').innerHTML = [st('δ, bending part', q('length', t.bend)), st('δ, shear part', q('length', t.shear)), st('Shear part of δ', S.fmt(100 * t.frac, 3) + ' %'),
+      st('EI', q('rigidity', t.EI)), st('GA/f<sub>s</sub>', q('force', t.GAs)), st('Span where shear is 5 % of δ', `${q('length', t.L5, 4)} (L/h = ${S.fmt(t.L5 / depth, 3)})`)].join('');
+    // plot 1: δ/δ_bending vs L/h
+    const rs = Array.from({ length: 81 }, (_, i) => 10 ** (Math.log10(1) + i * (Math.log10(60) - Math.log10(1)) / 80));
+    const ratio = (rr) => { const L = rr * depth; return p.support === 'simple' ? 1 + 12 * t.EI / (t.GAs * L * L) : 1 + 3 * t.EI / (t.GAs * L * L); };
+    const fePts = [2, 3, 5, 8, 12, 20, 35].map((rr) => { const qq = Object.assign({}, p, { L: rr * depth }); return { rr, v: M.timoFE(qq, p.Nel, p.integ).delta / M.timoClosed(qq).bend }; });
+    const s1 = [
+      { x: rs, y: rs.map(ratio), role: 'theory', label: 'Timoshenko, closed form: δ/δ_bending' },
+      { x: fePts.map((r) => r.rr), y: fePts.map((r) => r.v), role: 'numeric', markers: true, r: 3, label: `Finite elements (N_e = ${p.Nel}, ${p.integ})` },
+      { x: [1, 60], y: [1 / 0.95, 1 / 0.95], role: 'mutedline', width: 1, dash: '4 3', label: 'shear = 5 % of δ', hover: false },
+    ];
+    const ov = $('overlay').value === 'auto' && preset === 'ibeamSpan' && p.shape === 'ibeam' ? SAMPLE.spans : null;
+    if (ov) s1.unshift({ x: ov.Lh, y: ov.ratio, role: 'measured', markers: true, label: 'Sample data: δ / (PL³/48EI), E from the fit' });
+    plots.p1.o.xlabel = 'Span-to-depth ratio, L/h'; plots.p1.o.ylabel = 'δ / δ_bending'; plots.p1.o.logx = plots.p1.o.logy = true;
+    plots.p1.draw({ series: s1, xlim: [1, 60], ylim: [0.95, Math.min(100, Math.max(...s1.flatMap((q_) => q_.y).filter(Number.isFinite)) * 1.3)], points: [{ x: p.L / depth, y: t.total / t.bend, role: 'theory', shape: 'ring', label: 'this span' }], desc: 'Deflection relative to the bending-only value.' });
+    $('h-p1').textContent = 'How much shear adds to the deflection';
+    $('cap1').innerHTML = `Euler–Bernoulli theory is the curve's limit of 1. The shear part grows as (h/L)²; for this section it is 5 % at L/h = ${S.fmt(t.L5 / depth, 3)}.`;
+    // plot 2: deflected shape
+    const xs = Array.from({ length: 121 }, (_, i) => p.L * i / 120);
+    const s2 = [
+      { x: xs.map((x) => S.conv('length', x)), y: xs.map((x) => -S.conv('length', t.wfun(x).b + t.wfun(x).s)), role: 'theory', label: 'Timoshenko, closed form' },
+      { x: xs.map((x) => S.conv('length', x)), y: xs.map((x) => -S.conv('length', t.wfun(x).b)), role: 'third', label: 'Bending only (Euler–Bernoulli)' },
+      { x: fe.xs.map((x) => S.conv('length', x)), y: fe.ws.map((w) => -S.conv('length', w)), role: 'numeric', markers: true, r: 2.6, label: 'Finite elements' },
+    ];
+    plots.p2.o.xlabel = `Position, x (${S.unit('length')})`; plots.p2.o.ylabel = `Deflection, y (${S.unit('length')})`;
+    plots.p2.draw({ series: s2, xlim: [0, S.conv('length', p.L)], ylim: lim(s2.flatMap((q_) => q_.y)), desc: 'Deflected shape.' });
+    $('h-p2').textContent = 'Deflected shape (y up, Beer)';
+    $('cap2').innerHTML = 'The shear part of the deflection is linear in x along each segment of constant V: shear strain γ = f_s V/(GA) tilts the beam axis without bending it.';
+    const rows = [
+      ['Deflection under the load: closed form vs finite elements', 'length', t.total, fe.delta, 'disc'],
+      ['Span with a 5 % shear part: closed form vs bisection on the elements', 'length', t.L5, M.feL5(p, Math.max(p.Nel, 64)), 'disc'],
+      ['Deflection: Euler–Bernoulli vs Timoshenko', 'length', t.bend, t.total, 'model'],
+    ];
+    if (t.kCowper) rows.push(["Shear part: energy factor 6/5 vs Cowper's 1/k (rectangle)", 'length', t.shear, t.shear / t.sec.fs / t.kCowper, 'model']);
+    renderReadout(rows, `Numerical: ${fe.n} two-node Timoshenko elements, ${p.integ === 'full' ? 'two-point (full)' : 'one-point (reduced)'} integration of the shear term; it never uses the deflection formulas.`);
+    const cv = M.feConvergence(p, p.integ);
+    drawConv(cv.rows, cv.slope, 'Beam finite elements, N_e', p.integ === 'full' ? 'Full integration "locks": the elements are far too stiff in shear until the mesh is very fine (order @ORDER@). Switch to reduced integration.' : 'Error in δ vs the closed form. Observed order @ORDER@: linear elements with reduced integration converge as N_e⁻².', 2);
+    const W = [];
+    if (t.frac > 0.05) W.push(['bad', `L/h = ${S.fmt(p.L / depth, 3)}: shear deformation is ${S.fmt(100 * t.frac, 3)} % of the deflection; Euler–Bernoulli (δ = PL³/48EI) underestimates it.`]);
+    else W.push(['ok', `L/h = ${S.fmt(p.L / depth, 3)}: shear deformation is only ${S.fmt(100 * t.frac, 3)} % of the deflection.`]);
+    if (p.L / depth < 3) W.push(['warn', 'L/h < 3: even Timoshenko beam theory is approximate; local deformation under the load and at the supports is comparable to the beam deflection.']);
+    if (p.integ === 'full') W.push(['bad', `Full integration of the shear term locks: error ${S.fmt(100 * Math.abs(fe.delta - t.total) / t.total, 3)} % with ${fe.n} elements.`]);
+    warn(W);
+    $('cards').innerHTML = [
+      card('<i>δ</i> = <i>PL</i>³/(48<i>EI</i>) + <i>f</i><sub>s</sub><i>PL</i>/(4<i>GA</i>)', 'bending (Ch. 9, Lab 7) plus the shear strain γ = f_s V/(GA) (Appendix D of the handout).', 'Simple span, central load; f_s from the section (6/5 rectangle).', t.frac > 0.05 ? chip('warn', 'shear matters') : chip('ok', 'valid'), `δ = ${q('length', t.total)}`),
+      card('<i>L</i>₅ = √(228 <i>EI</i>/(<i>GA</i>/<i>f</i><sub>s</sub>))', 'shear part = 5 % of the total: (δ_s/δ_b) = 12 f_s EI/(GA L²) = 1/19.', 'Below this span Euler–Bernoulli is more than 5 % off.', chip('ok', 'valid'), `L₅ = ${q('length', M.timoClosed(Object.assign({}, p, { support: 'simple' })).L5, 4)}`),
+    ].join('');
+  }
+
+  // =============================================================== built-up beam
+  function updateLayer() {
+    const c = M.newmarkClosed(p), fd = M.newmarkFD(p, p.Nl), bolts = p.conn === 'bolts';
+    const uniform = !bolts || Math.abs(p.s1 - p.s2) < 1e-12 || p.e >= p.L / 2;
+    const disc = bolts ? M.boltsDiscrete(p) : null, beer = bolts ? M.beerBoltForces(p) : null;
+    R = { kind: 'layer', c, fd, disc };
+    const g = c.g;
+    $('diag-txt').textContent = p.conn === 'loose' ? 'loose: layers slide freely' : p.conn === 'glue' ? 'glue layer' : `${disc.n} bolts`;
+    const W0 = Math.round(Math.max(320, Math.min(900, $('diagram').clientWidth || 900))), x0 = 30, scx = (W0 - 60) / p.L, y = 80, hh = 26;
+    let s = `<rect x="${x0}" y="${y - hh}" width="${p.L * scx}" height="${hh * p.t1 / (p.t1 + p.t2)}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`;
+    s += `<rect x="${x0}" y="${y - hh + hh * p.t1 / (p.t1 + p.t2)}" width="${p.L * scx}" height="${hh * p.t2 / (p.t1 + p.t2)}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.2"/>`;
+    if (bolts) for (const xb of disc.xs) s += `<line x1="${x0 + xb * scx}" y1="${y - hh - 4}" x2="${x0 + xb * scx}" y2="${y + 4}" style="stroke:var(--third);stroke-width:2"/>`;
+    if (p.conn === 'glue') s += `<line x1="${x0}" y1="${y - hh + hh * p.t1 / (p.t1 + p.t2)}" x2="${x0 + p.L * scx}" y2="${y - hh + hh * p.t1 / (p.t1 + p.t2)}" style="stroke:var(--fourth);stroke-width:3"/>`;
+    s += `<path d="M${x0} ${y}l-9 16h18z" style="fill:var(--panel-2);stroke:var(--ink)"/><circle cx="${x0 + p.L * scx}" cy="${y + 8}" r="8" style="fill:var(--panel-2);stroke:var(--ink)"/>`;
+    if (p.load === 'point') s += `<path d="M${x0 + p.L * scx / 2} ${y - hh - 44}L${x0 + p.L * scx / 2} ${y - hh - 6}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x0 + p.L * scx / 2} ${y - hh - 3}l-6 -12h12z" style="fill:var(--numeric)"/>`;
+    else s += `<rect x="${x0}" y="${y - hh - 22}" width="${p.L * scx}" height="16" style="fill:var(--numeric);fill-opacity:.15;stroke:var(--numeric)"/>`;
+    s += `<text x="${x0 + p.L * scx / 2}" y="${y + 40}" text-anchor="middle" style="fill:var(--muted);font-size:12px">L = ${q('length', p.L, 4)}</text>`;
+    $('diagram').innerHTML = `<svg viewBox="0 0 ${W0} 130" role="img" aria-label="Two-layer beam">${s}</svg>`;
+    const dShow = bolts ? disc.delta : c.delta;
+    const EIeff = p.load === 'point' ? p.P * p.L ** 3 / (48 * dShow) : 5 * p.w * p.L ** 4 / (384 * dShow);
+    $('stats').innerHTML = [st('Midspan deflection δ', q('length', dShow)), st('Loose / fully composite δ', `${q('length', c.deltaLoose)} / ${q('length', c.deltaFull)}`),
+      st('Effective EI', q('rigidity', EIeff)), st('Composite action η', S.fmt((EIeff - g.EI0) / (g.EIfull - g.EI0), 4)),
+      st('End slip', q('length', bolts ? disc.slip0 : c.slip0)), bolts ? st('Largest bolt force (springs)', q('force', Math.max(...disc.forces.map((f) => Math.abs(f.F))))) : st('Connection stiffness k', q('stress', c.k))].join('');
+    // plot 1: slip along the beam
+    const xs = Array.from({ length: 201 }, (_, i) => p.L * i / 200);
+    const s1 = [];
+    if (uniform) s1.push({ x: xs.map((x) => S.conv('length', x)), y: xs.map((x) => S.conv('length', c.slip(x))), role: 'theory', label: p.conn === 'bolts' ? 'Smeared connection, closed form' : 'Closed form' });
+    if (p.conn !== 'loose') { const ff = thin(fd.xs.map((x, i) => ({ x, i })), 40); s1.push({ x: ff.map((r) => S.conv('length', r.x)), y: ff.map((r) => { const i = Math.min(Math.max(r.i, 1), fd.xs.length - 2), hx = fd.xs[1] - fd.xs[0]; return -S.conv('length', (fd.N[i + 1] - fd.N[i - 1]) / (2 * hx) / c.k); }), role: 'numeric', markers: true, r: 2.2, label: 'Finite differences (smeared)' }); }
+    if (bolts) s1.push({ x: disc.slipProfile.map((r) => S.conv('length', r.x)), y: disc.slipProfile.map((r) => S.conv('length', r.s)), role: 'fourth', label: 'Discrete bolts (springs)' });
+    const ov = $('overlay').value === 'auto' && preset === 'layered' && near(p.L, 0.6) && near(p.b, 50.8e-3) && p.load === 'point' && (p.conn !== 'bolts' || (near(p.s1, 0.1) && near(p.s2, 0.1))) ? SAMPLE.layered : null;
+    if (ov && ov[p.conn]) s1.unshift({ x: [0], y: [-S.conv('length', ov[p.conn].slip_per_N * p.P)], role: 'measured', markers: true, label: 'Sample data: end slip (magnitude, plotted with the model\'s sign)' });
+    plots.p1.o.logx = plots.p1.o.logy = false;
+    plots.p1.o.xlabel = `Position, x (${S.unit('length')})`; plots.p1.o.ylabel = `Slip between the layers (${S.unit('length')})`;
+    plots.p1.draw({ series: s1.length ? s1 : [{ x: [0, S.conv('length', p.L)], y: [0, 0], role: 'theory', label: 'no slip' }], xlim: [0, S.conv('length', p.L)], ylim: lim(s1.flatMap((q_) => q_.y)), desc: 'Interface slip along the beam.' });
+    $('h-p1').textContent = 'Slip between the layers';
+    $('cap1').innerHTML = 'Slip = longitudinal displacement of the top layer\'s bottom face minus the bottom layer\'s top face. It is largest at the supports and zero at midspan; a stiffer connection reduces it.';
+    // plot 2: stress through the depth at midspan
+    const xm = p.L / 2, Nm = bolts ? (disc.segs.find((sg) => sg.a <= xm + 1e-12 && sg.b >= xm - 1e-12) || disc.segs[0]).N : c.N(xm);
+    const kap = (Mof) => (Mof - g.r * Nm) / g.EI0;
+    const Mm = M.Mof(p, xm), E = g.E, kp = kap(Mm);
+    const yb1 = p.t2 + p.t1 / 2, yb2 = p.t2 / 2;
+    const prof = [];
+    for (let i = 0; i <= 20; i++) { const yy = p.t2 * i / 20; prof.push({ y: yy, s: Nm / g.A2 - E * kp * (yy - yb2) }); }
+    for (let i = 0; i <= 20; i++) { const yy = p.t2 + p.t1 * i / 20; prof.push({ y: yy, s: -Nm / g.A1 - E * kp * (yy - yb1) }); }
+    const full = [0, g.Ht].map((yy) => ({ y: yy, s: -Mm * (yy - g.ybar) / g.Ifull }));
+    const fdN = fd.N[(fd.xs.length - 1) / 2], fdk = (Mm - g.r * fdN) / g.EI0;
+    const fdp = [0, p.t2 / 2, p.t2 - 1e-9, p.t2 + 1e-9, p.t2 + p.t1 / 2, p.t2 + p.t1].map((yy) => ({ y: yy, s: yy < p.t2 ? fdN / g.A2 - E * fdk * (yy - yb2) : -fdN / g.A1 - E * fdk * (yy - yb1) }));
+    const s2 = [
+      { x: prof.map((r) => S.conv('stress', r.s)), y: prof.map((r) => S.conv('length', r.y)), role: bolts && !uniform ? 'fourth' : 'theory', label: bolts ? 'Discrete bolts at midspan' : 'Closed form at midspan' },
+      { x: full.map((r) => S.conv('stress', r.s)), y: full.map((r) => S.conv('length', r.y)), role: 'mutedline', width: 1, dash: '4 3', label: 'Fully composite, −My/I', hover: false },
+    ];
+    if (p.conn !== 'loose' && !bolts) s2.push({ x: fdp.map((r) => S.conv('stress', r.s)), y: fdp.map((r) => S.conv('length', r.y)), role: 'numeric', markers: true, r: 2.6, label: 'Finite differences' });
+    plots.p2.o.xlabel = `Normal stress at midspan, σ (${S.unit('stress')})`; plots.p2.o.ylabel = `Height above the bottom (${S.unit('length')})`;
+    plots.p2.draw({ series: s2, xlim: lim(s2.flatMap((q_) => q_.x), 0.1), ylim: [0, S.conv('length', g.Ht)], desc: 'Normal stress through the depth at midspan.' });
+    $('h-p2').textContent = 'Normal stress at midspan';
+    $('cap2').innerHTML = 'Partial interaction: each layer bends about its own axis and carries an axial force ±N; the stress jumps at the interface. Fully bonded, the jump vanishes and the profile is −My/I of the whole section.';
+    const tag = bolts && !uniform ? ' (smeared, uniform k = k_b/s₁)' : '';
+    const rows = [[`Midspan deflection: closed form vs finite differences${tag}`, 'length', c.delta, fd.delta, 'disc'],
+      [`End slip: closed form vs finite differences${tag}`, 'length', c.slip0, fd.slip0, 'disc']];
+    if (bolts) {
+      if (uniform) {
+        rows.push(['Midspan deflection: smeared k = k_b/s₁ vs discrete springs', 'length', c.delta, disc.delta, 'model']);
+        rows.push(['End slip: smeared vs discrete springs', 'length', c.slip0, disc.slip0, 'model']);
+      } else {
+        const fv = M.newmarkFD(p, Math.max(p.Nl, 400), (x) => p.kb / disc.spacing(x));
+        rows.push(['Midspan deflection: smeared k(x) = k_b/s(x) (finite differences) vs discrete springs', 'length', fv.delta, disc.delta, 'model']);
+      }
+      const Fb = Math.max(...beer.map((f) => f.F)), Fd = Math.max(...disc.forces.map((f) => Math.abs(f.F)));
+      rows.push(["Largest bolt force: Beer's q·s (fully composite) vs springs", 'force', Fb, Fd, 'model']);
+    }
+    renderReadout(rows, `Numerical: second-order finite differences for N'' − α²N = −βM (${fd.xs.length - 1} intervals), δ = ∫κ m dx; it never uses the sinh/cosh closed form.`);
+    const cv = M.layerConvergence(p);
+    drawConv(cv.rows, cv.slope, 'Finite-difference intervals, n', p.conn === 'loose' ? 'Loose layers: N = 0 everywhere and the trapezoid rule is exact for a piecewise-linear moment (round-off only).' : 'Error in δ vs the closed form. Observed order @ORDER@ (central differences: 2). Stiff connections need a fine grid: the axial force builds up over a length 1/α.', 2);
+    const W = [];
+    if (p.conn === 'bolts' && Math.max(p.s1, p.s2) > 1 / Math.max(c.alpha, 1e-9)) W.push(['bad', `Bolt spacing ${q('length', Math.max(p.s1, p.s2), 3)} exceeds the load-transfer length 1/α = ${q('length', 1 / c.alpha, 3)}: smearing the bolts into a continuous connection is no longer accurate.`]);
+    else if (p.conn === 'bolts') W.push(['ok', `Bolt spacing below the load-transfer length 1/α = ${q('length', 1 / c.alpha, 3)}: the smeared model is a fair approximation.`]);
+    if (bolts) { const Fb = Math.max(...beer.map((f) => f.F)), Fd = Math.max(...disc.forces.map((f) => Math.abs(f.F))); W.push(['warn', `Beer's q·s (rigid connection) gives ${q('force', Fb, 3)} for the largest bolt force; flexible bolts slip and share the load differently: ${q('force', Fd, 3)}.`]); }
+    if (p.conn === 'glue') W.push([c.eta > 0.97 ? 'ok' : 'warn', `Glue: composite action η = ${S.fmt(c.eta, 4)}; a rigid bond (η = 1) is ${c.eta > 0.97 ? 'a good' : 'not a good'} assumption here.`]);
+    warn(W);
+    $('cards').innerHTML = [
+      card('<i>N</i>″ − <i>α</i>²<i>N</i> = −<i>βM</i>', 'equilibrium of each layer and compatibility of the slip (Appendix D of the handout).', 'α² = k(1/EA* + r²/EI₀), β = kr/EI₀; N = 0 at free ends.', bolts && !uniform ? chip('warn', 'needs uniform k') : chip('ok', 'valid'), `α = ${S.fmt(c.alpha, 4)} /m`),
+      card('<i>q</i> = <i>VQ</i>/<i>I</i>, <i>F</i> = <i>q s</i>', 'Beer §6.1A applied to a fully composite section.', 'Assumes a rigid connection; conservative for flexible bolts.', bolts ? chip('warn', 'rigid-connection estimate') : chip('ok', 'valid'), `q at the support = ${q('shearflow', Math.abs(M.Vof(p, 0)) * g.Qint / g.Ifull)}`),
+    ].join('');
+  }
+
+  const EXPERIMENTS = [
+    ['A wide rectangle', 'Part A bar laid flat (b/h = 2): how far above VQ/(Ib) is the stress at the faces?', () => { applyPreset('rectFlat'); }],
+    ['A deep, short I-beam', 'Part B I-beam over 300 mm (L/h ≈ 3): Euler–Bernoulli vs Timoshenko.', () => { applyPreset('ibeamSpan'); p.L = 0.3; }],
+    ['Shear locking', 'Slender cantilever with fully integrated shear terms in 4 elements.', () => { applyPreset('cantilever'); p.L = 1.0; p.integ = 'full'; p.Nel = 4; }],
+    ['Few bolts', 'Part C bars with bolts 300 mm apart: smeared connection vs discrete springs.', () => { applyPreset('layered'); p.s1 = p.s2 = 0.3; }],
+    ['Glue is not rigid', 'Part C bars bonded with a soft 1 mm adhesive layer (G = 50 MPa).', () => { applyPreset('layered'); p.conn = 'glue'; p.Gg = 50e6; p.tg = 1e-3; }],
+    ['Circular section', 'τ_max = 4V/3A and why the strip integration converges more slowly.', () => { applyPreset('circle'); }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => { const b = e.target.closest('button[data-exp]'); if (!b) return; EXPERIMENTS[+b.dataset.exp][2](); setAll(); update(); });
+
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (qq) => S.csvUnit(qq);
+  $('exp-curve').addEventListener('click', () => {
+    if (!R) return;
+    if (R.kind === 'section') {
+      const rows = R.num.prof.map((r) => [S.plain(S.conv('length', r.y)), S.plain(S.conv('volume3', r.Q)), S.plain(S.conv('stress', p.V * r.Q / (R.num.I * r.b))), S.plain(S.conv('stress', R.sc.tau(Math.min(r.y, R.sc.H - 1e-12), p.V)))]);
+      S.exportCSV('lab05_section.csv', S.toCSV([`y_${u('length')}`, `Q_${u('volume3')}`, `tau_strips_${u('stress')}`, `tau_closed_${u('stress')}`], rows), panel);
+    } else if (R.kind === 'beam') {
+      const rows = R.fe.xs.map((x, i) => [S.plain(S.conv('length', x)), S.plain(-S.conv('length', R.fe.ws[i])), S.plain(-S.conv('length', R.t.wfun(x).b + R.t.wfun(x).s)), S.plain(-S.conv('length', R.t.wfun(x).b))]);
+      S.exportCSV('lab05_deflection.csv', S.toCSV([`x_${u('length')}`, `y_FE_${u('length')}`, `y_closed_${u('length')}`, `y_bending_only_${u('length')}`], rows), panel);
+    } else {
+      const rows = R.fd.xs.map((x, i) => [S.plain(S.conv('length', x)), S.plain(S.conv('force', R.fd.N[i])), S.plain(S.conv('force', R.c.N(x))), S.plain(S.conv('length', R.c.slip(x)))]);
+      S.exportCSV('lab05_layers.csv', S.toCSV([`x_${u('length')}`, `N_FD_${u('force')}`, `N_closed_${u('force')}`, `slip_closed_${u('length')}`], rows), panel);
+    }
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R || !R.readoutRows) return;
+    const rows = R.readoutRows.map(([n, qq, c, v, kind]) => [n, S.plain(S.conv(qq, c)), S.plain(S.conv(qq, v)), S.unit(qq), kind]);
+    S.exportCSV('lab05_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'comparison'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R || !R.conv) return;
+    S.exportCSV('lab05_convergence.csv', S.toCSV([R.conv.xlabel.replace(/[^A-Za-z]+/g, '_').toLowerCase(), 'relative_error'], R.conv.rows.map((r) => [r.N, S.plain(r.err)])), panel);
+  });
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(update, 150); });
+  applyPreset('rectUp');
+})();
+</script>
+</body>
+</html>

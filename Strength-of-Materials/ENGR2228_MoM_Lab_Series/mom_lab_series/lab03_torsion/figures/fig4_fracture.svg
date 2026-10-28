@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="img" aria-labelledby="fig-title fig-desc" xmlns:xlink="http://www.w3.org/1999/xlink" width="368.46pt" height="133.771765pt" viewBox="0 0 368.46 133.771765" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <title id=\"fig-title\">Figure 4. Fracture modes in torsion</title>
+ <desc id="fig-desc">Two sketches. (a) A ductile shaft breaks on a flat plane perpendicular to its axis, the plane of maximum shear stress. (b) A brittle shaft such as gray cast iron breaks along a helical surface at 45 degrees to the axis, perpendicular to the maximum tensile stress, which in pure shear equals tau.</desc>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 133.771765 
+L 368.46 133.771765 
+L 368.46 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 19.948235 92.488235 
+L 79.687059 92.488235 
+L 79.687059 41.283529 
+L 19.948235 41.283529 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 88.221176 92.488235 
+L 147.96 92.488235 
+L 147.96 41.283529 
+L 88.221176 41.283529 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 194.897647 92.488235 
+L 339.977647 92.488235 
+L 339.977647 41.283529 
+L 194.897647 41.283529 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 19.948235 41.283529 
+L 79.687059 41.283529 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_2">
+    <path d="M 19.948235 92.488235 
+L 79.687059 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 79.687059 92.488235 
+C 80.875278 92.488235 82.014991 89.79061 82.855188 84.98948 
+C 83.695386 80.18835 84.167471 73.675706 84.167471 66.885882 
+C 84.167471 60.096059 83.695386 53.583415 82.855188 48.782285 
+C 82.014991 43.981155 80.875278 41.283529 79.687059 41.283529 
+C 78.49884 41.283529 77.359127 43.981155 76.518929 48.782285 
+C 75.678732 53.583415 75.206647 60.096059 75.206647 66.885882 
+C 75.206647 73.675706 75.678732 80.18835 76.518929 84.98948 
+C 77.359127 89.79061 78.49884 92.488235 79.687059 92.488235 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 19.948235 41.283529 
+C 18.760412 41.283529 17.620024 43.982754 16.780106 48.782285 
+C 15.940188 53.581816 15.467824 60.09832 15.467824 66.885882 
+C 15.467824 73.673444 15.940188 80.189949 16.780106 84.98948 
+C 17.620024 89.789011 18.760412 92.488235 19.948235 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_3">
+    <path d="M 88.221176 41.283529 
+L 147.96 41.283529 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_4">
+    <path d="M 88.221176 92.488235 
+L 147.96 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 147.96 92.488235 
+C 149.148219 92.488235 150.287932 89.79061 151.12813 84.98948 
+C 151.968327 80.18835 152.440412 73.675706 152.440412 66.885882 
+C 152.440412 60.096059 151.968327 53.583415 151.12813 48.782285 
+C 150.287932 43.981155 149.148219 41.283529 147.96 41.283529 
+C 146.771781 41.283529 145.632068 43.981155 144.79187 48.782285 
+C 143.951673 53.583415 143.479588 60.096059 143.479588 66.885882 
+C 143.479588 73.675706 143.951673 80.18835 144.79187 84.98948 
+C 145.632068 89.79061 146.771781 92.488235 147.96 92.488235 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 88.221176 41.283529 
+C 87.033353 41.283529 85.892965 43.982754 85.053047 48.782285 
+C 84.213129 53.581816 83.740765 60.09832 83.740765 66.885882 
+C 83.740765 73.673444 84.213129 80.189949 85.053047 84.98948 
+C 85.892965 89.789011 87.033353 92.488235 88.221176 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_5">
+    <path d="M 194.897647 41.283529 
+L 339.977647 41.283529 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_6">
+    <path d="M 194.897647 92.488235 
+L 339.977647 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 339.977647 92.488235 
+C 341.165866 92.488235 342.305579 89.79061 343.145777 84.98948 
+C 343.985974 80.18835 344.458059 73.675706 344.458059 66.885882 
+C 344.458059 60.096059 343.985974 53.583415 343.145777 48.782285 
+C 342.305579 43.981155 341.165866 41.283529 339.977647 41.283529 
+C 338.789428 41.283529 337.649715 43.981155 336.809518 48.782285 
+C 335.96932 53.583415 335.497235 60.096059 335.497235 66.885882 
+C 335.497235 73.675706 335.96932 80.18835 336.809518 84.98948 
+C 337.649715 89.79061 338.789428 92.488235 339.977647 92.488235 
+z
+" clip-path="url(#pe0a6efa8b6)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 194.897647 41.283529 
+C 193.709824 41.283529 192.569435 43.982754 191.729518 48.782285 
+C 190.8896 53.581816 190.417235 60.09832 190.417235 66.885882 
+C 190.417235 73.673444 190.8896 80.189949 191.729518 84.98948 
+C 192.569435 89.789011 193.709824 92.488235 194.897647 92.488235 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_7">
+    <path d="M 207.698824 66.885882 
+L 216.104286 58.630607 
+L 220.307017 54.781166 
+L 223.909359 51.736973 
+L 227.5117 48.992196 
+L 230.513651 46.972945 
+L 233.515602 45.227148 
+L 236.517552 43.778779 
+L 238.919113 42.847744 
+L 241.320674 42.128062 
+L 243.722235 41.626061 
+L 246.123795 41.346156 
+L 248.525356 41.290807 
+L 250.926917 41.460501 
+L 253.328478 41.853745 
+L 255.730038 42.467083 
+L 258.131599 43.295122 
+L 260.53316 44.330581 
+L 263.535111 45.902552 
+L 266.537062 47.762676 
+L 269.539013 49.88541 
+L 273.141354 52.738062 
+L 276.743695 55.870342 
+L 281.546816 60.374048 
+L 288.751499 67.506333 
+L 296.556571 75.160202 
+L 300.759302 79.008325 
+L 304.361644 82.051008 
+L 307.963985 84.793953 
+L 310.965936 86.811461 
+L 313.967886 88.555339 
+L 316.969837 90.001642 
+L 319.371398 90.930939 
+L 321.772959 91.648821 
+L 324.17452 92.148976 
+L 326.57608 92.427007 
+L 327.176471 92.461479 
+L 327.176471 92.461479 
+" clip-path="url(#pe0a6efa8b6)" style="fill: none; stroke: #e69f00; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 8.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="7.147059" y="11.414118" transform="rotate(-0 7.147059 11.414118)">(a) Ductile: shear on a cross-section</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 7.8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(19.791805 103.200645)">flat fracture, perpendicular to the axis</text>
+    <text style="font-size: 7.8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(38.658055 111.69)">(plane of maximum shear)</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 8.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="186.363529" y="11.414118" transform="rotate(-0 186.363529 11.414118)">(b) Brittle: tension on a 45° helix</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 7.8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(206.047991 103.200645)">fracture surface along a helix at 45°</text>
+    <text style="font-size: 7.8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(237.793381 111.69)">(normal to σ₁ = τ)</text>
+   </g>
+   <g id="patch_11">
+    <path d="M 215.625526 34.110078 
+Q 217.825644 43.125726 220.025762 52.141374 
+" style="fill: none; stroke: #8a5300; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #8a5300" x="207.698824" y="28.482353" transform="rotate(-0 207.698824 28.482353)">45°</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pe0a6efa8b6">
+   <rect x="2.88" y="2.88" width="362.7" height="128.011765"/>
+  </clipPath>
+ </defs>
+</svg>

@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="img" aria-labelledby="fig-title fig-desc" xmlns:xlink="http://www.w3.org/1999/xlink" width="368.615909pt" height="156.548232pt" viewBox="0 0 368.615909 156.548232" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <title id=\"fig-title\">Figure 4. Anticlastic curvature and the shape factor</title>
+ <desc id="fig-desc">Two panels. (a) A rectangular cross-section of a beam bent with positive moment: the compressed top widens and the stretched bottom narrows because of Poisson's effect, so the section curves the other way with a transverse radius of rho over nu. (b) Fully plastic stress blocks of plus and minus the yield stress next to a rectangle and an I-section: the rectangle's plastic moment is 1.5 times its yield moment, while the I-section, whose material is already concentrated in the flanges, gains only about 10 to 20 percent.</desc>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 156.548232 
+L 368.615909 156.548232 
+L 368.615909 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 27.960319 58.323286 
+L 30.086437 57.860457 
+L 32.212555 57.416913 
+L 34.338673 56.992654 
+L 36.464792 56.587679 
+L 38.59091 56.201989 
+L 40.717028 55.835583 
+L 42.843146 55.488461 
+L 44.969264 55.160625 
+L 47.095382 54.852072 
+L 49.2215 54.562805 
+L 51.347618 54.292821 
+L 53.473736 54.042123 
+L 55.599855 53.810708 
+L 57.725973 53.598579 
+L 59.852091 53.405734 
+L 61.978209 53.232173 
+L 64.104327 53.077897 
+L 66.230445 52.942905 
+L 68.356563 52.827198 
+L 70.482681 52.730775 
+L 72.608799 52.653637 
+L 74.734917 52.595784 
+L 76.861036 52.557215 
+L 78.987154 52.53793 
+L 81.113272 52.53793 
+L 83.23939 52.557215 
+L 85.365508 52.595784 
+L 87.491626 52.653637 
+L 89.617744 52.730775 
+L 91.743862 52.827198 
+L 93.86998 52.942905 
+L 95.996099 53.077897 
+L 98.122217 53.232173 
+L 100.248335 53.405734 
+L 102.374453 53.598579 
+L 104.500571 53.810708 
+L 106.626689 54.042123 
+L 108.752807 54.292821 
+L 110.878925 54.562805 
+L 113.005043 54.852072 
+L 115.131162 55.160625 
+L 117.25728 55.488461 
+L 119.383398 55.835583 
+L 121.509516 56.201989 
+L 123.635634 56.587679 
+L 125.761752 56.992654 
+L 127.88787 57.416913 
+L 130.013988 57.860457 
+L 132.140106 58.323286 
+L 124.423085 125.847222 
+L 122.611947 125.384393 
+L 120.80081 124.940849 
+L 118.989672 124.51659 
+L 117.178535 124.111615 
+L 115.367397 123.725925 
+L 113.556259 123.359519 
+L 111.745122 123.012398 
+L 109.933984 122.684561 
+L 108.122846 122.376009 
+L 106.311709 122.086741 
+L 104.500571 121.816758 
+L 102.689433 121.566059 
+L 100.878296 121.334645 
+L 99.067158 121.122515 
+L 97.25602 120.92967 
+L 95.444883 120.756109 
+L 93.633745 120.601833 
+L 91.822607 120.466841 
+L 90.01147 120.351134 
+L 88.200332 120.254712 
+L 86.389195 120.177573 
+L 84.578057 120.11972 
+L 82.766919 120.081151 
+L 80.955782 120.061866 
+L 79.144644 120.061866 
+L 77.333506 120.081151 
+L 75.522369 120.11972 
+L 73.711231 120.177573 
+L 71.900093 120.254712 
+L 70.088956 120.351134 
+L 68.277818 120.466841 
+L 66.46668 120.601833 
+L 64.655543 120.756109 
+L 62.844405 120.92967 
+L 61.033267 121.122515 
+L 59.22213 121.334645 
+L 57.410992 121.566059 
+L 55.599855 121.816758 
+L 53.788717 122.086741 
+L 51.977579 122.376009 
+L 50.166442 122.684561 
+L 48.355304 123.012398 
+L 46.544166 123.359519 
+L 44.733029 123.725925 
+L 42.921891 124.111615 
+L 41.110753 124.51659 
+L 39.299616 124.940849 
+L 37.488478 125.384393 
+L 35.67734 125.847222 
+z
+" clip-path="url(#p7cf840962e)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 31.81883 55.429403 
+L 128.281596 55.429403 
+L 128.281596 122.953339 
+L 31.81883 122.953339 
+L 31.81883 55.429403 
+" clip-path="url(#p7cf840962e)" style="fill: none; stroke-dasharray: 4.8,3.2; stroke-dashoffset: 0; stroke: #666666; stroke-width: 0.8"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 7px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #b8478f" x="80.050213" y="31.313711" transform="rotate(-0 80.050213 31.313711)">top (compressed) widens</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 7px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #b8478f" x="80.050213" y="144.657461" transform="rotate(-0 80.050213 144.657461)">bottom (stretched) narrows</text>
+   </g>
+   <g id="text_3">
+    <!-- transverse radius $\rho/\nu$ -->
+    <g transform="translate(44.500213 89.191371)">
+     <text>
+      <tspan x="0" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">t</tspan>
+      <tspan x="2.08374" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">r</tspan>
+      <tspan x="4.581299" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">a</tspan>
+      <tspan x="8.752441" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">n</tspan>
+      <tspan x="12.923584" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">s</tspan>
+      <tspan x="16.673584" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">v</tspan>
+      <tspan x="20.423584" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">e</tspan>
+      <tspan x="24.594727" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">r</tspan>
+      <tspan x="27.092285" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">s</tspan>
+      <tspan x="30.842285" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">e</tspan>
+      <tspan x="35.013428" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'"> </tspan>
+      <tspan x="37.097168" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">r</tspan>
+      <tspan x="39.594727" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">a</tspan>
+      <tspan x="43.765869" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">d</tspan>
+      <tspan x="47.937012" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">i</tspan>
+      <tspan x="49.603271" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">u</tspan>
+      <tspan x="53.774414" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'">s</tspan>
+      <tspan x="57.524414" y="-0.53125" style="font-size: 7.5px; font-family: 'Liberation Sans'"> </tspan>
+      <tspan x="59.608154" y="-0.53125" style="font-style: oblique; font-size: 7.5px; font-family: 'DejaVu Sans'">ρ</tspan>
+      <tspan x="66.895752" y="-0.53125" style="font-style: oblique; font-size: 7.5px; font-family: 'DejaVu Sans'">ν</tspan>
+      <tspan x="64.368896" y="-0.53125" style="font-size: 7.5px; font-family: 'DejaVu Sans'">/</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 8.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="2.88" y="10.844296" transform="rotate(-0 2.88 10.844296)">(a) Anticlastic curvature (§4.3)</text>
+   </g>
+   <g id="patch_3">
+    <path d="M 110.992011 38.548419 
+Q 123.458725 38.548419 134.807404 38.548419 
+" clip-path="url(#p7cf840962e)" style="fill: none; stroke: #b8478f; stroke-linecap: round"/>
+    <path d="M 132.407404 37.348419 
+L 134.807404 38.548419 
+L 132.407404 39.748419 
+z
+" clip-path="url(#p7cf840962e)" style="fill: #b8478f; stroke: #b8478f; stroke-linecap: round"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 49.108415 38.548419 
+Q 36.641701 38.548419 25.293021 38.548419 
+" clip-path="url(#p7cf840962e)" style="fill: none; stroke: #b8478f; stroke-linecap: round"/>
+    <path d="M 27.693021 39.748419 
+L 25.293021 38.548419 
+L 27.693021 37.348419 
+z
+" clip-path="url(#p7cf840962e)" style="fill: #b8478f; stroke: #b8478f; stroke-linecap: round"/>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_5">
+    <path d="M 223.586809 130.568232 
+L 245.194468 130.568232 
+L 245.194468 38.168232 
+L 223.586809 38.168232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 251.368085 84.368232 
+L 269.888936 84.368232 
+L 269.888936 38.168232 
+L 251.368085 38.168232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #0072b2; opacity: 0.25; stroke: #0072b2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 251.368085 130.568232 
+L 269.888936 130.568232 
+L 269.888936 84.368232 
+L 251.368085 84.368232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #d55e00; opacity: 0.25; stroke: #d55e00; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 297.670213 47.408232 
+L 331.625106 47.408232 
+L 331.625106 38.168232 
+L 297.670213 38.168232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 297.670213 130.568232 
+L 331.625106 130.568232 
+L 331.625106 121.328232 
+L 297.670213 121.328232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 312.332553 121.328232 
+L 316.962766 121.328232 
+L 316.962766 47.408232 
+L 312.332553 47.408232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 337.798723 84.368232 
+L 356.319574 84.368232 
+L 356.319574 38.168232 
+L 337.798723 38.168232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #0072b2; opacity: 0.25; stroke: #0072b2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 337.798723 130.568232 
+L 356.319574 130.568232 
+L 356.319574 84.368232 
+L 337.798723 84.368232 
+z
+" clip-path="url(#pe7380d24f1)" style="fill: #d55e00; opacity: 0.25; stroke: #d55e00; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 7.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="246.737872" y="144.428232" transform="rotate(-0 246.737872 144.428232)">rectangle: Z/S = 1.5</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 7.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="326.994894" y="144.428232" transform="rotate(-0 326.994894 144.428232)">I-section: Z/S ≈ 1.1–1.2</text>
+   </g>
+   <g id="text_7">
+    <!-- fully plastic stress blocks, $\pm\sigma_Y$ -->
+    <g style="fill: #666666" transform="translate(238.009787 24.308232)">
+     <text>
+      <tspan x="0" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">f</tspan>
+      <tspan x="2.08374" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">u</tspan>
+      <tspan x="6.254883" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">l</tspan>
+      <tspan x="7.921143" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">l</tspan>
+      <tspan x="9.587402" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">y</tspan>
+      <tspan x="13.337402" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666"> </tspan>
+      <tspan x="15.421143" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">p</tspan>
+      <tspan x="19.592285" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">l</tspan>
+      <tspan x="21.258545" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">a</tspan>
+      <tspan x="25.429688" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">s</tspan>
+      <tspan x="29.179688" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">t</tspan>
+      <tspan x="31.263428" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">i</tspan>
+      <tspan x="32.929688" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">c</tspan>
+      <tspan x="36.679688" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666"> </tspan>
+      <tspan x="38.763428" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">s</tspan>
+      <tspan x="42.513428" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">t</tspan>
+      <tspan x="44.597168" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">r</tspan>
+      <tspan x="47.094727" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">e</tspan>
+      <tspan x="51.265869" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">s</tspan>
+      <tspan x="55.015869" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">s</tspan>
+      <tspan x="58.765869" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666"> </tspan>
+      <tspan x="60.849609" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">b</tspan>
+      <tspan x="65.020752" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">l</tspan>
+      <tspan x="66.687012" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">o</tspan>
+      <tspan x="70.858154" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">c</tspan>
+      <tspan x="74.608154" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">k</tspan>
+      <tspan x="78.358154" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">s</tspan>
+      <tspan x="82.108154" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666">,</tspan>
+      <tspan x="84.191895" y="-0.5625" style="font-size: 7.5px; font-family: 'Liberation Sans'; fill: #666666"> </tspan>
+      <tspan x="86.275635" y="-0.5625" style="font-size: 7.5px; font-family: 'DejaVu Sans'; fill: #666666">±</tspan>
+      <tspan x="92.559814" y="-0.5625" style="font-style: oblique; font-size: 7.5px; font-family: 'DejaVu Sans'; fill: #666666">σ</tspan>
+      <tspan x="97.313232" y="0.562496" style="font-style: oblique; font-size: 5.25px; font-family: 'DejaVu Sans'; fill: #666666">Y</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 8.5px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="211.239574" y="9.068232" transform="rotate(-0 211.239574 9.068232)">(b) Shape factor</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p7cf840962e">
+   <rect x="2.88" y="16.844296" width="154.340426" height="135.047872"/>
+  </clipPath>
+  <clipPath id="pe7380d24f1">
+   <rect x="211.239574" y="15.068232" width="154.340426" height="138.6"/>
+  </clipPath>
+ </defs>
+</svg>

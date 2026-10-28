@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tension Test Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 1: virtual tension test. Closed-form stress-strain results compared with a numerical virtual specimen, with convergence study and model-failure experiments.">
+<style>
+/*@@SIM_CORE_CSS@@*/
+/* Lab 1 additions */
+.progress-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.stage { font-size: 0.85rem; }
+.specimen svg { width: 100%; height: auto; display: block; }
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.ra { font-size: 0.78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 1 · Beer 8e §1.2A, 2.1A–E, 2.12</div>
+      <h1>Tension test and the stress–strain diagram</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> tension positive — <i>σ</i> = <i>P</i>/<i>A</i><sub>0</sub> and <i>ε</i> = <i>δ</i>/<i>L</i><sub>0</sub> are positive when the specimen is pulled and stretched. <b>Blue solid</b> = closed-form (textbook) result for a perfect, uniformly deforming bar; <b>vermillion dashed</b> = independent numerical solution (virtual specimen with a neck site); <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="preset">Material preset</label>
+        <select id="preset">
+          <option value="steel">1018 hot-rolled steel (smooth fit)</option>
+          <option value="al">6061-T6 aluminum</option>
+          <option value="ss">304 stainless steel, annealed</option>
+          <option value="custom" disabled>Custom (edited)</option>
+        </select>
+        <div class="btn-row"><button class="btn" id="reset" type="button">Reset preset and specimen</button></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-material">
+        <div class="group-title">Material law</div>
+        <p class="help small muted">Swift hardening <i>σ</i><sub>t</sub> = <i>K</i>(<i>ε</i><sub>0</sub> + <i>ε</i><sub>p</sub>)<sup><i>n</i></sup>, with <i>ε</i><sub>0</sub> set so the curve is continuous at the elastic limit.</p>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-specimen"><div class="group-title">Specimen</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-machine"><div class="group-title">Testing machine</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-solver">
+        <div class="group-title">Numerical solver</div>
+        <div><div class="small" style="margin-bottom:4px">Neck length set by</div><div id="neckmode"></div></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay">
+          <option value="none">No sample data</option>
+          <option value="steel">1018 steel specimen (sample_data.csv)</option>
+          <option value="al">6061-T6 specimen (sample_data.csv)</option>
+        </select>
+        <label class="check"><input type="checkbox" id="showch" checked> Show strain from crosshead travel</label>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curve data</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+
+    <section class="panel" aria-labelledby="h-test">
+      <div class="panel-head"><h2 id="h-test">Virtual tension test</h2><span id="stage" class="chip info stage">elastic</span></div>
+      <div class="progress-row">
+        <button class="btn" id="play" type="button" aria-label="Play the test">Play</button>
+        <input type="range" id="progress" min="0" max="1000" value="620" aria-label="Test progress">
+        <span class="small muted num" id="progress-txt"></span>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div id="plot-main"></div>
+      <p class="plot-caption" id="cap-main"></p>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-zoom">
+        <div class="panel-head"><h2 id="h-zoom">Elastic region and 0.2 % offset yield</h2></div>
+        <div id="plot-zoom"></div>
+        <p class="plot-caption">The offset line has slope <i>E</i> and starts at <i>ε</i> = 0.2 %. Hooke's law (thin blue line) keeps rising after the elastic limit <i>σ</i><sub>e</sub>; the material does not.</p>
+      </section>
+      <section class="panel" aria-labelledby="h-true">
+        <div class="panel-head"><h2 id="h-true">True stress and the Considère construction</h2></div>
+        <div id="plot-true"></div>
+        <p class="plot-caption">Necking starts where the hardening rate d<i>σ</i><sub>t</sub>/d<i>ε</i><sub>t</sub> falls to the true stress <i>σ</i><sub>t</sub> (ring). After that, <i>σ</i>(1 + <i>ε</i>) from the gage no longer equals the stress in the neck.</p>
+      </section>
+    </div>
+
+    <section class="panel specimen" aria-labelledby="h-spec">
+      <div class="panel-head"><h2 id="h-spec">Specimen at the current point</h2><span class="small muted" id="spec-txt"></span></div>
+      <div id="spec-svg"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted">Closed form: perfect uniform bar. Numerical: virtual specimen marched step by step.</span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+      <div class="stats" id="ductility"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2">
+        <div><div id="plot-conv"></div><p class="plot-caption" id="cap-conv"></p></div>
+        <div><div id="plot-mesh"></div><p class="plot-caption" id="cap-mesh"></p></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2><span class="small muted">Status is evaluated at the current test point.</span></div>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+
+<footer class="foot">
+  <p>Model: Swift hardening, plastic flow at constant volume, a neck zone of length ℓ with a small area imperfection, equilibrium (same <i>P</i> on every section) and compatibility (elongations add). The closed forms assume a perfect bar that stays uniform. Formulas verified against independent numerical methods by <span class="num">tests/test_lab01_model.js</span> and <span class="num">tests/test_lab01_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 1 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 1 physics — pure functions, SI base units (N, m, Pa). Loaded unchanged by the Node tests. */
+const Lab1Model = (() => {
+  'use strict';
+  const PRESETS = {
+    steel: { E: 205e9, sigma_e: 280.7e6, K: 753.2e6, n: 0.1954, eps_f: 0.92 },
+    al:    { E: 68.9e9, sigma_e: 240.0e6, K: 397.9e6, n: 0.06126, eps_f: 0.54 },
+    ss:    { E: 193e9, sigma_e: 238.9e6, K: 1295e6, n: 0.4174, eps_f: 1.20 },
+  };
+  const SPECIMEN = { d0: 10e-3, L0: 50e-3, delta: 0.003, neckOverD: 0.6, Cm: 8e-9, steps: 400, N: 50, neckMode: 'physical' };
+  const GRADING = 2;     // zone plastic strain = eps_f * t^2: finer steps near first yield
+  const N_ELASTIC = 12;  // points on the (exactly linear) elastic branch
+
+  function derived(p) {
+    const A0 = Math.PI / 4 * p.d0 * p.d0;
+    const eps0 = Math.pow(p.sigma_e / p.K, 1 / p.n);
+    const Lc = 1.2 * p.L0;                                        // reduced-section length
+    const ell = p.neckMode === 'mesh' ? p.L0 / p.N : Math.min(p.neckOverD * p.d0, p.L0);
+    return { A0, eps0, Lc, ell };
+  }
+  function validate(p) {
+    const err = [];
+    if (!(p.K > p.sigma_e)) err.push('Strength coefficient K must exceed the elastic limit σe (otherwise ε0 ≥ 1 and the hardening law is meaningless).');
+    if (!(p.n > 0)) err.push('Hardening exponent n must be positive.');
+    if (!(p.E > 0 && p.d0 > 0 && p.L0 > 0 && p.eps_f > 0)) err.push('E, d0, L0 and the fracture strain must be positive.');
+    if (!(p.delta >= 0 && p.delta < 0.5)) err.push('Imperfection δ must be between 0 and 50 %.');
+    return err;
+  }
+  const flow = (p, d, ep) => p.K * Math.pow(d.eps0 + ep, p.n);
+  // hardening rate with respect to TOTAL true strain: H/(1 + H/E), H = d sigma/d eps_p
+  const hardRate = (p, d, ep) => { const H = p.n * p.K * Math.pow(d.eps0 + ep, p.n - 1); return H / (1 + H / p.E); };
+
+  /* Textbook closed forms for a perfect bar that deforms uniformly (handout Sec. 2). */
+  function closedForms(p) {
+    const d = derived(p);
+    const { eps0, A0, Lc, ell } = d;
+    const sigY = p.K * Math.pow(eps0 + 0.002, p.n);              // 0.2 % offset, small-strain form
+    const ep_u = Math.max(0, p.n - eps0);                        // Considere (rigid-plastic hardening rate)
+    const sig_t_u = p.K * Math.pow(eps0 + ep_u, p.n);
+    const et_u = ep_u + sig_t_u / p.E;
+    const sigU = sig_t_u * Math.exp(-et_u);                      // s = sigma_t / (1 + e)
+    const e_u = Math.expm1(et_u);
+    const uU = sig_t_u * sig_t_u / (2 * p.E) + p.K / (p.n + 1) * (Math.pow(eps0 + ep_u, p.n + 1) - Math.pow(eps0, p.n + 1));
+    const E_app = 1 / (1 / p.E + A0 * p.Cm / Lc);                // springs in series
+    const dEps_imp = (1 - ell / p.L0) * Math.sqrt(2 * p.n * p.delta);   // asymptotic, small delta
+    return { eps0, sigY, ep_u, sig_t_u, et_u, sigU, e_u, uU, E_app, dEps_imp, A0, Lc, ell,
+             breaksFirst: p.eps_f < ep_u, u_res: p.sigma_e * p.sigma_e / (2 * p.E) };
+  }
+
+  function goldenMax(f, a, b) {
+    const g = (Math.sqrt(5) - 1) / 2;
+    let c = b - g * (b - a), e = a + g * (b - a), fc = f(c), fe = f(e);
+    for (let i = 0; i < 200 && b - a > 1e-14; i++) {
+      if (fc > fe) { b = e; e = c; fe = fc; c = b - g * (b - a); fc = f(c); }
+      else { a = c; c = e; fc = fe; e = a + g * (b - a); fe = f(e); }
+    }
+    const x = (a + b) / 2;
+    return f(x) >= f(0) ? x : 0;
+  }
+  function bisect(f, a, b) {
+    let fa = f(a);
+    for (let i = 0; i < 200 && b - a > 1e-15; i++) {
+      const m = 0.5 * (a + b), fm = f(m);
+      if ((fm > 0) === (fa > 0)) { a = m; fa = fm; } else b = m;
+    }
+    return 0.5 * (a + b);
+  }
+  // elastic state at load P on area A with frozen plastic strain ep: sigma = P exp(ep + sigma/E) / A
+  function elasticStress(P, A, ep, E) {
+    const target = P * Math.exp(ep) / A;
+    let s = target;
+    for (let i = 0; i < 30; i++) {
+      const f = s * Math.exp(-s / E) - target, df = Math.exp(-s / E) * (1 - s / E);
+      const ds = f / df; s -= ds;
+      if (Math.abs(ds) < 1e-12 * Math.max(1, Math.abs(s))) break;
+    }
+    return s;
+  }
+
+  /* Numerical "virtual specimen": march the equilibrium path with the neck zone's plastic strain
+     as the driver. Same P on every section (equilibrium); area A = A_initial exp(-eps_t) (volume
+     constancy); elongations of the zone, the rest of the gage and the rest of the reduced section
+     add (compatibility); crosshead travel adds the machine compliance Cm * P. */
+  function simulate(p, M) {
+    const d = derived(p);
+    const { A0, Lc, ell } = d;
+    const A0z = A0 * (1 - p.delta);
+    const gR = (x) => { const s = flow(p, d, x); return s * A0 * Math.exp(-(x + s / p.E)); };
+    const xPk = goldenMax(gR, 0, 3);
+    const o = { P: [], e: [], s: [], ech: [], epz: [], epr: [], sz: [], sr: [], etz: [], etr: [], dz: [], dr: [] };
+    let epr = 0;
+    const push = (P, epz, sz, sr) => {
+      const etz = epz + sz / p.E, etr = epr + sr / p.E;
+      const dg = ell * Math.expm1(etz) + (p.L0 - ell) * Math.expm1(etr);
+      const dred = dg + (Lc - p.L0) * Math.expm1(etr);
+      o.P.push(P); o.e.push(dg / p.L0); o.s.push(P / A0); o.ech.push((dred + p.Cm * P) / Lc);
+      o.epz.push(epz); o.epr.push(epr); o.sz.push(sz); o.sr.push(sr); o.etz.push(etz); o.etr.push(etr);
+      o.dz.push(p.d0 * Math.sqrt(1 - p.delta) * Math.exp(-etz / 2)); o.dr.push(p.d0 * Math.exp(-etr / 2));
+    };
+    // elastic branch up to first yield of the zone (weakest section)
+    const Pz = p.sigma_e * A0z * Math.exp(-p.sigma_e / p.E);
+    for (let i = 0; i <= N_ELASTIC; i++) {
+      const P = Pz * i / N_ELASTIC;
+      push(P, 0, elasticStress(P, A0z, 0, p.E), elasticStress(P, A0, 0, p.E));
+    }
+    for (let k = 1; k <= M; k++) {
+      const epz = p.eps_f * Math.pow(k / M, GRADING);
+      const sz = flow(p, d, epz);
+      const P = sz * A0z * Math.exp(-(epz + sz / p.E));
+      let sr;
+      if (P > gR(epr) && epr < xPk) {                  // rest of the bar yields on its rising branch
+        epr = P >= gR(xPk) ? xPk : bisect((x) => gR(x) - P, epr, xPk);
+        sr = flow(p, d, epr);
+      } else {
+        sr = elasticStress(P, A0, epr, p.E);           // rest unloads (or loads) elastically
+      }
+      push(P, epz, sz, sr);
+    }
+    o.ell = ell; o.A0 = A0; o.Lc = Lc;
+    return o;
+  }
+
+  function linSlope(x, y) {
+    const n = x.length; let mx = 0, my = 0;
+    for (let i = 0; i < n; i++) { mx += x[i]; my += y[i]; }
+    mx /= n; my /= n; let sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; }
+    return sxy / sxx;
+  }
+
+  /* Extract the textbook quantities from the numerical path exactly the way students do from data. */
+  function extract(o, p) {
+    const n = o.P.length;
+    const win = [], we = [], wc = [];
+    for (let i = 0; i <= N_ELASTIC; i++) if (o.s[i] >= 0.15 * p.sigma_e && o.s[i] <= 0.6 * p.sigma_e) { win.push(o.s[i]); we.push(o.e[i]); wc.push(o.ech[i]); }
+    const E_num = linSlope(we, win), E_app_num = linSlope(wc, win);
+    // 0.2 % offset with the textbook modulus E
+    let sigY = NaN, eY = NaN;
+    for (let i = 1; i < n; i++) {
+      const f0 = o.s[i - 1] - p.E * (o.e[i - 1] - 0.002), f1 = o.s[i] - p.E * (o.e[i] - 0.002);
+      if (f0 > 0 && f1 <= 0) { const t = f0 / (f0 - f1); sigY = o.s[i - 1] + t * (o.s[i] - o.s[i - 1]); eY = o.e[i - 1] + t * (o.e[i] - o.e[i - 1]); break; }
+    }
+    let imax = 0; for (let i = 1; i < n; i++) if (o.s[i] > o.s[imax]) imax = i;
+    let uU = 0; for (let i = 1; i <= imax; i++) uU += 0.5 * (o.s[i] + o.s[i - 1]) * (o.e[i] - o.e[i - 1]);
+    const L = n - 1;
+    const Lf = o.ell * Math.exp(o.epz[L]) + (p.L0 - o.ell) * Math.exp(o.epr[L]);   // marks after unloading
+    return {
+      E_num, E_app_num, sigY, eY, imax, sigU: o.s[imax], e_u: o.e[imax], ech_u: o.ech[imax], uU,
+      iF: L, s_f: o.s[L], e_f: o.e[L], ech_f: o.ech[L], sig_t_formula_f: o.s[L] * (1 + o.e[L]), eps_t_formula_f: Math.log1p(o.e[L]),
+      sig_neck_f: o.sz[L], eps_neck_f: o.etz[L], EL: Lf / p.L0 - 1, RA: 1 - (1 - p.delta) * Math.exp(-o.etz[L]),
+      fracBeforeNeck: imax === L,
+    };
+  }
+
+  /* Step-size study: error relative to a fine reference run (M = 8192). Step counts are deliberately
+     NOT nested (10, 15, 23, ...): with nested grids the sample nearest the maximum can be the same point
+     for several M and the error stalls. Energy is integrated to a FIXED strain eps* = 0.75 e_u so the
+     endpoint does not move with the grid. */
+  function energyTo(o, eStar) {
+    let u = 0;
+    for (let i = 1; i < o.e.length; i++) {
+      if (o.e[i] <= eStar) { u += 0.5 * (o.s[i] + o.s[i - 1]) * (o.e[i] - o.e[i - 1]); continue; }
+      const t = (eStar - o.e[i - 1]) / (o.e[i] - o.e[i - 1]), sStar = o.s[i - 1] + t * (o.s[i] - o.s[i - 1]);
+      u += 0.5 * (sStar + o.s[i - 1]) * (eStar - o.e[i - 1]);
+      break;
+    }
+    return u;
+  }
+  function convergence(p, Ms = [10, 15, 23, 35, 53, 80, 120, 180, 270, 405, 610], Mref = 8192) {
+    const refPath = simulate(p, Mref), ref = extract(refPath, p);
+    const eStar = 0.75 * Math.min(ref.e_u, ref.e_f);
+    ref.uStar = energyTo(refPath, eStar);
+    const rows = Ms.map((M) => {
+      const o = simulate(p, M), x = extract(o, p), uStar = energyTo(o, eStar);
+      return { M, h: 1 / M, sigU: x.sigU, sigY: x.sigY, uStar,
+               errU: Math.abs(x.sigU - ref.sigU) / ref.sigU, errY: Math.abs(x.sigY - ref.sigY) / ref.sigY, errW: Math.abs(uStar - ref.uStar) / ref.uStar };
+    });
+    const slope = (key) => logSlope(rows.map((r) => r.h), rows.map((r) => r[key]));
+    return { rows, ref, eStar, slopeU: slope('errU'), slopeY: slope('errY'), slopeW: slope('errW') };
+  }
+  function logSlope(xs, ys) {
+    const X = [], Y = [];
+    xs.forEach((x, i) => { if (ys[i] > 1e-14) { X.push(Math.log(x)); Y.push(Math.log(ys[i])); } });
+    return X.length >= 2 ? linSlope(X, Y) : NaN;
+  }
+
+  /* Mesh study: elongation after fracture when the neck length is set by the mesh (L0/N) vs physically. */
+  function meshStudy(p, Ns = [2, 3, 5, 8, 12, 20, 32, 50, 80, 128, 200], M = 240) {
+    return Ns.map((N) => {
+      const mesh = extract(simulate(Object.assign({}, p, { neckMode: 'mesh', N }), M), p);
+      return { N, ELmesh: mesh.EL };
+    });
+  }
+
+  /* Closed-form curves for plotting: perfect uniform bar, and the Considere construction. */
+  function uniformCurve(p, epMax, npts = 300) {
+    const d = derived(p);
+    const e = [], s = [], et = [], st = [];
+    const nEl = 20;
+    for (let i = 0; i <= nEl; i++) { const sg = p.sigma_e * i / nEl; const t = sg / p.E; et.push(t); st.push(sg); e.push(Math.expm1(t)); s.push(sg * Math.exp(-t)); }
+    for (let k = 1; k <= npts; k++) {
+      const ep = epMax * Math.pow(k / npts, 2), sg = flow(p, d, ep), t = ep + sg / p.E;
+      et.push(t); st.push(sg); e.push(Math.expm1(t)); s.push(sg * Math.exp(-t));
+    }
+    return { e, s, et, st };
+  }
+  function considereCurves(p, epMax, npts = 240) {
+    const d = derived(p);
+    const et = [], st = [], h = [];
+    for (let k = 1; k <= npts; k++) {
+      const ep = epMax * Math.pow(k / npts, 1.6), sg = flow(p, d, ep);
+      et.push(ep + sg / p.E); st.push(sg); h.push(hardRate(p, d, ep));
+    }
+    return { et, st, h };
+  }
+
+  return { PRESETS, SPECIMEN, derived, validate, flow, hardRate, closedForms, simulate, extract, convergence, energyTo, meshStudy,
+           uniformCurve, considereCurves, elasticStress, logSlope, N_ELASTIC };
+})();
+if (typeof module !== 'undefined') module.exports = Lab1Model;
+</script>
+
+<script id="sample-data" type="application/json">/*@@SAMPLE_DATA@@*/</script>
+<script>
+/*@@SIM_CORE_JS@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab1Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let p = Object.assign({}, M.PRESETS.steel, M.SPECIMEN);
+  let preset = 'steel';
+  let progress = 0.62;
+  let R = null;              // latest results
+
+  // ---------------------------------------------------------------- controls
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; markCustom(spec.id); update(); }); };
+  mk('g-material', { id: 'E', label: 'Elastic modulus', sym: 'E', q: 'modulus', min: 40e9, max: 220e9, step: 0.1e9 });
+  mk('g-material', { id: 'sigma_e', label: 'Elastic limit', sym: 'σ<sub>e</sub>', q: 'stress', min: 50e6, max: 900e6, step: 0.1e6 });
+  mk('g-material', { id: 'K', label: 'Strength coefficient', sym: 'K', q: 'stress', min: 150e6, max: 2000e6, step: 0.1e6 });
+  mk('g-material', { id: 'n', label: 'Hardening exponent', sym: 'n', q: 'none', min: 0.02, max: 0.6, step: 0.0001, help: 'Sets how much the material strengthens as it stretches. Considère: necking at ε<sub>0</sub> + ε<sub>p</sub> = n.' });
+  mk('g-specimen', { id: 'd0', label: 'Initial diameter', sym: 'd<sub>0</sub>', q: 'length', min: 4e-3, max: 16e-3, step: 0.01e-3 });
+  mk('g-specimen', { id: 'L0', label: 'Gage length', sym: 'L<sub>0</sub>', q: 'length', min: 10e-3, max: 100e-3, step: 0.1e-3, help: 'Reduced section is taken as 1.2 L<sub>0</sub>.' });
+  mk('g-specimen', { id: 'delta', label: 'Area imperfection at the neck site', sym: 'δ', q: 'percent', min: 0, max: 0.03, step: 0.0001, help: 'A 0.015 mm diameter error on 10 mm gives δ ≈ 0.3 %.' });
+  mk('g-specimen', { id: 'neckOverD', label: 'Neck zone length / d<sub>0</sub>', sym: 'ℓ/d<sub>0</sub>', q: 'none', min: 0.2, max: 3, step: 0.01 });
+  mk('g-specimen', { id: 'eps_f', label: 'True fracture strain in the neck', sym: 'ε<sub>f</sub>', q: 'none', min: 0.03, max: 1.6, step: 0.001, help: '<span id="ra-txt"></span>' });
+  mk('g-machine', { id: 'Cm', label: 'Machine + grip compliance', sym: 'C<sub>m</sub>', q: 'compliance', min: 0, max: 30e-9, step: 0.05e-9, help: 'Crosshead travel = specimen stretch + C<sub>m</sub>P. Typical: 0.005–0.015 mm/kN.' });
+  mk('g-solver', { id: 'steps', label: 'Load steps', sym: 'M', q: 'none', min: 8, max: 2048, log: true, int: true, help: 'Step size h = 1/M along the path. The convergence study below varies M automatically.' });
+  mk('g-solver', { id: 'N', label: 'Elements in the gage (mesh mode)', sym: 'N', q: 'none', min: 2, max: 200, log: true, int: true, help: 'Only used when the neck length is set by the mesh.' });
+  const neckSeg = S.segmented($('neckmode'), [['physical', 'Physical ℓ = c·d₀'], ['mesh', 'Mesh ℓ = L₀/N']], p.neckMode, (v) => { p.neckMode = v; update(); }, 'Neck length set by');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+
+  function markCustom(id) {
+    if (['E', 'sigma_e', 'K', 'n'].includes(id) && preset !== 'custom') { preset = 'custom'; $('preset').value = 'custom'; }
+  }
+  function setAll() { for (const k of Object.keys(ctl)) ctl[k].set(p[k]); neckSeg.set(p.neckMode); }
+  $('preset').addEventListener('change', (e) => {
+    preset = e.target.value;
+    Object.assign(p, M.PRESETS[preset]);
+    if (preset === 'steel' || preset === 'al') { $('overlay').value = preset; }
+    setAll(); update();
+  });
+  $('reset').addEventListener('click', () => {
+    if (preset === 'custom') preset = 'steel';
+    $('preset').value = preset;
+    p = Object.assign({}, M.PRESETS[preset], M.SPECIMEN);
+    setAll(); update();
+  });
+  $('overlay').addEventListener('change', () => draw());
+  $('showch').addEventListener('change', () => draw());
+
+  // ---------------------------------------------------------------- progress + play
+  $('progress').addEventListener('input', (e) => { progress = +e.target.value / 1000; draw(); });
+  let playing = null;
+  $('play').addEventListener('click', () => {
+    if (playing) { cancelAnimationFrame(playing); playing = null; $('play').textContent = 'Play'; return; }
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now(), start = progress >= 0.999 ? 0 : progress, dur = reduce ? 1 : 7000 * (1 - start);
+    $('play').textContent = 'Pause';
+    const step = (t) => {
+      progress = Math.min(1, start + (1 - start) * (t - t0) / dur);
+      $('progress').value = String(Math.round(progress * 1000));
+      draw();
+      if (progress < 1) playing = requestAnimationFrame(step); else { playing = null; $('play').textContent = 'Play'; }
+    };
+    playing = requestAnimationFrame(step);
+  });
+
+  // ---------------------------------------------------------------- plots
+  const pct = (v) => S.fmt(v, 3);
+  const sfx = () => (v) => S.fmt(v, 3);
+  const plots = {
+    main: new S.Plot($('plot-main'), { xlabel: 'Engineering strain, ε (%)', ylabel: '', aspect: 0.5, xfmt: pct, yfmt: sfx() }),
+    zoom: new S.Plot($('plot-zoom'), { xlabel: 'Engineering strain, ε (%)', ylabel: '', aspect: 0.72, xfmt: pct, yfmt: sfx() }),
+    tru: new S.Plot($('plot-true'), { xlabel: 'True strain, εt', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: sfx() }),
+    conv: new S.Plot($('plot-conv'), { xlabel: 'Load steps, M (step size h = 1/M)', ylabel: 'Relative error vs. M = 8192', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 4), yfmt: (v) => S.fmt(v, 2) }),
+    mesh: new S.Plot($('plot-mesh'), { xlabel: 'Elements in the gage, N', ylabel: 'Elongation after fracture (%)', aspect: 0.72, logx: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+  };
+
+  // ---------------------------------------------------------------- compute
+  let convTimer = null;
+  function update() {
+    const errs = M.validate(p);
+    $('errors').hidden = !errs.length;
+    $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    const cf = M.closedForms(p);
+    const path = M.simulate(p, p.steps);
+    const ex = M.extract(path, p);
+    const perfect = M.extract(M.simulate(Object.assign({}, p, { delta: 0 }), Math.max(p.steps, 800)), p);
+    R = Object.assign(R || {}, { cf, path, ex, perfect, p: Object.assign({}, p) });
+    $('ra-txt').textContent = `Reduction of area at fracture ≈ ${S.fmt(100 * ex.RA, 3)} %`;
+    draw();
+    clearTimeout(convTimer);
+    convTimer = setTimeout(() => { R.conv = M.convergence(p); R.mesh = M.meshStudy(p); drawConvergence(); renderReadout(); }, 60);
+  }
+
+  const stressQ = (v) => S.conv('stress', v);
+  function draw() {
+    if (!R) return;
+    const { cf, path, ex } = R;
+    const n = path.P.length;
+    const i = Math.min(n - 1, Math.round(progress * (n - 1)));
+    const su = S.unit('stress');
+    // stage
+    let stage, cls;
+    if (path.epz[i] === 0) { stage = 'elastic'; cls = 'ok'; }
+    else if (i < ex.imax) { stage = path.epr[i] > 0 ? 'uniform plastic stretching' : 'yielding starts at the weakest section'; cls = 'info'; }
+    else if (i < n - 1) { stage = 'necking: deformation localized'; cls = 'warn'; }
+    else { stage = ex.fracBeforeNeck ? 'fractured before necking' : 'fracture'; cls = 'bad'; }
+    $('stage').textContent = stage; $('stage').className = 'chip stage ' + cls;
+    $('progress-txt').textContent = `ε = ${S.fmt(100 * path.e[i], 3)} %`;
+    const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+    $('stats').innerHTML = [
+      st('Load P', S.fmtQ('force', path.P[i], 4)),
+      st('σ = P/A₀', S.fmtQ('stress', path.s[i], 4)),
+      st('ε (gage)', S.fmt(100 * path.e[i], 3) + ' %'),
+      st('σ(1+ε)', S.fmtQ('stress', path.s[i] * (1 + path.e[i]), 4)),
+      st('σ in neck', S.fmtQ('stress', path.sz[i], 4)),
+      st('Neck diameter', S.fmtQ('length', path.dz[i], 4)),
+    ].join('');
+
+    // ---- main plot
+    const sample = SAMPLE[$('overlay').value];
+    const series = [];
+    const uni = M.uniformCurve(p, Math.min(p.eps_f, Math.max(cf.ep_u, 1e-4)));
+    const uniTail = M.uniformCurve(p, p.eps_f);
+    let xmax = Math.max(100 * ex.e_f, 100 * ex.e_u) * 1.06;
+    let ymax = Math.max(...path.s) * 1.12;
+    if (sample) {
+      const sx = sample.ext.map((r) => 100 * r[0]), sy = sample.ext.map((r) => S.conv('stress', r[1] * 1e6));
+      series.push({ x: sx, y: sy, role: 'measured', markers: true, label: 'Sample data, extensometer', maxMarkers: 260 });
+      if ($('showch').checked) series.push({ x: sample.ch.map((r) => 100 * r[0]), y: sample.ch.map((r) => S.conv('stress', r[1] * 1e6)), role: 'mutedline', markers: true, r: 1.6, label: 'Sample data, raw crosshead / Lc', maxMarkers: 220, opacity: 0.7 });
+      xmax = Math.max(xmax, 100 * Math.max(...sample.ch.map((r) => r[0])) * 1.04);
+      ymax = Math.max(ymax, S.unconv('stress', Math.max(...sy)) * 1.08);
+    }
+    const tailStart = uniTail.e.findIndex((e) => e > cf.e_u);
+    series.push({ x: uni.e.map((v) => 100 * v), y: uni.s.map(stressQ), role: 'theory', label: 'Closed form, perfect uniform bar' });
+    if (tailStart > 0) series.push({ x: uniTail.e.slice(tailStart - 1).map((v) => 100 * v), y: uniTail.s.slice(tailStart - 1).map(stressQ), role: 'theory', opacity: 0.35, width: 1.5, label: 'Uniform-bar formula past necking (invalid)', hover: false });
+    series.push({ x: path.e.map((v) => 100 * v), y: path.s.map(stressQ), role: 'numeric', label: 'Numerical virtual specimen (gage)' });
+    if ($('showch').checked) series.push({ x: path.ech.map((v) => 100 * v), y: path.s.map(stressQ), role: 'third', label: 'Virtual specimen, crosshead / Lc' });
+    const pts = [
+      { x: 100 * ex.eY, y: stressQ(ex.sigY), role: 'numeric', shape: 'diamond', label: '0.2 % offset' },
+      { x: 100 * ex.e_u, y: stressQ(ex.sigU), role: 'numeric', label: 'max load' },
+      { x: 100 * ex.e_f, y: stressQ(ex.s_f), role: 'numeric', shape: 'x', label: 'fracture' },
+      { x: 100 * path.e[i], y: stressQ(path.s[i]), role: 'accent', shape: 'ring' },
+    ];
+    plots.main.o.ylabel = `Engineering stress, σ (${su})`;
+    plots.main.draw({ series, points: pts, xlim: [0, xmax], ylim: [0, S.conv('stress', ymax)],
+      bands: ex.fracBeforeNeck ? [] : [{ x0: 100 * ex.e_u, x1: xmax, label: 'necking: P/A₀ ≠ stress in the neck', legend: 'Uniform-strain assumption fails' }],
+      desc: `Engineering stress-strain curve. Ultimate strength ${S.fmtQ('stress', ex.sigU)} at ${S.fmt(100 * ex.e_u, 3)} percent strain; fracture at ${S.fmt(100 * ex.e_f, 3)} percent.` });
+    $('cap-main').innerHTML = `Maximum load at ε = ${S.fmt(100 * ex.e_u, 3)} % (closed form: ${S.fmt(100 * cf.e_u, 3)} %). Past it the stretch concentrates in the neck zone (ℓ = ${S.fmtQ('length', cf.ell, 3)}), so the gage strain no longer describes the material.`;
+
+    // ---- zoom plot
+    const zx = Math.max(1.2, 100 * ex.eY * 1.9), zy = Math.max(cf.sigY, p.sigma_e) * 1.25;
+    const zs = [];
+    if (sample) zs.push({ x: sample.ext.map((r) => 100 * r[0]), y: sample.ext.map((r) => S.conv('stress', r[1] * 1e6)), role: 'measured', markers: true, label: 'Sample data, extensometer', maxMarkers: 400 });
+    zs.push({ x: uni.e.map((v) => 100 * v), y: uni.s.map(stressQ), role: 'theory', label: 'Closed form' });
+    zs.push({ x: path.e.map((v) => 100 * v), y: path.s.map(stressQ), role: 'numeric', label: 'Numerical' });
+    zs.push({ x: [0, 100 * zy / p.E], y: [0, stressQ(zy)], role: 'theory', width: 1, opacity: 0.6, dash: '2 2', label: "Hooke's law σ = Eε", hover: false });
+    plots.zoom.o.ylabel = `Engineering stress, σ (${su})`;
+    plots.zoom.draw({ series: zs, xlim: [0, zx], ylim: [0, stressQ(zy)],
+      segs: [{ x0: 0.2, y0: 0, x1: 0.2 + 100 * zy / p.E, y1: stressQ(zy), role: 'mutedline', dash: '5 3', width: 1.2 }],
+      points: [{ x: 100 * Math.expm1(p.sigma_e / p.E), y: stressQ(p.sigma_e), role: 'theory', label: 'σe' }, { x: 100 * ex.eY, y: stressQ(ex.sigY), role: 'numeric', shape: 'diamond', label: `σY = ${S.fmtQ('stress', ex.sigY, 4)}` }],
+      desc: `Elastic region. The 0.2 percent offset yield strength is ${S.fmtQ('stress', ex.sigY)}.` });
+
+    // ---- true stress + Considere
+    const epC = Math.min(p.eps_f, Math.max(cf.ep_u * 2.2, 0.05));
+    const cc = M.considereCurves(p, epC);
+    const ts = [];
+    ts.push({ x: cc.et, y: cc.st.map(stressQ), role: 'theory', label: 'Material law σt(εt)' });
+    ts.push({ x: cc.et, y: cc.h.map(stressQ), role: 'fourth', label: 'Hardening rate dσt/dεt' });
+    ts.push({ x: path.e.map((v) => Math.log1p(v)), y: path.s.map((v, k) => stressQ(v * (1 + path.e[k]))), role: 'numeric', label: 'σ(1+ε) vs ln(1+ε), from gage' });
+    ts.push({ x: path.etz, y: path.sz.map(stressQ), role: 'third', label: 'Actual stress in neck' });
+    const tymax = Math.max(...path.sz) * 1.08;
+    plots.tru.o.ylabel = `True stress, σt (${su})`;
+    plots.tru.draw({ series: ts, xlim: [0, Math.max(...path.etz) * 1.03], ylim: [0, stressQ(tymax)],
+      bands: ex.fracBeforeNeck ? [] : [{ x0: Math.log1p(ex.e_u), x1: 10, label: 'σ(1+ε) invalid' }],
+      points: [{ x: cf.et_u, y: stressQ(cf.sig_t_u), role: 'theory', shape: 'ring', label: 'Considère: dσt/dεt = σt' }, { x: path.etz[i], y: stressQ(path.sz[i]), role: 'accent', shape: 'ring' }],
+      desc: `True stress-strain. Considère predicts necking at true strain ${S.fmt(cf.et_u, 3)}.` });
+
+    drawSpecimen(i);
+    renderCards(i);
+    renderWarnings(i);
+    if (R.conv) renderReadout();
+  }
+
+  // ---------------------------------------------------------------- specimen drawing
+  function drawSpecimen(i) {
+    const { path, cf } = R;
+    const L0 = p.L0, Lc = cf.Lc;
+    const lenZ = cf.ell * Math.exp(path.etz[i]), lenR = (L0 - cf.ell) * Math.exp(path.etr[i]);
+    const lenOut = (Lc - L0) * Math.exp(path.etr[i]);
+    const total = lenZ + lenR + lenOut;
+    const W = Math.round(Math.max(360, Math.min(900, $('spec-svg').clientWidth || 900))), H = 230;
+    const mx = W < 600 ? 62 : 120, scale = (W - 2 * mx - (W < 600 ? 60 : 120)) / Math.max(total, Lc);
+    const cy = H / 2, dr = path.dr[i] * scale, dz = path.dz[i] * scale, d0 = p.d0 * scale;
+    const x0 = mx + (W < 600 ? 30 : 60), xL = x0 + lenOut / 2 * scale, xZ0 = xL + lenR / 2 * scale, xZ1 = xZ0 + lenZ * scale, xR = xZ1 + lenR / 2 * scale, x1 = xR + lenOut / 2 * scale;
+    // outline: smooth neck (cosine blend) between xZ0 and xZ1, extended a little for a natural shape
+    const top = [], bot = [];
+    const N = 120;
+    for (let k = 0; k <= N; k++) {
+      const x = x0 + (x1 - x0) * k / N;
+      let r = dr / 2;
+      const zc = (xZ0 + xZ1) / 2, half = Math.max((xZ1 - xZ0) / 2, 2);
+      const t = Math.abs(x - zc) / (half * 1.6);
+      if (t < 1) r = dr / 2 - (dr / 2 - dz / 2) * 0.5 * (1 + Math.cos(Math.PI * t));
+      top.push(`${x.toFixed(1)},${(cy - r).toFixed(1)}`); bot.push(`${x.toFixed(1)},${(cy + r).toFixed(1)}`);
+    }
+    const shoulderH = d0 * 1.5;
+    const P = path.P[i];
+    const arrow = (x, dir) => `<line x1="${x}" y1="${cy}" x2="${x + dir * 44}" y2="${cy}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x + dir * 52} ${cy}L${x + dir * 40} ${cy - 7}L${x + dir * 40} ${cy + 7}Z" style="fill:var(--numeric)"/>`;
+    const gx0 = xL, gx1 = xR;
+    const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Specimen outline at the current point: neck diameter ${S.fmtQ('length', path.dz[i])}, diameter elsewhere ${S.fmtQ('length', path.dr[i])}.">
+      <rect x="${x0 - (W < 600 ? 22 : 50)}" y="${cy - shoulderH / 2}" width="${W < 600 ? 22 : 50}" height="${shoulderH}" style="fill:var(--panel-2);stroke:var(--muted)"/>
+      <rect x="${x1}" y="${cy - shoulderH / 2}" width="${W < 600 ? 22 : 50}" height="${shoulderH}" style="fill:var(--panel-2);stroke:var(--muted)"/>
+      <polygon points="${top.join(' ')} ${bot.reverse().join(' ')}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.5"/>
+      <rect x="${xZ0}" y="${cy - dr / 2 - 16}" width="${Math.max(2, xZ1 - xZ0)}" height="8" style="fill:var(--fail);opacity:.55"/>
+      <text x="${(xZ0 + xZ1) / 2}" y="${cy - dr / 2 - 22}" text-anchor="middle" style="fill:var(--fail-ink);font-size:13px;font-weight:600">neck zone ℓ</text>
+      <line x1="${gx0}" y1="${cy + d0 / 2 + 6}" x2="${gx0}" y2="${cy + d0 / 2 + 26}" style="stroke:var(--ink);stroke-width:1.5"/>
+      <line x1="${gx1}" y1="${cy + d0 / 2 + 6}" x2="${gx1}" y2="${cy + d0 / 2 + 26}" style="stroke:var(--ink);stroke-width:1.5"/>
+      <line x1="${gx0}" y1="${cy + d0 / 2 + 18}" x2="${gx1}" y2="${cy + d0 / 2 + 18}" style="stroke:var(--muted);stroke-width:1"/>
+      <text x="${(gx0 + gx1) / 2}" y="${cy + d0 / 2 + 40}" text-anchor="middle" style="fill:var(--ink);font-size:13px">gage length L = ${S.fmtQ('length', lenZ + lenR, 4)} (L₀ = ${S.fmtQ('length', L0, 3)})</text>
+      ${P > 0 ? arrow(x0 - (W < 600 ? 26 : 56), -1) + arrow(x1 + (W < 600 ? 26 : 56), 1) : ''}
+      <text x="${x0 - 60}" y="${cy - 14}" text-anchor="end" style="fill:var(--numeric);font-size:13px;font-weight:600">P</text>
+      <text x="${x1 + 60}" y="${cy - 14}" text-anchor="start" style="fill:var(--numeric);font-size:13px;font-weight:600">P</text>
+      <text x="${W / 2}" y="${H - 8}" text-anchor="middle" style="fill:var(--numeric);font-size:13px;font-weight:600">P = ${S.fmtQ('force', P, 3)}</text>
+    </svg>`;
+    $('spec-svg').innerHTML = svg;
+    $('spec-txt').textContent = `neck d = ${S.fmtQ('length', path.dz[i], 4)} · elsewhere d = ${S.fmtQ('length', path.dr[i], 4)} · drawn to scale`;
+  }
+
+  // ---------------------------------------------------------------- readout table
+  function renderReadout() {
+    const { cf, ex, perfect, conv } = R;
+    const pctd = (a, b) => (100 * (a - b) / b);
+    const chip = (ok, text) => `<span class="chip ${ok === true ? 'ok' : ok === 'break' ? 'bad' : 'warn'}">${text}</span>`;
+    const rows = [];
+    const add = (name, q, c, nu, status, why, cls = '') => rows.push({ name, q, c, nu, status, why, cls });
+    // E
+    const dE = pctd(ex.E_num, p.E);
+    const predE = -100 * (3 * 0.375 * p.sigma_e / p.E + p.delta * cf.ell / (p.L0 * (1 - p.delta)));
+    add('Elastic modulus from gage, <i>E</i>', 'modulus', p.E, ex.E_num, Math.abs(dE - predE) < 0.06 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Slope of σ vs ε for 15–60 % of σe. Gap ${S.fmt(dE, 2)} % (expected ${S.fmt(predE, 2)} %): finite-strain definitions of σ and ε (≈ −3σ/E) and the weaker neck zone (≈ −δℓ/L₀). Both are far below measurement uncertainty.`);
+    // E_app
+    const dEa = pctd(ex.E_app_num, cf.E_app);
+    add('Apparent modulus from crosshead, <i>E</i><sub>app</sub> = 1/(1/<i>E</i> + <i>A</i><sub>0</sub><i>C</i><sub>m</sub>/<i>L</i><sub>c</sub>)', 'modulus', cf.E_app, ex.E_app_num, Math.abs(dEa) < 0.3 ? chip(true, 'agree') : chip(false, 'gap'),
+      `Springs in series. Crosshead strain reads only ${S.fmt(100 * cf.E_app / p.E, 3)} % of the true modulus: never take E from crosshead travel.`);
+    // sigma_Y
+    const dY = pctd(ex.sigY, cf.sigY), predY = -100 * (0.002 + cf.sigY / p.E);
+    add('0.2 % offset yield strength, <i>σ</i><sub>Y</sub> ≈ <i>K</i>(<i>ε</i><sub>0</sub> + 0.002)<sup><i>n</i></sup>', 'stress', cf.sigY, ex.sigY, Math.abs(dY - predY) < 0.25 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Gap ${S.fmt(dY, 2)} %; expected ≈ −ε<sub>Y</sub> = ${S.fmt(predY, 2)} % because the closed form treats true and engineering stress as equal at small strain.`);
+    // sigma_U
+    const dU = pctd(ex.sigU, cf.sigU), predU = -100 * p.delta;
+    add('Ultimate strength (Considère), <i>σ</i><sub>U</sub> = <i>K n<sup>n</sup></i> e<sup>−<i>ε</i><sub>t,U</sub></sup>', 'stress', cf.sigU, ex.sigU, Math.abs(dU - predU) < 0.05 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Gap ${S.fmt(dU, 2)} %; expected −δ = ${S.fmt(predU, 2)} %: the weakest section sets the maximum load.`);
+    // e_u
+    const dEuPerf = pctd(perfect.e_u, cf.e_u);
+    add('Uniform elongation, <i>ε</i><sub>u</sub> = exp(<i>n</i> − <i>ε</i><sub>0</sub> + <i>σ</i><sub>t,U</sub>/<i>E</i>) − 1', 'percent', cf.e_u, ex.e_u, Math.abs(dEuPerf) < 1 ? chip(true, 'explained by δ') : chip(false, 'gap'),
+      `Perfect bar (δ = 0), numerical: ${S.fmt(100 * perfect.e_u, 4)} % (${S.fmt(dEuPerf, 2)} %; the closed form neglects elastic strain in the hardening rate). With δ the neck site reaches its peak first and the rest of the gage stops stretching early.`);
+    // imperfection asymptotic
+    const dnum = cf.et_u - Math.log1p(ex.e_u);
+    const okImp = p.delta > 0 ? Math.abs(dnum - cf.dEps_imp) / cf.dEps_imp < 0.2 : true;
+    add('Imperfection drop in true uniform strain, (1 − ℓ/<i>L</i><sub>0</sub>)√(2<i>n</i>δ)', 'none', cf.dEps_imp, dnum, p.delta === 0 ? chip(true, 'δ = 0') : okImp ? chip(true, 'asymptotic OK') : chip(false, 'beyond small-δ'),
+      `Expansion of the load capacity about its peak: valid for small δ. Push δ to 3 % to watch the estimate degrade.`);
+    // energy
+    const dWperf = pctd(perfect.uU, cf.uU);
+    add('Energy per volume to max load, <i>u</i><sub>U</sub> = ∫<i>σ</i><sub>t</sub>d<i>ε</i><sub>t</sub>', 'energy', cf.uU, ex.uU, Math.abs(dWperf) < 1 ? chip(true, 'explained by δ') : chip(false, 'gap'),
+      `Trapezoid rule up to the largest sample. Perfect bar (δ = 0): ${S.fmtQ('energy', perfect.uU, 4)} (${S.fmt(dWperf, 2)} %). The imperfect specimen stops stretching uniformly earlier, so it stores ${S.fmt(-pctd(ex.uU, cf.uU), 3)} % less energy before necking.`);
+    // fracture true stress (model break)
+    const dF = pctd(ex.sig_t_formula_f, ex.sig_neck_f);
+    add('True stress at fracture: <i>σ</i>(1 + <i>ε</i>) from gage vs. <i>P</i>/<i>A</i> in neck', 'stress', ex.sig_t_formula_f, ex.sig_neck_f, ex.fracBeforeNeck ? chip(true, 'no neck') : chip('break', 'model breaks'),
+      ex.fracBeforeNeck ? 'Fracture came before necking, so deformation stayed uniform and the formula holds.' : `The formula assumes the whole gage stretched uniformly. It is ${S.fmt(dF, 3)} % off once a neck forms.`, ex.fracBeforeNeck ? '' : 'break');
+    if (cf.breaksFirst) add('Considère never reached', 'none', NaN, NaN, chip(false, 'brittle-like'), 'The fracture strain is below the necking strain: σU is the fracture stress and the Considère closed forms do not apply.');
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Status</th><th scope="col">Why they differ</th></tr>';
+    const val = (q, v) => q === 'percent' ? S.fmt(100 * v, 4) + ' %' : q === 'none' ? S.fmt(v, 4) : S.fmtQ(q, v, 4);
+    $('readout').innerHTML = th + rows.map((r) => `<tr class="${r.cls}"><td>${r.name}</td><td class="v">${val(r.q, r.c)}</td><td class="v">${val(r.q, r.nu)}</td><td>${r.status}</td><td class="why">${r.why}</td></tr>`).join('');
+    R.readoutRows = rows.map((r) => [r.name.replace(/<[^>]+>/g, ''), r.q, r.c, r.nu]);
+    const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+    $('ductility').innerHTML = [
+      st('Elongation after fracture', S.fmt(100 * ex.EL, 3) + ' %'),
+      st('Reduction of area', S.fmt(100 * ex.RA, 3) + ' %'),
+      st('Modulus of resilience σe²/2E', S.fmtQ('energy', cf.u_res, 3)),
+      st('Crosshead strain at fracture', S.fmt(100 * ex.ech_f, 3) + ' %'),
+    ].join('');
+  }
+
+  // ---------------------------------------------------------------- convergence plots
+  function drawConvergence() {
+    const { conv, mesh, cf } = R;
+    const Ms = conv.rows.map((r) => r.M);
+    const series = [
+      { x: Ms, y: conv.rows.map((r) => r.errU), role: 'numeric', label: `σU, largest sample: slope ${S.fmt(-conv.slopeU, 2)}` },
+      { x: Ms, y: conv.rows.map((r) => r.errY), role: 'third', label: `σY, offset intersection: slope ${S.fmt(-conv.slopeY, 2)}` },
+      { x: Ms, y: conv.rows.map((r) => r.errW), role: 'fourth', label: `u(ε*), trapezoid to ε*: slope ${S.fmt(-conv.slopeW, 2)}` },
+    ];
+    const all = conv.rows.flatMap((r) => [r.errU, r.errY, r.errW]).filter((v) => v > 0);
+    const lo = Math.pow(10, Math.floor(Math.log10(Math.min(...all)))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max(...all))));
+    const e0 = Math.max(...conv.rows.slice(0, 2).map((r) => r.errY)) * 1.5;
+    series.push({ x: [10, 610], y: [e0, e0 * Math.pow(10 / 610, 2)], role: 'theory', width: 1, opacity: 0.7, dash: '2 3', label: 'reference slope: error ∝ h²', hover: false });
+    plots.conv.draw({ series, xlim: [8, 800], ylim: [lo, hi], desc: `Convergence study: offset-yield error falls with slope ${S.fmt(-conv.slopeY, 2)} on log-log axes.` });
+    $('cap-conv').innerHTML = `All three converge at about second order (error ∝ <i>h</i><sup>2</sup>, slope ≈ 2), as expected for linear interpolation and the trapezoid rule on a smooth curve. The σ<sub>U</sub> points scatter because the error of "largest sample" depends on how close a sample happens to fall to the true peak. Energy is integrated to a fixed strain ε* = ${S.fmt(100 * conv.eStar, 3)} %: integrating to the largest sample instead moves the endpoint by up to one step and drops the method to first order.`;
+    const Ns = mesh.map((r) => r.N);
+    plots.mesh.draw({
+      series: [
+        { x: Ns, y: mesh.map((r) => 100 * r.ELmesh), role: 'numeric', label: 'Neck length set by mesh, ℓ = L₀/N' },
+        { x: [2, 200], y: [100 * R.ex.EL, 100 * R.ex.EL], role: 'third', label: p.neckMode === 'mesh' ? 'Current setting' : 'Physical neck length, ℓ = c·d₀' },
+        { x: [2, 200], y: [100 * cf.e_u, 100 * cf.e_u], role: 'theory', width: 1.2, label: 'Uniform elongation εu (closed form)' },
+      ],
+      xlim: [1.8, 220], ylim: [0, Math.max(...mesh.map((r) => 100 * r.ELmesh), 100 * R.ex.EL) * 1.12],
+      desc: 'Mesh study: elongation after fracture keeps falling as the mesh is refined when nothing physical sets the neck length.' });
+    $('cap-mesh').innerHTML = `With the neck length tied to the mesh, elongation after fracture never converges: it falls toward ε<sub>u</sub> as <i>N</i> grows. A one-dimensional model contains no length scale for the neck; real necks are about one diameter long, which is why %EL depends on the gage-length-to-diameter ratio.`;
+  }
+
+  // ---------------------------------------------------------------- push past assumptions
+  const EXPERIMENTS = [
+    ['Refine a model with no neck length', 'Switch the neck length to the mesh and use N = 200 elements.', () => { p.neckMode = 'mesh'; p.N = 200; }],
+    ['Large imperfection', 'Set δ = 3 %. The small-δ estimate of the uniform-strain drop degrades and σU falls by 3 %.', () => { p.delta = 0.03; }],
+    ['Soft testing machine', 'Set Cm = 0.03 mm/kN. Compare the crosshead curve with the gage curve.', () => { p.Cm = 30e-9; }],
+    ['Breaks before it necks', 'Set the fracture strain below n. Considère never applies and σU becomes the fracture stress.', () => { p.eps_f = Math.max(0.03, 0.4 * Math.max(0.01, M.closedForms(p).ep_u)); }],
+    ['Almost no hardening', 'Set n = 0.03. Necking starts almost at yield.', () => { p.n = 0.03; markCustom('n'); }],
+    ['Short gage length', 'Set L₀ = 2 d₀. Same material, larger elongation after fracture.', () => { p.L0 = 2 * p.d0; }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-exp]'); if (!b) return;
+    EXPERIMENTS[+b.dataset.exp][2](); setAll(); update();
+  });
+  function renderWarnings(i) {
+    const { path, ex, cf } = R;
+    const W = [];
+    const s = path.s[i], e = path.e[i];
+    if (path.epz[i] > 0) {
+      const ratio = p.E * e / s;
+      W.push(['warn', ratio < 2 ? `Hooke's law: Eε = ${S.fmtQ('stress', p.E * e, 4)} vs actual σ = ${S.fmtQ('stress', s, 4)} (${S.fmt(100 * (ratio - 1), 3)} % too high): the material is past its elastic limit.`
+        : `Hooke's law would give Eε = ${S.fmtQ('stress', p.E * e, 3)}, ${S.fmt(ratio, 3)} times the actual stress: almost all of this strain is plastic.`]);
+    }
+    if (i > ex.imax) W.push(['bad', `Necking: σ = P/A₀ = ${S.fmtQ('stress', s, 4)}, but the stress in the neck is ${S.fmtQ('stress', path.sz[i], 4)}.`]);
+    if (p.neckMode === 'mesh') W.push(['bad', `Neck length set by the mesh (ℓ = ${S.fmtQ('length', cf.ell, 3)}): post-necking results depend on N.`]);
+    if (p.delta > 0.01) W.push(['warn', `δ = ${S.fmt(100 * p.delta, 3)} %: the small-imperfection expansion √(2nδ) is losing accuracy.`]);
+    if (cf.E_app / p.E < 0.5) W.push(['warn', `Crosshead modulus is ${S.fmt(100 * cf.E_app / p.E, 3)} % of E: compliance dominates the crosshead reading.`]);
+    if (cf.breaksFirst) W.push(['bad', 'Fracture before necking: Considère closed forms do not apply.']);
+    if (!W.length) W.push(['ok', 'At this point every assumption behind the textbook formulas holds.']);
+    $('warnings').innerHTML = W.map(([c, t]) => `<li><span class="chip ${c}">${c === 'ok' ? 'valid' : c === 'warn' ? 'approx.' : 'fails'}</span><span>${t}</span></li>`).join('');
+  }
+
+  // ---------------------------------------------------------------- formula cards
+  function renderCards(i) {
+    const { path, ex, cf } = R;
+    const d = M.derived(p);
+    const s = path.s[i], e = path.e[i];
+    const hr = M.hardRate(p, d, path.epz[i]);
+    const necked = i > ex.imax;
+    const card = (eq, origin, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${origin}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+    const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+    const cards = [
+      card('<i>σ</i> = <i>P</i> / <i>A</i><sub>0</sub>', 'equilibrium of a cut through the gage: the internal force <i>P</i> balances the load.', '<i>A</i><sub>0</sub> is the original area, so this is a nominal stress. It equals the real stress only while the section has not shrunk much and away from the grips (Saint-Venant).',
+        necked ? chip('bad', 'not the neck stress') : chip('ok', 'uniform'), `P/A₀ = ${S.fmtQ('stress', s, 4)} · stress in neck = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('<i>ε</i> = <i>δ</i> / <i>L</i><sub>0</sub>', 'geometry: the average stretch per unit length between the gage marks.', 'An average. After necking the neck strains far more than the rest of the gage.',
+        necked ? chip('warn', 'average only') : chip('ok', 'uniform'), `gage ε = ${S.fmt(100 * e, 3)} % · neck ε = ${S.fmt(100 * Math.expm1(path.etz[i]), 3)} %`),
+      card('<i>σ</i> = <i>E ε</i>', 'Hooke\'s law, the linear constitutive law (Beer §2.1D).', '<i>E</i> is the slope. Valid only below the elastic limit <i>σ</i><sub>e</sub>.',
+        path.epz[i] > 0 ? chip('bad', 'past σe') : chip('ok', 'elastic'), `Eε = ${S.fmtQ('stress', p.E * e, 4)} vs σ = ${S.fmtQ('stress', s, 4)}`),
+      card('<i>σ</i><sub>t</sub> = <i>σ</i>(1+<i>ε</i>), <i>ε</i><sub>t</sub> = ln(1+<i>ε</i>)', 'volume constancy <i>AL</i> = <i>A</i><sub>0</sub><i>L</i><sub>0</sub> during plastic flow (Beer §2.1C).', 'Converts nominal to true values. Exact while the gage deforms uniformly; wrong after necking.',
+        necked ? chip('bad', 'invalid') : chip('ok', 'exact'), `σ(1+ε) = ${S.fmtQ('stress', s * (1 + e), 4)} · neck σt = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('d<i>σ</i><sub>t</sub>/d<i>ε</i><sub>t</sub> = <i>σ</i><sub>t</sub>', 'd<i>P</i> = 0 with <i>P</i> = <i>σ</i><sub>t</sub><i>A</i> and d<i>A</i>/<i>A</i> = −d<i>ε</i><sub>t</sub> (Considère).', 'While hardening outpaces the area loss, the bar stays uniform; when it no longer can, a neck forms. For the Swift law: <i>ε</i><sub>0</sub> + <i>ε</i><sub>p</sub> = <i>n</i>.',
+        path.epz[i] === 0 ? chip('info', 'elastic') : hr > path.sz[i] ? chip('ok', 'stable') : chip('warn', 'neck site unstable'), `dσt/dεt = ${S.fmtQ('stress', hr, 4)} vs σt = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('<i>E</i><sub>app</sub> = 1 / (1/<i>E</i> + <i>A</i><sub>0</sub><i>C</i><sub>m</sub>/<i>L</i><sub>c</sub>)', 'springs in series: the specimen and the machine carry the same <i>P</i>; their stretches add.', '<i>C</i><sub>m</sub> lumps frame, grips and shoulders. Crosshead strain overstates elastic strain.',
+        cf.E_app / p.E < 0.9 ? chip('warn', `${S.fmt(100 * cf.E_app / p.E, 3)} % of E`) : chip('ok', 'stiff machine'), `E = ${S.fmtQ('modulus', p.E, 4)} · E_app = ${S.fmtQ('modulus', cf.E_app, 4)}`),
+    ];
+    $('cards').innerHTML = cards.join('');
+  }
+
+  // ---------------------------------------------------------------- export
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (q) => S.csvUnit(q);
+  $('exp-curve').addEventListener('click', () => {
+    const { path } = R;
+    const rows = path.P.map((P, k) => [k, S.plain(S.conv('force', P)), S.plain(path.e[k]), S.plain(S.conv('stress', path.s[k])), S.plain(path.ech[k]),
+      S.plain(Math.log1p(path.e[k])), S.plain(S.conv('stress', path.s[k] * (1 + path.e[k]))), S.plain(path.etz[k]), S.plain(S.conv('stress', path.sz[k])), S.plain(S.conv('length', path.dz[k]))]);
+    const head = ['point', `load_${u('force')}`, 'eng_strain_gage', `eng_stress_${u('stress')}`, 'crosshead_strain', 'true_strain_formula', `true_stress_formula_${u('stress')}`, 'true_strain_neck', `true_stress_neck_${u('stress')}`, `neck_diameter_${u('length')}`];
+    S.exportCSV('lab01_virtual_test.csv', S.toCSV(head, rows), panel);
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R.readoutRows) return;
+    const conv = (q, v) => q === 'none' ? v : q === 'percent' ? 100 * v : S.conv(q, v);
+    const rows = R.readoutRows.map(([n, q, c, v]) => [n, S.plain(conv(q, c)), S.plain(conv(q, v)), q === 'none' ? '' : q === 'percent' ? '%' : S.unit(q), S.plain(100 * (v - c) / c, 4)]);
+    S.exportCSV('lab01_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'difference_pct'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R.conv) return;
+    const rows = R.conv.rows.map((r) => [r.M, S.plain(r.h), S.plain(S.conv('stress', r.sigU)), S.plain(S.conv('stress', r.sigY)), S.plain(S.conv('energy', r.uStar)), S.plain(r.errU), S.plain(r.errY), S.plain(r.errW)]);
+    rows.push(['reference_8192', S.plain(1 / 8192), S.plain(S.conv('stress', R.conv.ref.sigU)), S.plain(S.conv('stress', R.conv.ref.sigY)), S.plain(S.conv('energy', R.conv.ref.uStar)), '', '', '']);
+    S.exportCSV('lab01_convergence.csv', S.toCSV(['steps_M', 'h', `sigU_${u('stress')}`, `sigY_${u('stress')}`, `energy_to_eps_star_${u('energy')}`, 'rel_err_sigU', 'rel_err_sigY', 'rel_err_energy'], rows), panel);
+  });
+
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (R) drawSpecimen(Math.min(R.path.P.length - 1, Math.round(progress * (R.path.P.length - 1)))); }, 150); });
+  $('overlay').value = 'steel';
+  update();
+})();
+</script>
+</body>
+</html>

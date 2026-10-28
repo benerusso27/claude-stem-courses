@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg role="img" aria-labelledby="fig-title fig-desc" xmlns:xlink="http://www.w3.org/1999/xlink" width="368.46pt" height="240.022109pt" viewBox="0 0 368.46 240.022109" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <title id=\"fig-title\">Figure 1. Tension-test setup</title>
+ <desc id="fig-desc">Schematic of a universal testing machine. A moving crosshead at the top, carrying a load cell, travels upward along two screw columns at a set rate while the base stays fixed. Wedge grips hold the threaded or shouldered ends of a round specimen. A clip-on extensometer with a 50.0 mm gage length is attached to the narrow reduced section, whose initial diameter is 10.00 mm. An arrow labeled P shows the tensile load measured by the load cell.</desc>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 240.022109 
+L 368.46 240.022109 
+L 368.46 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 68.3675 229.585859 
+L 209.4175 229.585859 
+L 209.4175 211.954609 
+L 68.3675 211.954609 
+z
+" clip-path="url(#p65f5368597)" style="fill: #d9d9d9; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 75.92375 211.954609 
+L 88.5175 211.954609 
+L 88.5175 20.529609 
+L 75.92375 20.529609 
+z
+" clip-path="url(#p65f5368597)" style="fill: #efefef; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 189.2675 211.954609 
+L 201.86125 211.954609 
+L 201.86125 20.529609 
+L 189.2675 20.529609 
+z
+" clip-path="url(#p65f5368597)" style="fill: #efefef; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 68.3675 20.529609 
+L 209.4175 20.529609 
+L 209.4175 9.195234 
+L 68.3675 9.195234 
+z
+" clip-path="url(#p65f5368597)" style="fill: #d9d9d9; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 68.3675 72.163984 
+L 209.4175 72.163984 
+L 209.4175 54.532734 
+L 68.3675 54.532734 
+z
+" clip-path="url(#p65f5368597)" style="fill: #cfe3f0; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 127.558125 86.017109 
+L 150.226875 86.017109 
+L 150.226875 72.163984 
+L 127.558125 72.163984 
+z
+" clip-path="url(#p65f5368597)" style="fill: #ffffff; stroke: #1a1a1a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 127.558125 109.945234 
+L 150.226875 109.945234 
+L 155.264375 86.017109 
+L 122.520625 86.017109 
+z
+" clip-path="url(#p65f5368597)" style="fill: url(#hd029445c33); stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 122.520625 198.101484 
+L 155.264375 198.101484 
+L 150.226875 174.173359 
+L 127.558125 174.173359 
+z
+" clip-path="url(#p65f5368597)" style="fill: url(#hd029445c33); stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 128.8175 211.954609 
+L 148.9675 211.954609 
+L 148.9675 198.101484 
+L 128.8175 198.101484 
+z
+" clip-path="url(#p65f5368597)" style="fill: #d9d9d9; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 133.35125 127.576484 
+L 144.43375 127.576484 
+L 144.43375 97.351484 
+L 133.35125 97.351484 
+z
+" clip-path="url(#p65f5368597)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 133.35125 184.248359 
+L 144.43375 184.248359 
+L 144.43375 152.763984 
+L 133.35125 152.763984 
+z
+" clip-path="url(#p65f5368597)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 135.618125 154.023359 
+L 142.166875 154.023359 
+L 142.166875 126.317109 
+L 135.618125 126.317109 
+z
+" clip-path="url(#p65f5368597)" style="fill: #e6e6e6; stroke: #1a1a1a; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 143.42625 151.000859 
+L 157.279375 151.000859 
+L 157.279375 129.339609 
+L 143.42625 129.339609 
+L 143.42625 151.000859 
+z
+" clip-path="url(#p65f5368597)" style="fill: none; stroke: #0072b2; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 142.166875 150.245234 
+L 143.93 150.245234 
+" clip-path="url(#p65f5368597)" style="fill: none; stroke: #0072b2; stroke-width: 2.2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_2">
+    <path d="M 142.166875 130.095234 
+L 143.93 130.095234 
+" clip-path="url(#p65f5368597)" style="fill: none; stroke: #0072b2; stroke-width: 2.2; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(229.5675 45.952656)">crosshead moves up</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(229.5675 54.659687)">at a set rate</text>
+   </g>
+   <g id="text_2">
+    <text style="font-style: italic; font-size: 10px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #d55e00" x="142.670625" y="43.282148" transform="rotate(-0 142.670625 43.282148)">P</text>
+   </g>
+   <g id="patch_15">
+    <path d="M 235.644004 80.312909 
+Q 193.935118 79.654539 152.226232 78.996169 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1a1a1a" x="239.6425" y="83.049922" transform="rotate(-0 239.6425 83.049922)">load cell: measures P</text>
+   </g>
+   <g id="patch_16">
+    <path d="M 235.641639 101.257334 
+Q 195.822352 99.966483 156.003065 98.675632 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1a1a1a" x="239.6425" y="104.459297" transform="rotate(-0 239.6425 104.459297)">upper wedge grip</text>
+   </g>
+   <g id="patch_17">
+    <path d="M 235.648171 133.730255 
+Q 197.461081 136.868291 159.273991 140.006326 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(239.6425 127.812031)">clip-on extensometer</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(239.6425 136.519062)">(gage length 50.0 mm)</text>
+   </g>
+   <g id="patch_18">
+    <path d="M 235.644758 157.437693 
+Q 189.905695 158.231914 144.166631 159.026135 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(239.6425 154.258906)">specimen, reduced section</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #1a1a1a" transform="translate(239.6425 162.965937)">d₀ = 10.00 mm</text>
+   </g>
+   <g id="patch_19">
+    <path d="M 235.640876 184.992589 
+Q 195.821961 185.858133 156.003046 186.723678 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1a1a1a" x="239.6425" y="186.318672" transform="rotate(-0 239.6425 186.318672)">lower wedge grip</text>
+   </g>
+   <g id="patch_20">
+    <path d="M 235.661232 217.360001 
+Q 223.530874 218.936277 211.400516 220.512552 
+" style="fill: none; stroke: #666666; stroke-width: 0.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1a1a1a" x="239.6425" y="216.543672" transform="rotate(-0 239.6425 216.543672)">fixed base</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #666666" transform="translate(45.40125 114.642891)">frame</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #666666" transform="translate(31.175 123.349922)">(columns,</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #666666" transform="translate(38.295 132.056953)">screws)</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #666666" transform="translate(259.33375 9.303828)">Universal testing machine</text>
+    <text style="font-size: 8px; font-family: 'Arial', 'Liberation Sans', 'Helvetica', 'DejaVu Sans', sans-serif; fill: #666666" transform="translate(261.783125 18.010859)">(schematic, not to scale)</text>
+   </g>
+   <g id="patch_21">
+    <path d="M 224.53 61.34492 
+Q 224.53 48.234916 224.53 36.913767 
+" clip-path="url(#p65f5368597)" style="fill: none; stroke: #d55e00; stroke-width: 1.6; stroke-linecap: round"/>
+    <path d="M 222.13 41.713767 
+L 224.53 36.913767 
+L 226.93 41.713767 
+z
+" clip-path="url(#p65f5368597)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 1.6; stroke-linecap: round"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 138.8925 48.757627 
+Q 138.8925 41.310979 138.8925 36.100398 
+" clip-path="url(#p65f5368597)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 136.4925 40.900398 
+L 138.8925 36.100398 
+L 141.2925 40.900398 
+z
+" clip-path="url(#p65f5368597)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p65f5368597">
+   <rect x="2.88" y="5.417109" width="362.7" height="231.725"/>
+  </clipPath>
+ </defs>
+ <defs>
+  <pattern id="hd029445c33" patternUnits="userSpaceOnUse" x="0" y="0" width="72" height="72">
+   <rect x="0" y="0" width="73" height="73" fill="#bfbfbf"/>
+   <path d="M -36 36 
+L 36 -36 
+M -33 39 
+L 39 -33 
+M -30 42 
+L 42 -30 
+M -27 45 
+L 45 -27 
+M -24 48 
+L 48 -24 
+M -21 51 
+L 51 -21 
+M -18 54 
+L 54 -18 
+M -15 57 
+L 57 -15 
+M -12 60 
+L 60 -12 
+M -9 63 
+L 63 -9 
+M -6 66 
+L 66 -6 
+M -3 69 
+L 69 -3 
+M 0 72 
+L 72 0 
+M 3 75 
+L 75 3 
+M 6 78 
+L 78 6 
+M 9 81 
+L 81 9 
+M 12 84 
+L 84 12 
+M 15 87 
+L 87 15 
+M 18 90 
+L 90 18 
+M 21 93 
+L 93 21 
+M 24 96 
+L 96 24 
+M 27 99 
+L 99 27 
+M 30 102 
+L 102 30 
+M 33 105 
+L 105 33 
+M 36 108 
+L 108 36 
+" style="fill: #1a1a1a; stroke: #1a1a1a; stroke-width: 1.0; stroke-linecap: butt; stroke-linejoin: miter"/>
+  </pattern>
+ </defs>
+</svg>

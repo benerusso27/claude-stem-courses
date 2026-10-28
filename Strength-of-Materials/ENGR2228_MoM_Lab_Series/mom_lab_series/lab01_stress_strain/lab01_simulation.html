@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tension Test Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ENGR 2228 Lab 1: virtual tension test. Closed-form stress-strain results compared with a numerical virtual specimen, with convergence study and model-failure experiments.">
+<style>
+/* SimCore styles — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   Layout concept: an instrument console — control rack on the left, live chart wall on the right;
+   one column on phones. Colors follow style_guide.md section 4 (Okabe-Ito semantic roles). */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel-2: #eef2f5;
+  --ink: #161b20;
+  --muted: #56616c;
+  --line: #d3dae1;
+  --grid: #e4e9ee;
+  --accent: #0072b2;
+  --accent-ink: #ffffff;
+  --theory: #0072b2;
+  --numeric: #d55e00;
+  --measured: #1a1a1a;
+  --third: #b8478f;
+  --fourth: #00845f;
+  --mutedline: #8c8c8c;
+  --fail: #e69f00;
+  --fail-ink: #8a5300;
+  --ok: #1d7a4b;
+  --ok-bg: #e3f3ea;
+  --warn-bg: #fff1d6;
+  --bad: #b3261e;
+  --bad-bg: #fbe4e2;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-num: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+    --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+    --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+    --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+    --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1418; --panel: #161c21; --panel-2: #1c242a; --ink: #e5eaef; --muted: #9ba7b2;
+  --line: #2b353e; --grid: #232c33; --accent: #56b4e9; --accent-ink: #06121a;
+  --theory: #56b4e9; --numeric: #e8743b; --measured: #e6e6e6; --third: #e08ac0; --fourth: #3cc59a;
+  --mutedline: #a6a6a6; --fail: #e69f00; --fail-ink: #f2c063; --ok: #6fd39c; --ok-bg: #133524;
+  --warn-bg: #3a2c0d; --bad: #ff8a80; --bad-bg: #3d1614; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui);
+  font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(1.25rem, 1.05rem + 1vw, 1.7rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 700; }
+h3 { font-size: 0.95rem; font-weight: 650; }
+p { margin: 0; }
+sub, sup { font-size: 0.72em; line-height: 0; }
+a { color: var(--accent); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+
+/* ---- header ---------------------------------------------------------------------------- */
+.top { max-width: 1440px; margin: 0 auto; padding-block: 18px 12px; display: grid; gap: 8px; }
+.top-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 16px; }
+.eyebrow { font-size: 0.75rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.signconv { font-size: 0.85rem; color: var(--muted); max-width: 95ch; }
+.signconv b { color: var(--ink); font-weight: 650; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 0.85rem; padding: 6px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+.seg button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ---- layout ---------------------------------------------------------------------------- */
+.console { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .console { grid-template-columns: minmax(0, 1fr); } }
+.rack { display: grid; gap: 12px; position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding-block: 4px 12px; }
+@media (max-width: 860px) { .rack { position: static; max-height: none; overflow: visible; } }
+.wall { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.panel-note { font-size: 0.85rem; color: var(--muted); max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- controls ---------------------------------------------------------------------------- */
+.group { display: grid; gap: 10px; }
+.group-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.ctl { display: grid; gap: 3px; }
+.ctl label { font-size: 0.85rem; display: flex; gap: 6px; align-items: baseline; }
+.ctl .sym { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 0.95rem; min-width: 2.2em; }
+.ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) 6.2em 3.6em; gap: 8px; align-items: center; }
+.ctl-row input[type="number"] {
+  width: 100%; font: inherit; font-family: var(--font-num); font-size: 0.85rem; padding: 3px 5px;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); color: var(--ink); text-align: right;
+}
+.ctl-row .unit { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.ctl .help { font-size: 0.78rem; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; min-height: 24px; }
+select { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--ink); width: 100%; }
+.btn {
+  font: inherit; font-size: 0.85rem; padding: 7px 12px; border-radius: var(--r); cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 650; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ---- status chips ------------------------------------------------------------------------ */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 650; padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.warn { color: var(--fail-ink); background: var(--warn-bg); }
+.chip.bad { color: var(--bad); background: var(--bad-bg); }
+.chip.info { color: var(--accent); background: var(--panel-2); }
+.chip.ok::before { border-radius: 2px; }
+.chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.chip.bad::before { clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); border-radius: 0; }
+
+/* ---- plots --------------------------------------------------------------------------------- */
+.plot { position: relative; width: 100%; min-width: 0; }
+.plot svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.plot .tip {
+  position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 7px; font-size: 0.78rem; font-family: var(--font-num); white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.12); z-index: 2;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 26px; height: 10px; flex: none; }
+.plot-caption { font-size: 0.8rem; color: var(--muted); }
+
+/* ---- readout table ------------------------------------------------------------------------- */
+.table-wrap { overflow-x: auto; }
+table.readout { width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 640px; }
+table.readout th, table.readout td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.readout th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+table.readout td.v { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+table.readout td.why { color: var(--muted); font-size: 0.8rem; min-width: 18em; }
+table.readout tr.break td { background: var(--warn-bg); }
+
+/* ---- cards ---------------------------------------------------------------------------------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: var(--r); padding: 12px; display: grid; gap: 6px; align-content: start; background: var(--panel); }
+.card .eq { font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; }
+.card .eq i { font-style: italic; }
+.card .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card p { font-size: 0.83rem; color: var(--muted); }
+.card .live { font-family: var(--font-num); font-size: 0.8rem; color: var(--ink); }
+
+/* ---- misc ----------------------------------------------------------------------------------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.stat { border-left: 3px solid var(--line); padding: 2px 8px; }
+.stat .k { font-size: 0.78rem; color: var(--muted); }
+.stat .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 0.98rem; }
+.export-panel textarea { width: 100%; min-height: 140px; font-family: var(--font-num); font-size: 0.75rem; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; }
+.error-box { border: 1px solid var(--bad); background: var(--bad-bg); color: var(--bad); padding: 8px 10px; border-radius: var(--r); font-size: 0.88rem; }
+details > summary { cursor: pointer; font-weight: 650; }
+.foot { max-width: 1440px; margin: 20px auto 0; font-size: 0.8rem; color: var(--muted); display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Lab 1 additions */
+.progress-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.stage { font-size: 0.85rem; }
+.specimen svg { width: 100%; height: auto; display: block; }
+.warnlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warnlist li { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.exp { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px; display: grid; gap: 6px; align-content: start; }
+.exp p { font-size: 0.82rem; color: var(--muted); }
+.ra { font-size: 0.78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">ENGR 2228 · Lab 1 · Beer 8e §1.2A, 2.1A–E, 2.12</div>
+      <h1>Tension test and the stress–strain diagram</h1>
+    </div>
+    <div id="units-toggle"></div>
+  </div>
+  <p class="signconv"><b>Sign convention (Beer 8e):</b> tension positive — <i>σ</i> = <i>P</i>/<i>A</i><sub>0</sub> and <i>ε</i> = <i>δ</i>/<i>L</i><sub>0</sub> are positive when the specimen is pulled and stretched. <b>Blue solid</b> = closed-form (textbook) result for a perfect, uniformly deforming bar; <b>vermillion dashed</b> = independent numerical solution (virtual specimen with a neck site); <b>open circles</b> = sample "measured" data.</p>
+</header>
+
+<main class="console">
+  <aside class="rack" aria-label="Simulation controls">
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="preset">Material preset</label>
+        <select id="preset">
+          <option value="steel">1018 hot-rolled steel (smooth fit)</option>
+          <option value="al">6061-T6 aluminum</option>
+          <option value="ss">304 stainless steel, annealed</option>
+          <option value="custom" disabled>Custom (edited)</option>
+        </select>
+        <div class="btn-row"><button class="btn" id="reset" type="button">Reset preset and specimen</button></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-material">
+        <div class="group-title">Material law</div>
+        <p class="help small muted">Swift hardening <i>σ</i><sub>t</sub> = <i>K</i>(<i>ε</i><sub>0</sub> + <i>ε</i><sub>p</sub>)<sup><i>n</i></sup>, with <i>ε</i><sub>0</sub> set so the curve is continuous at the elastic limit.</p>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-specimen"><div class="group-title">Specimen</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-machine"><div class="group-title">Testing machine</div></div>
+    </section>
+    <section class="panel">
+      <div class="group" id="g-solver">
+        <div class="group-title">Numerical solver</div>
+        <div><div class="small" style="margin-bottom:4px">Neck length set by</div><div id="neckmode"></div></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <label class="group-title" for="overlay">Compare with sample data</label>
+        <select id="overlay">
+          <option value="none">No sample data</option>
+          <option value="steel">1018 steel specimen (sample_data.csv)</option>
+          <option value="al">6061-T6 specimen (sample_data.csv)</option>
+        </select>
+        <label class="check"><input type="checkbox" id="showch" checked> Show strain from crosshead travel</label>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="group">
+        <div class="group-title">Export (CSV)</div>
+        <div class="btn-row">
+          <button class="btn primary" id="exp-curve" type="button">Curve data</button>
+          <button class="btn" id="exp-readout" type="button">Readout table</button>
+          <button class="btn" id="exp-conv" type="button">Convergence study</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <div class="wall">
+    <div id="errors" class="error-box" hidden></div>
+
+    <section class="panel" aria-labelledby="h-test">
+      <div class="panel-head"><h2 id="h-test">Virtual tension test</h2><span id="stage" class="chip info stage">elastic</span></div>
+      <div class="progress-row">
+        <button class="btn" id="play" type="button" aria-label="Play the test">Play</button>
+        <input type="range" id="progress" min="0" max="1000" value="620" aria-label="Test progress">
+        <span class="small muted num" id="progress-txt"></span>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div id="plot-main"></div>
+      <p class="plot-caption" id="cap-main"></p>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" aria-labelledby="h-zoom">
+        <div class="panel-head"><h2 id="h-zoom">Elastic region and 0.2 % offset yield</h2></div>
+        <div id="plot-zoom"></div>
+        <p class="plot-caption">The offset line has slope <i>E</i> and starts at <i>ε</i> = 0.2 %. Hooke's law (thin blue line) keeps rising after the elastic limit <i>σ</i><sub>e</sub>; the material does not.</p>
+      </section>
+      <section class="panel" aria-labelledby="h-true">
+        <div class="panel-head"><h2 id="h-true">True stress and the Considère construction</h2></div>
+        <div id="plot-true"></div>
+        <p class="plot-caption">Necking starts where the hardening rate d<i>σ</i><sub>t</sub>/d<i>ε</i><sub>t</sub> falls to the true stress <i>σ</i><sub>t</sub> (ring). After that, <i>σ</i>(1 + <i>ε</i>) from the gage no longer equals the stress in the neck.</p>
+      </section>
+    </div>
+
+    <section class="panel specimen" aria-labelledby="h-spec">
+      <div class="panel-head"><h2 id="h-spec">Specimen at the current point</h2><span class="small muted" id="spec-txt"></span></div>
+      <div id="spec-svg"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-readout">
+      <div class="panel-head"><h2 id="h-readout">Closed form vs. numerical solution</h2><span class="small muted">Closed form: perfect uniform bar. Numerical: virtual specimen marched step by step.</span></div>
+      <div class="table-wrap"><table class="readout" id="readout"></table></div>
+      <div class="stats" id="ductility"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-conv">
+      <div class="panel-head"><h2 id="h-conv">Convergence study</h2></div>
+      <div class="grid2">
+        <div><div id="plot-conv"></div><p class="plot-caption" id="cap-conv"></p></div>
+        <div><div id="plot-mesh"></div><p class="plot-caption" id="cap-mesh"></p></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-push">
+      <div class="panel-head"><h2 id="h-push">Push the model past its assumptions</h2></div>
+      <ul class="warnlist" id="warnings"></ul>
+      <div class="exp-grid" id="experiments"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-cards">
+      <div class="panel-head"><h2 id="h-cards">Where each formula comes from, and when it stops applying</h2><span class="small muted">Status is evaluated at the current test point.</span></div>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <details class="panel export-panel" id="export-panel" hidden>
+      <summary>Exported data: <span class="fname"></span></summary>
+      <p class="small muted">If your browser blocked the download, copy the data below and paste it into a spreadsheet or a .csv file.</p>
+      <div class="btn-row"><button class="btn copy" type="button">Copy CSV</button><span class="copy-msg small muted" aria-live="polite"></span></div>
+      <textarea readonly aria-label="CSV data"></textarea>
+    </details>
+  </div>
+</main>
+
+<footer class="foot">
+  <p>Model: Swift hardening, plastic flow at constant volume, a neck zone of length ℓ with a small area imperfection, equilibrium (same <i>P</i> on every section) and compatibility (elongations add). The closed forms assume a perfect bar that stays uniform. Formulas verified against independent numerical methods by <span class="num">tests/test_lab01_model.js</span> and <span class="num">tests/test_lab01_independent.py</span>; see <span class="num">tests/VERIFICATION.md</span>.</p>
+  <p>ENGR 2228 Mechanics of Materials Lab Series · Lab 1 · Works offline; no data leaves this page.</p>
+</footer>
+
+<script id="model">
+/* Lab 1 physics — pure functions, SI base units (N, m, Pa). Loaded unchanged by the Node tests. */
+const Lab1Model = (() => {
+  'use strict';
+  const PRESETS = {
+    steel: { E: 205e9, sigma_e: 280.7e6, K: 753.2e6, n: 0.1954, eps_f: 0.92 },
+    al:    { E: 68.9e9, sigma_e: 240.0e6, K: 397.9e6, n: 0.06126, eps_f: 0.54 },
+    ss:    { E: 193e9, sigma_e: 238.9e6, K: 1295e6, n: 0.4174, eps_f: 1.20 },
+  };
+  const SPECIMEN = { d0: 10e-3, L0: 50e-3, delta: 0.003, neckOverD: 0.6, Cm: 8e-9, steps: 400, N: 50, neckMode: 'physical' };
+  const GRADING = 2;     // zone plastic strain = eps_f * t^2: finer steps near first yield
+  const N_ELASTIC = 12;  // points on the (exactly linear) elastic branch
+
+  function derived(p) {
+    const A0 = Math.PI / 4 * p.d0 * p.d0;
+    const eps0 = Math.pow(p.sigma_e / p.K, 1 / p.n);
+    const Lc = 1.2 * p.L0;                                        // reduced-section length
+    const ell = p.neckMode === 'mesh' ? p.L0 / p.N : Math.min(p.neckOverD * p.d0, p.L0);
+    return { A0, eps0, Lc, ell };
+  }
+  function validate(p) {
+    const err = [];
+    if (!(p.K > p.sigma_e)) err.push('Strength coefficient K must exceed the elastic limit σe (otherwise ε0 ≥ 1 and the hardening law is meaningless).');
+    if (!(p.n > 0)) err.push('Hardening exponent n must be positive.');
+    if (!(p.E > 0 && p.d0 > 0 && p.L0 > 0 && p.eps_f > 0)) err.push('E, d0, L0 and the fracture strain must be positive.');
+    if (!(p.delta >= 0 && p.delta < 0.5)) err.push('Imperfection δ must be between 0 and 50 %.');
+    return err;
+  }
+  const flow = (p, d, ep) => p.K * Math.pow(d.eps0 + ep, p.n);
+  // hardening rate with respect to TOTAL true strain: H/(1 + H/E), H = d sigma/d eps_p
+  const hardRate = (p, d, ep) => { const H = p.n * p.K * Math.pow(d.eps0 + ep, p.n - 1); return H / (1 + H / p.E); };
+
+  /* Textbook closed forms for a perfect bar that deforms uniformly (handout Sec. 2). */
+  function closedForms(p) {
+    const d = derived(p);
+    const { eps0, A0, Lc, ell } = d;
+    const sigY = p.K * Math.pow(eps0 + 0.002, p.n);              // 0.2 % offset, small-strain form
+    const ep_u = Math.max(0, p.n - eps0);                        // Considere (rigid-plastic hardening rate)
+    const sig_t_u = p.K * Math.pow(eps0 + ep_u, p.n);
+    const et_u = ep_u + sig_t_u / p.E;
+    const sigU = sig_t_u * Math.exp(-et_u);                      // s = sigma_t / (1 + e)
+    const e_u = Math.expm1(et_u);
+    const uU = sig_t_u * sig_t_u / (2 * p.E) + p.K / (p.n + 1) * (Math.pow(eps0 + ep_u, p.n + 1) - Math.pow(eps0, p.n + 1));
+    const E_app = 1 / (1 / p.E + A0 * p.Cm / Lc);                // springs in series
+    const dEps_imp = (1 - ell / p.L0) * Math.sqrt(2 * p.n * p.delta);   // asymptotic, small delta
+    return { eps0, sigY, ep_u, sig_t_u, et_u, sigU, e_u, uU, E_app, dEps_imp, A0, Lc, ell,
+             breaksFirst: p.eps_f < ep_u, u_res: p.sigma_e * p.sigma_e / (2 * p.E) };
+  }
+
+  function goldenMax(f, a, b) {
+    const g = (Math.sqrt(5) - 1) / 2;
+    let c = b - g * (b - a), e = a + g * (b - a), fc = f(c), fe = f(e);
+    for (let i = 0; i < 200 && b - a > 1e-14; i++) {
+      if (fc > fe) { b = e; e = c; fe = fc; c = b - g * (b - a); fc = f(c); }
+      else { a = c; c = e; fc = fe; e = a + g * (b - a); fe = f(e); }
+    }
+    const x = (a + b) / 2;
+    return f(x) >= f(0) ? x : 0;
+  }
+  function bisect(f, a, b) {
+    let fa = f(a);
+    for (let i = 0; i < 200 && b - a > 1e-15; i++) {
+      const m = 0.5 * (a + b), fm = f(m);
+      if ((fm > 0) === (fa > 0)) { a = m; fa = fm; } else b = m;
+    }
+    return 0.5 * (a + b);
+  }
+  // elastic state at load P on area A with frozen plastic strain ep: sigma = P exp(ep + sigma/E) / A
+  function elasticStress(P, A, ep, E) {
+    const target = P * Math.exp(ep) / A;
+    let s = target;
+    for (let i = 0; i < 30; i++) {
+      const f = s * Math.exp(-s / E) - target, df = Math.exp(-s / E) * (1 - s / E);
+      const ds = f / df; s -= ds;
+      if (Math.abs(ds) < 1e-12 * Math.max(1, Math.abs(s))) break;
+    }
+    return s;
+  }
+
+  /* Numerical "virtual specimen": march the equilibrium path with the neck zone's plastic strain
+     as the driver. Same P on every section (equilibrium); area A = A_initial exp(-eps_t) (volume
+     constancy); elongations of the zone, the rest of the gage and the rest of the reduced section
+     add (compatibility); crosshead travel adds the machine compliance Cm * P. */
+  function simulate(p, M) {
+    const d = derived(p);
+    const { A0, Lc, ell } = d;
+    const A0z = A0 * (1 - p.delta);
+    const gR = (x) => { const s = flow(p, d, x); return s * A0 * Math.exp(-(x + s / p.E)); };
+    const xPk = goldenMax(gR, 0, 3);
+    const o = { P: [], e: [], s: [], ech: [], epz: [], epr: [], sz: [], sr: [], etz: [], etr: [], dz: [], dr: [] };
+    let epr = 0;
+    const push = (P, epz, sz, sr) => {
+      const etz = epz + sz / p.E, etr = epr + sr / p.E;
+      const dg = ell * Math.expm1(etz) + (p.L0 - ell) * Math.expm1(etr);
+      const dred = dg + (Lc - p.L0) * Math.expm1(etr);
+      o.P.push(P); o.e.push(dg / p.L0); o.s.push(P / A0); o.ech.push((dred + p.Cm * P) / Lc);
+      o.epz.push(epz); o.epr.push(epr); o.sz.push(sz); o.sr.push(sr); o.etz.push(etz); o.etr.push(etr);
+      o.dz.push(p.d0 * Math.sqrt(1 - p.delta) * Math.exp(-etz / 2)); o.dr.push(p.d0 * Math.exp(-etr / 2));
+    };
+    // elastic branch up to first yield of the zone (weakest section)
+    const Pz = p.sigma_e * A0z * Math.exp(-p.sigma_e / p.E);
+    for (let i = 0; i <= N_ELASTIC; i++) {
+      const P = Pz * i / N_ELASTIC;
+      push(P, 0, elasticStress(P, A0z, 0, p.E), elasticStress(P, A0, 0, p.E));
+    }
+    for (let k = 1; k <= M; k++) {
+      const epz = p.eps_f * Math.pow(k / M, GRADING);
+      const sz = flow(p, d, epz);
+      const P = sz * A0z * Math.exp(-(epz + sz / p.E));
+      let sr;
+      if (P > gR(epr) && epr < xPk) {                  // rest of the bar yields on its rising branch
+        epr = P >= gR(xPk) ? xPk : bisect((x) => gR(x) - P, epr, xPk);
+        sr = flow(p, d, epr);
+      } else {
+        sr = elasticStress(P, A0, epr, p.E);           // rest unloads (or loads) elastically
+      }
+      push(P, epz, sz, sr);
+    }
+    o.ell = ell; o.A0 = A0; o.Lc = Lc;
+    return o;
+  }
+
+  function linSlope(x, y) {
+    const n = x.length; let mx = 0, my = 0;
+    for (let i = 0; i < n; i++) { mx += x[i]; my += y[i]; }
+    mx /= n; my /= n; let sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; }
+    return sxy / sxx;
+  }
+
+  /* Extract the textbook quantities from the numerical path exactly the way students do from data. */
+  function extract(o, p) {
+    const n = o.P.length;
+    const win = [], we = [], wc = [];
+    for (let i = 0; i <= N_ELASTIC; i++) if (o.s[i] >= 0.15 * p.sigma_e && o.s[i] <= 0.6 * p.sigma_e) { win.push(o.s[i]); we.push(o.e[i]); wc.push(o.ech[i]); }
+    const E_num = linSlope(we, win), E_app_num = linSlope(wc, win);
+    // 0.2 % offset with the textbook modulus E
+    let sigY = NaN, eY = NaN;
+    for (let i = 1; i < n; i++) {
+      const f0 = o.s[i - 1] - p.E * (o.e[i - 1] - 0.002), f1 = o.s[i] - p.E * (o.e[i] - 0.002);
+      if (f0 > 0 && f1 <= 0) { const t = f0 / (f0 - f1); sigY = o.s[i - 1] + t * (o.s[i] - o.s[i - 1]); eY = o.e[i - 1] + t * (o.e[i] - o.e[i - 1]); break; }
+    }
+    let imax = 0; for (let i = 1; i < n; i++) if (o.s[i] > o.s[imax]) imax = i;
+    let uU = 0; for (let i = 1; i <= imax; i++) uU += 0.5 * (o.s[i] + o.s[i - 1]) * (o.e[i] - o.e[i - 1]);
+    const L = n - 1;
+    const Lf = o.ell * Math.exp(o.epz[L]) + (p.L0 - o.ell) * Math.exp(o.epr[L]);   // marks after unloading
+    return {
+      E_num, E_app_num, sigY, eY, imax, sigU: o.s[imax], e_u: o.e[imax], ech_u: o.ech[imax], uU,
+      iF: L, s_f: o.s[L], e_f: o.e[L], ech_f: o.ech[L], sig_t_formula_f: o.s[L] * (1 + o.e[L]), eps_t_formula_f: Math.log1p(o.e[L]),
+      sig_neck_f: o.sz[L], eps_neck_f: o.etz[L], EL: Lf / p.L0 - 1, RA: 1 - (1 - p.delta) * Math.exp(-o.etz[L]),
+      fracBeforeNeck: imax === L,
+    };
+  }
+
+  /* Step-size study: error relative to a fine reference run (M = 8192). Step counts are deliberately
+     NOT nested (10, 15, 23, ...): with nested grids the sample nearest the maximum can be the same point
+     for several M and the error stalls. Energy is integrated to a FIXED strain eps* = 0.75 e_u so the
+     endpoint does not move with the grid. */
+  function energyTo(o, eStar) {
+    let u = 0;
+    for (let i = 1; i < o.e.length; i++) {
+      if (o.e[i] <= eStar) { u += 0.5 * (o.s[i] + o.s[i - 1]) * (o.e[i] - o.e[i - 1]); continue; }
+      const t = (eStar - o.e[i - 1]) / (o.e[i] - o.e[i - 1]), sStar = o.s[i - 1] + t * (o.s[i] - o.s[i - 1]);
+      u += 0.5 * (sStar + o.s[i - 1]) * (eStar - o.e[i - 1]);
+      break;
+    }
+    return u;
+  }
+  function convergence(p, Ms = [10, 15, 23, 35, 53, 80, 120, 180, 270, 405, 610], Mref = 8192) {
+    const refPath = simulate(p, Mref), ref = extract(refPath, p);
+    const eStar = 0.75 * Math.min(ref.e_u, ref.e_f);
+    ref.uStar = energyTo(refPath, eStar);
+    const rows = Ms.map((M) => {
+      const o = simulate(p, M), x = extract(o, p), uStar = energyTo(o, eStar);
+      return { M, h: 1 / M, sigU: x.sigU, sigY: x.sigY, uStar,
+               errU: Math.abs(x.sigU - ref.sigU) / ref.sigU, errY: Math.abs(x.sigY - ref.sigY) / ref.sigY, errW: Math.abs(uStar - ref.uStar) / ref.uStar };
+    });
+    const slope = (key) => logSlope(rows.map((r) => r.h), rows.map((r) => r[key]));
+    return { rows, ref, eStar, slopeU: slope('errU'), slopeY: slope('errY'), slopeW: slope('errW') };
+  }
+  function logSlope(xs, ys) {
+    const X = [], Y = [];
+    xs.forEach((x, i) => { if (ys[i] > 1e-14) { X.push(Math.log(x)); Y.push(Math.log(ys[i])); } });
+    return X.length >= 2 ? linSlope(X, Y) : NaN;
+  }
+
+  /* Mesh study: elongation after fracture when the neck length is set by the mesh (L0/N) vs physically. */
+  function meshStudy(p, Ns = [2, 3, 5, 8, 12, 20, 32, 50, 80, 128, 200], M = 240) {
+    return Ns.map((N) => {
+      const mesh = extract(simulate(Object.assign({}, p, { neckMode: 'mesh', N }), M), p);
+      return { N, ELmesh: mesh.EL };
+    });
+  }
+
+  /* Closed-form curves for plotting: perfect uniform bar, and the Considere construction. */
+  function uniformCurve(p, epMax, npts = 300) {
+    const d = derived(p);
+    const e = [], s = [], et = [], st = [];
+    const nEl = 20;
+    for (let i = 0; i <= nEl; i++) { const sg = p.sigma_e * i / nEl; const t = sg / p.E; et.push(t); st.push(sg); e.push(Math.expm1(t)); s.push(sg * Math.exp(-t)); }
+    for (let k = 1; k <= npts; k++) {
+      const ep = epMax * Math.pow(k / npts, 2), sg = flow(p, d, ep), t = ep + sg / p.E;
+      et.push(t); st.push(sg); e.push(Math.expm1(t)); s.push(sg * Math.exp(-t));
+    }
+    return { e, s, et, st };
+  }
+  function considereCurves(p, epMax, npts = 240) {
+    const d = derived(p);
+    const et = [], st = [], h = [];
+    for (let k = 1; k <= npts; k++) {
+      const ep = epMax * Math.pow(k / npts, 1.6), sg = flow(p, d, ep);
+      et.push(ep + sg / p.E); st.push(sg); h.push(hardRate(p, d, ep));
+    }
+    return { et, st, h };
+  }
+
+  return { PRESETS, SPECIMEN, derived, validate, flow, hardRate, closedForms, simulate, extract, convergence, energyTo, meshStudy,
+           uniformCurve, considereCurves, elasticStress, logSlope, N_ELASTIC };
+})();
+if (typeof module !== 'undefined') module.exports = Lab1Model;
+</script>
+
+<script id="sample-data" type="application/json">{"steel":{"A0_mm2":78.618,"ext":[[0.0,-0.11],[8e-06,0.53],[0.0,1.08],[4e-06,1.64],[1.2e-05,2.16],[1.6e-05,2.54],[1.6e-05,3.38],[2e-05,3.87],[2.6e-05,4.68],[3e-05,5.25],[2.6e-05,6.17],[3.6e-05,7.16],[4e-05,8.0],[4.4e-05,9.18],[5e-05,10.32],[5.6e-05,11.75],[6.4e-05,13.13],[7e-05,14.93],[8e-05,16.82],[9.2e-05,18.99],[0.000106,21.39],[0.000116,24.09],[0.000128,27.09],[0.000146,29.9],[0.000158,33.3],[0.000182,36.52],[0.000198,40.11],[0.000214,43.65],[0.000232,47.16],[0.000246,50.62],[0.000262,54.38],[0.00028,57.8],[0.000298,61.41],[0.000318,65.18],[0.000338,68.75],[0.00035,72.32],[0.000376,75.77],[0.000388,79.77],[0.000404,83.08],[0.000424,86.79],[0.00044,90.42],[0.000456,94.07],[0.000476,97.62],[0.000492,101.17],[0.000512,104.85],[0.000528,108.51],[0.000544,112.01],[0.000564,115.65],[0.000582,119.26],[0.000596,123.02],[0.00062,126.59],[0.000634,130.33],[0.000656,133.93],[0.000672,137.47],[0.000692,141.32],[0.000704,144.51],[0.000722,148.16],[0.000738,151.81],[0.000758,155.41],[0.000774,159.17],[0.000796,162.8],[0.000808,166.39],[0.000826,169.93],[0.000846,173.71],[0.000864,177.25],[0.000884,180.66],[0.000902,184.58],[0.000918,187.92],[0.000938,191.79],[0.000956,195.16],[0.00097,198.58],[0.000986,202.5],[0.00101,206.15],[0.001022,209.81],[0.001042,213.46],[0.001058,216.81],[0.001076,220.6],[0.001092,224.27],[0.001114,227.72],[0.001132,231.43],[0.001142,234.88],[0.001166,238.72],[0.00118,242.42],[0.001198,246.01],[0.001218,249.69],[0.001238,253.32],[0.001252,256.76],[0.001268,260.24],[0.001288,264.2],[0.001306,267.35],[0.001326,271.13],[0.001344,274.55],[0.001358,278.45],[0.001374,281.98],[0.001398,285.53],[0.001412,289.27],[0.001426,292.93],[0.00145,296.75],[0.001472,300.57],[0.00148,303.9],[0.001504,307.15],[0.001518,310.89],[0.001536,314.4],[0.001556,318.3],[0.001572,321.5],[0.0017,315.21],[0.001828,307.4],[0.001954,300.72],[0.002066,295.02],[0.002118,295.26],[0.002176,295.47],[0.002228,294.92],[0.002284,295.73],[0.00234,295.86],[0.002398,295.96],[0.002452,296.33],[0.002508,295.01],[0.002566,294.98],[0.002622,295.19],[0.002676,295.5],[0.002732,295.95],[0.002788,296.43],[0.002838,296.27],[0.002896,296.2],[0.002952,296.19],[0.003008,295.83],[0.003064,296.1],[0.003118,296.76],[0.003178,296.9],[0.00323,297.17],[0.00328,297.21],[0.00334,296.89],[0.003396,295.96],[0.003452,296.13],[0.003508,295.58],[0.003562,295.31],[0.003616,295.4],[0.003674,295.55],[0.003732,296.61],[0.003784,296.22],[0.003844,296.44],[0.003892,296.11],[0.003952,295.44],[0.004004,295.82],[0.004064,295.83],[0.00412,296.06],[0.004176,296.24],[0.004232,296.67],[0.004288,296.11],[0.004342,295.69],[0.004396,295.97],[0.004452,295.92],[0.00451,295.87],[0.004566,295.89],[0.00462,295.86],[0.004676,295.77],[0.004734,296.06],[0.004788,295.66],[0.00484,295.85],[0.004892,295.86],[0.004952,295.21],[0.00501,295.61],[0.005066,295.21],[0.005112,295.41],[0.005174,296.22],[0.005228,296.53],[0.005284,296.74],[0.005336,297.32],[0.005394,296.76],[0.005448,296.99],[0.00551,297.23],[0.005566,296.28],[0.005622,296.51],[0.005678,296.16],[0.00573,296.13],[0.005784,296.69],[0.00584,296.43],[0.005896,296.1],[0.005954,296.52],[0.006068,295.72],[0.006228,295.92],[0.006396,295.68],[0.006566,296.62],[0.006728,296.41],[0.006896,296.15],[0.007066,297.3],[0.007228,297.31],[0.007396,295.22],[0.007562,295.76],[0.007728,294.57],[0.007902,295.81],[0.008068,295.72],[0.008228,296.25],[0.008398,297.04],[0.008562,295.4],[0.00873,295.45],[0.008898,295.96],[0.00906,296.06],[0.009232,295.87],[0.0094,295.22],[0.009566,295.52],[0.009732,296.14],[0.0099,295.92],[0.010062,296.67],[0.010226,295.94],[0.010398,295.92],[0.01056,296.8],[0.010726,296.9],[0.010896,296.78],[0.011066,296.41],[0.011232,296.53],[0.011394,296.16],[0.011564,296.99],[0.011734,297.39],[0.011896,297.04],[0.012062,297.08],[0.01223,296.11],[0.0124,295.16],[0.012566,294.79],[0.01273,296.09],[0.012898,296.55],[0.013066,295.63],[0.01323,295.89],[0.013398,295.54],[0.013564,296.57],[0.013728,295.25],[0.013896,296.27],[0.014066,296.94],[0.014228,296.19],[0.014398,296.25],[0.01456,296.9],[0.014732,295.8],[0.014896,296.14],[0.01506,294.94],[0.015228,295.53],[0.015398,295.72],[0.015564,297.11],[0.015734,297.5],[0.015896,295.63],[0.016062,296.67],[0.016228,296.57],[0.016396,296.69],[0.016566,297.02],[0.016728,296.14],[0.016896,296.06],[0.017066,296.85],[0.017226,296.41],[0.017398,296.29],[0.017562,294.68],[0.017732,296.39],[0.017898,296.64],[0.018062,296.94],[0.018232,296.41],[0.018398,295.87],[0.018566,295.4],[0.01872,297.26],[0.018882,298.48],[0.019032,299.12],[0.019184,300.13],[0.019346,301.49],[0.0195,302.31],[0.019658,303.12],[0.019816,303.81],[0.019974,305.12],[0.020132,306.07],[0.020288,306.56],[0.020446,307.82],[0.020608,308.45],[0.020764,309.53],[0.020918,310.16],[0.02108,310.65],[0.021236,311.78],[0.021392,312.7],[0.021552,313.41],[0.021714,314.23],[0.021868,314.86],[0.02203,315.87],[0.022182,316.53],[0.022346,316.97],[0.022504,317.99],[0.022662,318.98],[0.022822,319.7],[0.02298,319.84],[0.02314,320.76],[0.0233,321.59],[0.023454,322.51],[0.023616,322.98],[0.02378,323.66],[0.023936,324.24],[0.024098,325.08],[0.024254,325.87],[0.02442,326.67],[0.024576,327.11],[0.024736,327.84],[0.024892,328.18],[0.025056,328.97],[0.025218,329.44],[0.025374,330.51],[0.025532,330.95],[0.025698,331.4],[0.025854,332.54],[0.026018,332.48],[0.026174,333.41],[0.02634,334.08],[0.026498,334.46],[0.026662,334.77],[0.026824,335.21],[0.026986,336.23],[0.02714,336.61],[0.027304,337.29],[0.027464,338.0],[0.027628,338.27],[0.027786,338.94],[0.027942,339.37],[0.028108,340.06],[0.028268,340.53],[0.02843,341.12],[0.02859,341.38],[0.028752,342.11],[0.028916,342.67],[0.029076,343.38],[0.02924,343.8],[0.029398,344.47],[0.029562,344.83],[0.029722,344.87],[0.029888,345.76],[0.030044,346.19],[0.030206,346.8],[0.030372,347.04],[0.03053,347.79],[0.03069,348.24],[0.030852,348.43],[0.031016,349.36],[0.031174,349.57],[0.031342,350.13],[0.0315,350.39],[0.03166,350.97],[0.031828,351.69],[0.031988,351.7],[0.032148,352.3],[0.032314,352.27],[0.032474,352.92],[0.03264,353.3],[0.032798,354.01],[0.032958,354.34],[0.03312,354.73],[0.033286,355.37],[0.033444,355.91],[0.03361,356.01],[0.03377,356.91],[0.033934,356.96],[0.034094,357.45],[0.034258,357.87],[0.03442,358.14],[0.034582,358.69],[0.034744,358.89],[0.03491,359.45],[0.03507,359.97],[0.035238,360.07],[0.035394,361.07],[0.035562,360.51],[0.035726,361.29],[0.035882,361.75],[0.036052,362.22],[0.036214,362.57],[0.036372,363.04],[0.036534,363.15],[0.0367,363.63],[0.03686,363.91],[0.037026,364.52],[0.037184,364.51],[0.03735,365.18],[0.037516,365.79],[0.037678,365.97],[0.037838,365.92],[0.038004,366.44],[0.038166,366.56],[0.038328,367.41],[0.03849,367.55],[0.038654,367.9],[0.038818,368.49],[0.03898,368.78],[0.039144,369.1],[0.03931,369.19],[0.039472,369.72],[0.039634,369.9],[0.039796,370.12],[0.039958,370.6]],"ch":[[0.0,-0.11],[0.00022,2.16],[0.00045,4.68],[0.00067,8.0],[0.0009,13.13],[0.00112,21.39],[0.00133,33.3],[0.00155,47.16],[0.00178,61.41],[0.002,75.77],[0.00222,90.42],[0.00245,104.85],[0.00265,119.26],[0.0029,133.93],[0.00312,148.16],[0.00333,162.8],[0.00355,177.25],[0.00378,191.79],[0.004,206.15],[0.00422,220.6],[0.00443,234.88],[0.00465,249.69],[0.0049,264.2],[0.00512,278.45],[0.00533,292.93],[0.00555,307.15],[0.00577,321.5],[0.006,295.02],[0.00622,295.73],[0.00643,295.01],[0.00665,295.95],[0.00688,296.19],[0.00712,296.9],[0.00733,295.96],[0.00755,295.4],[0.00777,296.44],[0.008,295.83],[0.00823,296.11],[0.00843,295.87],[0.00867,296.06],[0.0089,295.21],[0.00912,296.22],[0.00933,296.76],[0.00955,296.51],[0.00978,296.43],[0.01,295.72],[0.01023,296.37],[0.01043,295.94],[0.01068,296.41],[0.01088,296.56],[0.01112,297.28],[0.01133,295.22],[0.01155,295.83],[0.01178,295.68],[0.012,295.72],[0.01223,296.6],[0.01247,295.78],[0.01267,295.45],[0.01288,296.56],[0.01312,295.71],[0.01333,295.22],[0.01357,296.04],[0.01378,296.33],[0.01402,296.67],[0.01422,295.11],[0.01447,296.23],[0.01467,296.9],[0.0149,296.23],[0.01512,296.43],[0.01535,296.16],[0.01557,296.36],[0.01578,297.07],[0.016,297.08],[0.01623,296.29],[0.01643,294.14],[0.01667,296.09],[0.01688,297.03],[0.01712,295.21],[0.01733,295.54],[0.01755,296.23],[0.01777,296.15],[0.018,296.94],[0.01822,295.68],[0.01843,297.12],[0.01865,295.8],[0.01888,296.37],[0.01912,295.67],[0.01933,295.72],[0.01955,297.09],[0.01977,296.15],[0.02,296.67],[0.02023,296.42],[0.02045,296.53],[0.02067,296.14],[0.02088,296.75],[0.0211,296.6],[0.02133,296.29],[0.02155,294.7],[0.02178,296.6],[0.022,296.94],[0.02222,296.14],[0.02245,295.86],[0.02267,297.26],[0.0229,298.48],[0.02312,299.98],[0.02333,301.49],[0.02355,302.46],[0.02377,303.71],[0.024,305.12],[0.02422,306.18],[0.02443,307.27],[0.02465,308.45],[0.0249,309.72],[0.02512,310.93],[0.02533,311.78],[0.02555,312.74],[0.02577,313.91],[0.02598,314.86],[0.02623,316.07],[0.02643,317.11],[0.02667,317.99],[0.0269,319.39],[0.02712,319.91],[0.02733,320.76],[0.02757,321.79],[0.02778,322.84],[0.028,323.66],[0.02823,324.56],[0.02845,325.56],[0.02867,326.67],[0.0289,327.48],[0.0291,328.14],[0.02933,328.97],[0.02957,329.78],[0.02978,331.19],[0.03002,331.4],[0.03022,332.4],[0.03045,332.96],[0.03067,334.08],[0.03088,334.71],[0.0311,335.42],[0.03133,336.23],[0.03155,337.0],[0.03178,338.11],[0.032,338.27],[0.03222,339.07],[0.03245,339.84],[0.03267,340.53],[0.03288,341.6],[0.0331,342.15],[0.03335,342.67],[0.03357,343.13],[0.03378,344.31],[0.034,344.83],[0.03422,345.3],[0.03445,346.0],[0.03467,346.8],[0.03488,347.21],[0.03512,347.91],[0.03535,348.43],[0.03557,349.05],[0.03578,349.75],[0.036,350.39],[0.03622,350.94],[0.03645,351.94],[0.03667,352.3],[0.03688,352.92],[0.03712,353.26],[0.03733,354.01],[0.03755,354.47],[0.03777,355.21],[0.038,355.91],[0.03823,356.19],[0.03843,357.04],[0.03867,357.45],[0.0389,358.06],[0.03912,358.67],[0.03933,358.89],[0.03957,359.33],[0.03978,360.4],[0.03998,361.07],[0.0402,361.09],[0.04043,361.58],[0.04068,362.22],[0.04088,362.35],[0.0411,362.93],[0.04133,363.63],[0.04155,364.16],[0.04178,364.63],[0.042,365.18],[0.04223,365.3],[0.04245,365.83],[0.04265,366.44],[0.04288,367.05],[0.04312,367.8],[0.04333,367.9],[0.04355,368.43],[0.04378,368.67],[0.044,369.19],[0.04423,369.49],[0.04443,370.5],[0.04467,370.6],[0.0456,372.33],[0.04672,374.19],[0.04783,376.34],[0.04893,378.38],[0.05005,380.32],[0.05115,382.15],[0.05227,383.36],[0.05338,385.76],[0.0545,387.63],[0.05562,389.11],[0.05672,390.65],[0.05782,391.64],[0.05895,393.27],[0.06005,394.86],[0.06115,396.14],[0.06227,397.5],[0.0634,399.09],[0.0645,400.49],[0.0656,401.66],[0.06672,402.84],[0.06782,403.7],[0.06893,405.1],[0.07005,406.51],[0.07117,407.44],[0.07228,408.17],[0.07338,409.34],[0.07448,410.3],[0.0756,411.35],[0.07672,412.27],[0.07783,413.38],[0.07893,414.67],[0.08005,415.51],[0.08117,415.72],[0.08225,417.07],[0.08338,417.54],[0.0845,418.67],[0.0856,419.43],[0.08672,420.5],[0.08782,421.06],[0.08893,421.92],[0.09005,422.6],[0.09117,423.23],[0.09227,424.06],[0.0934,424.51],[0.0945,425.12],[0.0956,426.27],[0.09672,426.39],[0.09783,427.11],[0.09893,427.79],[0.10005,428.56],[0.10115,429.02],[0.10228,429.73],[0.10338,430.2],[0.1045,430.66],[0.10562,431.64],[0.10672,431.64],[0.10783,432.29],[0.10893,433.0],[0.11007,433.75],[0.11117,433.87],[0.11227,434.94],[0.11338,434.97],[0.1145,435.43],[0.1156,435.92],[0.11672,436.25],[0.11783,436.6],[0.11893,436.96],[0.12003,437.49],[0.12117,438.07],[0.12227,438.26],[0.12338,438.5],[0.1245,439.35],[0.1256,439.34],[0.12672,440.02],[0.12782,440.3],[0.12893,440.74],[0.13005,440.95],[0.13117,441.33],[0.13228,441.35],[0.13338,441.63],[0.1345,442.3],[0.1356,442.75],[0.13672,442.61],[0.13783,443.18],[0.13893,443.59],[0.14005,443.88],[0.14117,444.06],[0.14227,444.06],[0.14338,444.67],[0.1445,445.1],[0.1456,445.23],[0.14672,445.39],[0.14783,445.4],[0.14893,445.53],[0.15005,445.7],[0.15115,446.38],[0.15228,446.61],[0.15338,446.64],[0.15448,446.78],[0.1556,446.98],[0.15672,447.5],[0.15782,447.52],[0.15893,447.95],[0.16005,447.92],[0.16117,448.06],[0.16227,448.27],[0.16338,448.33],[0.1645,448.52],[0.16562,448.76],[0.1667,449.02],[0.16783,449.28],[0.16893,449.12],[0.17005,449.17],[0.17117,449.67],[0.17227,449.44],[0.17338,449.84],[0.1745,449.98],[0.1756,450.21],[0.17673,450.24],[0.17783,450.61],[0.17893,450.71],[0.18007,450.16],[0.18115,451.17],[0.18228,450.54],[0.18338,451.33],[0.18448,451.04],[0.18562,451.05],[0.18672,451.41],[0.18782,451.33],[0.18893,451.5],[0.19005,451.89],[0.19115,451.85],[0.19228,451.69],[0.19338,451.74],[0.1945,451.56],[0.19562,452.26],[0.19672,451.64],[0.19783,450.89],[0.19895,450.24],[0.20005,449.92],[0.20117,448.92],[0.20228,448.06],[0.20338,446.92],[0.20448,446.41],[0.2056,444.92],[0.20672,443.99],[0.20783,442.49],[0.20893,441.37],[0.21005,439.64],[0.21117,438.27],[0.21227,437.04],[0.21338,435.39],[0.21448,433.68],[0.2156,432.56],[0.21672,431.24],[0.21783,429.57],[0.21893,427.92],[0.22003,425.83],[0.22117,423.97],[0.22228,422.62],[0.22338,420.96],[0.2245,419.61],[0.2256,417.35],[0.22672,415.87],[0.22782,414.14],[0.22893,412.33],[0.23005,411.13],[0.23117,408.68],[0.23225,407.44],[0.23338,405.67],[0.2345,404.13],[0.2356,402.32],[0.23672,400.56],[0.23783,399.26],[0.23893,397.62],[0.24003,395.47],[0.24117,394.07],[0.24227,392.13],[0.24338,390.62],[0.24448,388.65],[0.2456,387.38],[0.24672,385.46],[0.24783,384.06],[0.24895,382.35],[0.25005,380.98],[0.25117,379.12],[0.25227,377.49],[0.25337,376.15],[0.25448,374.82],[0.2556,372.64],[0.25672,371.43],[0.25783,369.86],[0.25893,368.45],[0.26005,366.45],[0.26117,365.45],[0.26227,363.34],[0.26338,361.8],[0.2645,360.58],[0.2656,358.77],[0.26672,357.49],[0.26782,356.02],[0.26893,354.9],[0.27005,353.39],[0.27115,351.93],[0.27227,350.52],[0.27338,348.93],[0.2745,347.72],[0.2756,346.17],[0.27672,344.79],[0.27783,343.43],[0.27893,342.29],[0.28003,340.73],[0.28117,339.18],[0.28227,337.66],[0.28338,336.93],[0.2845,335.37],[0.28562,334.29],[0.28672,332.49],[0.28783,331.18],[0.28893,330.01],[0.29005,328.83],[0.29117,327.6],[0.29228,326.23],[0.29338,325.03],[0.29448,323.54],[0.29562,322.74],[0.29672,321.13],[0.29782,320.0],[0.29893,319.07],[0.30005,317.97],[0.30117,316.21],[0.30227,315.09],[0.30338,313.79],[0.30448,313.17],[0.3056,311.73],[0.30672,310.61],[0.30783,309.25],[0.30893,308.44],[0.31005,307.31],[0.31115,306.2],[0.31227,305.09],[0.31338,303.73],[0.3145,302.66],[0.3156,301.66],[0.31672,300.5],[0.31783,299.57],[0.31895,298.29],[0.32005,-0.03],[0.32115,-0.08]]},"al":{"A0_mm2":78.461,"ext":[[-6e-06,0.1],[2e-06,0.42],[8e-06,0.89],[2.4e-05,1.26],[2.8e-05,1.82],[3.6e-05,2.29],[4.4e-05,2.84],[5.2e-05,3.35],[5.8e-05,3.96],[6.8e-05,4.72],[8.2e-05,5.19],[9e-05,6.22],[9.6e-05,6.98],[0.000112,7.72],[0.000124,8.56],[0.000136,9.57],[0.000154,10.77],[0.00017,11.62],[0.000184,12.83],[0.000206,14.13],[0.000228,15.59],[0.000242,16.91],[0.00027,18.54],[0.000294,20.32],[0.000318,21.88],[0.000346,23.86],[0.00037,25.46],[0.000396,27.54],[0.00043,29.56],[0.000458,31.53],[0.00049,33.91],[0.00052,35.95],[0.000556,38.11],[0.000584,40.19],[0.000618,42.42],[0.000648,44.56],[0.000678,46.76],[0.000712,48.94],[0.000744,51.2],[0.000772,53.31],[0.000808,55.58],[0.000842,57.85],[0.00087,59.98],[0.000904,62.26],[0.000938,64.49],[0.000968,66.61],[0.001,68.9],[0.001028,71.11],[0.001066,73.46],[0.001098,75.55],[0.001132,77.89],[0.001166,80.14],[0.001198,82.13],[0.001226,84.56],[0.001256,86.82],[0.00129,89.09],[0.001322,91.11],[0.00136,93.4],[0.001392,95.63],[0.001422,97.84],[0.001458,100.05],[0.001488,102.32],[0.00152,104.52],[0.001548,106.68],[0.001582,109.09],[0.001616,111.11],[0.001648,113.44],[0.00168,115.57],[0.001712,117.71],[0.001744,120.07],[0.00178,122.48],[0.00181,124.58],[0.001836,126.76],[0.001872,128.88],[0.001908,131.07],[0.001938,133.28],[0.001968,135.61],[0.002,137.74],[0.002036,140.22],[0.002068,142.43],[0.002098,144.45],[0.002136,146.86],[0.00216,148.89],[0.002196,151.26],[0.002228,153.27],[0.002264,155.61],[0.002296,157.95],[0.002326,160.0],[0.002358,162.07],[0.002394,164.54],[0.002424,166.87],[0.00246,169.0],[0.002486,171.24],[0.002518,173.35],[0.002552,175.56],[0.002586,177.62],[0.002618,179.96],[0.002648,182.08],[0.002684,184.59],[0.002714,186.49],[0.002748,188.77],[0.002778,190.95],[0.002812,193.09],[0.00285,195.41],[0.002874,197.32],[0.002912,199.63],[0.002942,201.55],[0.002976,203.91],[0.003014,205.94],[0.003046,208.2],[0.00308,210.08],[0.003114,212.14],[0.003144,214.59],[0.00318,216.62],[0.003214,218.4],[0.003248,220.08],[0.003286,222.35],[0.003322,224.03],[0.00336,225.86],[0.003396,227.72],[0.003434,229.36],[0.00347,231.3],[0.003508,232.74],[0.003548,234.26],[0.00359,235.95],[0.003628,237.23],[0.003672,238.83],[0.003706,240.11],[0.003748,241.52],[0.003792,242.73],[0.003834,244.16],[0.003878,245.43],[0.00392,246.44],[0.003964,247.75],[0.004014,248.59],[0.004056,249.56],[0.0041,250.66],[0.004148,252.02],[0.004194,252.7],[0.004238,253.64],[0.004288,254.43],[0.004326,255.39],[0.004374,256.2],[0.004426,256.92],[0.004468,257.69],[0.00452,258.43],[0.004568,258.9],[0.004616,259.85],[0.004664,260.84],[0.004714,261.21],[0.004762,261.77],[0.00481,262.35],[0.004866,263.01],[0.004908,263.39],[0.004962,264.35],[0.00501,265.16],[0.00506,265.2],[0.005112,265.8],[0.005156,266.37],[0.005206,267.1],[0.005262,267.53],[0.005314,267.86],[0.005362,268.14],[0.005412,268.79],[0.005462,269.39],[0.005514,269.62],[0.005566,270.09],[0.005616,270.58],[0.005666,271.05],[0.005714,271.54],[0.005768,271.69],[0.00582,271.99],[0.005872,272.47],[0.005926,273.03],[0.005974,273.66],[0.006132,274.16],[0.006286,275.26],[0.006446,276.23],[0.0066,276.81],[0.006762,278.19],[0.00692,278.94],[0.007078,279.35],[0.00724,280.34],[0.007396,280.79],[0.007556,281.81],[0.007716,282.66],[0.007878,283.39],[0.008036,283.68],[0.008198,284.56],[0.00836,284.97],[0.008518,285.29],[0.008684,286.09],[0.00884,286.54],[0.009002,286.85],[0.009166,287.56],[0.009328,287.59],[0.00949,288.3],[0.009654,288.8],[0.009814,289.24],[0.009976,289.75],[0.01014,290.46],[0.010302,290.28],[0.010466,290.98],[0.010632,291.11],[0.010788,291.43],[0.010952,291.93],[0.011118,292.3],[0.011278,292.76],[0.011444,293.24],[0.011612,293.39],[0.011776,293.69],[0.011932,293.84],[0.012098,294.44],[0.012262,294.68],[0.012424,294.54],[0.012588,295.06],[0.012758,295.57],[0.012914,295.65],[0.013084,295.97],[0.013246,296.22],[0.013414,296.95],[0.013574,296.78],[0.013744,297.23],[0.013906,297.1],[0.014062,297.46],[0.01423,297.78],[0.014396,297.8],[0.01456,298.36],[0.014724,298.4],[0.01489,298.92],[0.015052,299.03],[0.01522,299.1],[0.01538,299.52],[0.015546,299.5],[0.015712,299.52],[0.01588,299.79],[0.016038,300.31],[0.016206,300.21],[0.016374,300.66],[0.016536,300.84],[0.0167,301.28],[0.016866,301.08],[0.01703,301.3],[0.017196,301.54],[0.017362,301.66],[0.017528,302.03],[0.01769,302.28],[0.017856,302.31],[0.01802,302.25],[0.01819,302.43],[0.018354,302.43],[0.018518,302.95],[0.018686,302.99],[0.018848,303.19],[0.019018,303.33],[0.01918,303.54],[0.019348,303.55],[0.019512,303.7],[0.019678,303.87],[0.01984,304.04],[0.02001,304.24],[0.020174,304.37],[0.020342,304.33],[0.020506,304.18],[0.02067,304.72],[0.020834,304.57],[0.021004,305.12],[0.02117,305.37],[0.021336,305.13],[0.0215,305.67],[0.021668,305.42],[0.021826,305.59],[0.021994,305.46],[0.022162,305.91],[0.022328,305.69],[0.022494,305.92],[0.022662,306.02],[0.022826,306.23],[0.02299,306.29],[0.02316,306.52],[0.023322,306.61],[0.02349,307.02],[0.023658,306.89],[0.02382,306.75],[0.023988,307.09],[0.024152,307.04],[0.024316,307.26],[0.024484,307.25],[0.024652,307.18],[0.024816,307.45],[0.024984,307.65],[0.025146,307.44],[0.025316,307.85],[0.025486,307.91],[0.025646,307.96],[0.025816,307.94],[0.025978,308.08],[0.026148,308.55],[0.026312,308.43],[0.02648,308.36],[0.02665,308.29],[0.026814,308.55],[0.02698,308.78],[0.02714,308.46],[0.027308,308.89],[0.027476,308.8],[0.027644,308.99],[0.02781,308.8],[0.027974,309.22],[0.028142,309.25],[0.028312,309.1],[0.028474,309.57],[0.028638,309.57],[0.028808,309.44],[0.028972,309.66],[0.02914,309.82],[0.029308,309.89],[0.02947,309.75],[0.029642,309.59],[0.029804,309.66],[0.029974,310.14],[0.030138,309.99],[0.030308,309.77],[0.030472,309.95],[0.03064,310.15],[0.030804,310.32],[0.030974,310.43],[0.03114,310.73],[0.031306,310.43],[0.03147,310.74],[0.03164,310.83],[0.031806,310.85],[0.031972,310.61],[0.032144,311.16],[0.032304,310.8],[0.03247,310.87],[0.032642,310.88],[0.032806,311.39],[0.032978,310.82],[0.03314,311.31],[0.033306,311.02],[0.03347,311.07],[0.033644,311.24],[0.03381,311.3],[0.033978,311.06],[0.034144,311.19],[0.034304,311.27],[0.034474,311.5],[0.03464,311.39],[0.03481,311.52],[0.034972,311.66],[0.035146,311.7],[0.03531,311.94],[0.03548,312.05],[0.035642,311.86],[0.03581,311.7],[0.035976,311.87],[0.036146,312.24],[0.036312,312.08],[0.036478,312.35],[0.036648,312.33],[0.036812,312.4],[0.036986,312.19],[0.037148,312.13],[0.037318,312.26],[0.037484,312.28],[0.037648,312.38],[0.037818,312.77],[0.03798,312.43],[0.038148,312.5],[0.038322,312.59],[0.038486,312.65],[0.038646,312.66],[0.038822,313.02],[0.03899,312.75],[0.03916,312.89],[0.039326,313.1],[0.03949,312.94],[0.039662,312.74],[0.039824,313.16],[0.039996,313.05]],"ch":[[0.0,0.1],[0.00023,1.82],[0.00045,3.96],[0.00067,6.98],[0.00088,10.77],[0.00112,15.59],[0.00133,21.88],[0.00155,29.56],[0.00177,38.11],[0.002,46.76],[0.00223,55.58],[0.00243,64.49],[0.00267,73.46],[0.0029,82.13],[0.00312,91.11],[0.00333,100.05],[0.00355,109.09],[0.0038,117.71],[0.004,126.76],[0.00422,135.61],[0.00443,144.45],[0.00468,153.27],[0.0049,162.07],[0.0051,171.24],[0.00535,179.96],[0.00555,188.77],[0.00578,197.32],[0.00602,205.94],[0.00623,214.59],[0.00643,222.35],[0.00667,229.36],[0.0069,235.95],[0.00712,241.52],[0.00735,246.44],[0.00757,250.66],[0.00778,254.43],[0.008,257.69],[0.00823,260.84],[0.00845,263.01],[0.00868,265.2],[0.00888,267.53],[0.00912,269.39],[0.00935,271.05],[0.00955,272.47],[0.00977,273.89],[0.01,275.26],[0.01022,276.61],[0.01045,278.07],[0.01067,278.94],[0.01088,279.95],[0.0111,280.89],[0.01133,281.81],[0.01155,282.76],[0.01178,283.71],[0.012,284.56],[0.01222,285.19],[0.01245,285.96],[0.01267,286.54],[0.0129,287.22],[0.01312,287.86],[0.01333,288.3],[0.01355,289.07],[0.01378,289.8],[0.01402,290.46],[0.01423,290.77],[0.01445,291.07],[0.01468,291.43],[0.01488,292.25],[0.01512,292.92],[0.01535,293.24],[0.01555,293.48],[0.01578,293.81],[0.016,294.44],[0.01622,294.62],[0.01645,295.02],[0.01667,295.57],[0.01688,295.48],[0.01712,296.25],[0.01733,296.95],[0.01757,296.89],[0.01777,297.52],[0.018,297.46],[0.01823,298.15],[0.01843,298.24],[0.01867,298.4],[0.01888,299.09],[0.0191,299.12],[0.01933,299.52],[0.01955,299.7],[0.01977,299.7],[0.02,300.31],[0.02022,300.42],[0.02045,300.43],[0.02067,301.28],[0.02088,301.27],[0.0211,301.41],[0.02133,301.66],[0.02155,301.91],[0.02178,301.54],[0.022,302.25],[0.02223,302.54],[0.02245,302.62],[0.02265,302.99],[0.02288,303.64],[0.02312,303.41],[0.02333,303.55],[0.02355,303.84],[0.02378,303.92],[0.024,304.24],[0.02422,304.06],[0.02445,304.42],[0.02467,304.72],[0.0249,304.75],[0.02512,305.16],[0.02533,305.13],[0.02557,305.02],[0.02578,305.41],[0.026,305.46],[0.02622,305.85],[0.02643,305.92],[0.02667,306.02],[0.0269,306.53],[0.02712,306.8],[0.02733,306.61],[0.02757,306.79],[0.02778,306.93],[0.02802,307.09],[0.02823,307.0],[0.02845,307.29],[0.02867,307.18],[0.02888,307.54],[0.0291,307.55],[0.02933,307.85],[0.02955,308.14],[0.02977,308.16],[0.03002,308.08],[0.03023,308.04],[0.03043,308.2],[0.03067,308.29],[0.0309,308.71],[0.03112,308.78],[0.03133,308.89],[0.03155,309.2],[0.03178,308.65],[0.03198,309.22],[0.03222,309.08],[0.03245,309.39],[0.03265,309.57],[0.0329,309.62],[0.03312,309.72],[0.03333,309.89],[0.03355,309.75],[0.03378,309.87],[0.034,310.14],[0.03423,310.33],[0.03445,310.23],[0.03467,310.15],[0.03488,310.17],[0.03512,310.57],[0.03533,310.43],[0.03555,310.84],[0.03578,310.38],[0.036,310.61],[0.03622,310.94],[0.03645,310.92],[0.03665,310.88],[0.03688,311.17],[0.03712,310.94],[0.03733,311.02],[0.03755,311.21],[0.03778,311.35],[0.038,311.06],[0.03822,311.21],[0.03845,311.86],[0.03867,311.39],[0.03888,312.0],[0.03912,311.71],[0.03932,311.94],[0.03955,311.95],[0.03978,311.45],[0.04,311.87],[0.04022,312.05],[0.04043,312.23],[0.04067,312.33],[0.0409,312.35],[0.0411,311.95],[0.04132,312.26],[0.04155,312.33],[0.04177,312.41],[0.042,312.43],[0.04222,312.32],[0.04245,312.4],[0.04267,312.66],[0.04288,312.66],[0.0431,312.63],[0.04333,313.1],[0.04355,312.63],[0.04378,313.2],[0.044,313.05],[0.045,313.39],[0.04612,312.88],[0.0472,313.36],[0.04832,313.8],[0.04945,313.86],[0.05055,313.91],[0.05167,314.24],[0.05277,314.37],[0.05388,314.18],[0.05498,314.04],[0.05612,313.3],[0.05722,312.27],[0.05833,310.84],[0.05945,309.6],[0.06053,307.91],[0.06165,306.42],[0.06277,304.69],[0.06388,303.0],[0.065,301.04],[0.0661,299.23],[0.06722,297.14],[0.06832,294.99],[0.06943,293.41],[0.07057,291.24],[0.07165,289.25],[0.07277,287.47],[0.07388,285.67],[0.075,283.4],[0.0761,281.68],[0.07722,279.59],[0.07832,277.72],[0.07945,275.74],[0.08055,274.01],[0.08165,271.99],[0.08277,270.44],[0.08388,268.41],[0.085,266.56],[0.0861,264.67],[0.08722,263.01],[0.08833,261.2],[0.08943,259.54],[0.09052,257.71],[0.09167,256.04],[0.09277,254.42],[0.09387,252.44],[0.09498,250.85],[0.0961,249.5],[0.09722,247.69],[0.09833,246.17],[0.09945,244.6],[0.10055,243.04],[0.10167,241.44],[0.10277,239.79],[0.10388,238.36],[0.10498,236.87],[0.1061,235.53],[0.10722,233.86],[0.10833,232.39],[0.10943,230.85],[0.11055,229.5],[0.11165,228.16],[0.11277,226.6],[0.11388,225.63],[0.11498,224.3],[0.11612,222.77],[0.1172,221.65],[0.11832,-0.06]]}}</script>
+<script>
+/* SimCore — shared by every simulation in the ENGR 2228 lab series (inlined at build time).
+   No dependencies; works offline. Provides: unit system (SI primary, US toggle), number
+   formatting, slider controls, an SVG plotter with hover readout, CSV export with a
+   copy-to-clipboard fallback. Physics never lives here: each lab keeps its model in a
+   <script id="model"> block of pure functions so the Node tests load exactly what runs. */
+const SimCore = (() => {
+  'use strict';
+  const KSI = 6.894757293168e6, IN = 0.0254, LBF = 4.4482216152605;
+  // quantity -> [factor from SI base, label] per unit system
+  const Q = {
+    stress:     { SI: [1e-6, 'MPa'],   US: [1 / KSI, 'ksi'] },
+    modulus:    { SI: [1e-9, 'GPa'],   US: [1 / KSI, 'ksi'] },
+    length:     { SI: [1e3, 'mm'],     US: [1 / IN, 'in'] },
+    longlength: { SI: [1, 'm'],        US: [1 / (12 * IN), 'ft'] },
+    force:      { SI: [1e-3, 'kN'],    US: [1 / (1000 * LBF), 'kip'] },
+    compliance: { SI: [1e6, 'mm/kN'],  US: [1000 * LBF / IN, 'in/kip'] },
+    energy:     { SI: [1e-6, 'MJ/m³'], US: [1000 / KSI, 'in·lb/in³'] },
+    area:       { SI: [1e6, 'mm²'],    US: [1 / (IN * IN), 'in²'] },
+    moment:     { SI: [1, 'N·m'],      US: [1 / (LBF * IN), 'lb·in'] },
+    angle:      { SI: [180 / Math.PI, '°'], US: [180 / Math.PI, '°'] },
+    twistrate:  { SI: [180 / Math.PI, '°/m'], US: [180 / Math.PI / 3.280839895, '°/ft'] },
+    inertia:    { SI: [1e12, 'mm⁴'],   US: [1 / IN ** 4, 'in⁴'] },
+    volume3:    { SI: [1e9, 'mm³'],    US: [1 / IN ** 3, 'in³'] },
+    power:      { SI: [1e-3, 'kW'],    US: [1 / 745.69987, 'hp'] },
+    temperature:{ SI: [1, '°C'],       US: [1.8, '°F'] },
+    percent:    { SI: [100, '%'],      US: [100, '%'] },
+    shearflow:  { SI: [1e-3, 'N/mm'],  US: [IN / LBF, 'lb/in'] },
+    stiffness:  { SI: [1e-6, 'kN/mm'], US: [IN / (1000 * LBF), 'kip/in'] },
+    rigidity:   { SI: [1, 'N·m²'],     US: [1 / (LBF * IN * IN), 'lb·in²'] },
+    forceN:     { SI: [1, 'N'],        US: [1 / LBF, 'lbf'] },
+    rotstiff:   { SI: [1, 'N·m/rad'],  US: [1 / (LBF * IN), 'lb·in/rad'] },
+    lineload:   { SI: [1e-3, 'kN/m'],  US: [0.3048 / (1000 * LBF), 'kip/ft'] },
+    microstrain:{ SI: [1e6, 'µε'],     US: [1e6, 'µε'] },
+    pressure:   { SI: [1e-6, 'MPa'],   US: [1 / 6894.757293168, 'psi'] },
+    none:       { SI: [1, ''],         US: [1, ''] },
+  };
+  let system = 'SI';
+  const listeners = [];
+  const setSystem = (s) => { system = s; listeners.forEach((f) => f(s)); };
+  const onSystem = (f) => listeners.push(f);
+  const getSystem = () => system;
+  const conv = (q, v) => v * Q[q][system][0];
+  const unconv = (q, v) => v / Q[q][system][0];
+  const unit = (q) => Q[q][system][1];
+  const csvUnit = (q) => unit(q).replace('µε', 'ue').replace('²', '2').replace('³', '3').replace('⁴', '4').replace('·', '').replace('°', 'deg').replace('/', '_per_').replace('%', 'pct');
+
+  const SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+  function fmt(v, sig = 4) {
+    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+    if (v === 0) return '0';
+    const a = Math.abs(v);
+    if (a >= 1e6 || a < 1e-4) {
+      const [m, e] = v.toExponential(sig - 1).split('e');
+      return m.replace('-', '−') + '×10' + String(parseInt(e, 10)).split('').map((c) => SUP[c] || c).join('');
+    }
+    const digits = Math.floor(Math.log10(a)) + 1;
+    const dec = Math.max(0, sig - digits);
+    let s = (Math.round(v * 10 ** dec) / 10 ** dec).toFixed(dec);
+    const [ip, fp] = s.replace('-', '').split('.');
+    const ipg = ip.length > 4 ? ip.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : ip;
+    return (v < 0 ? '−' : '') + ipg + (fp !== undefined ? '.' + fp : '');
+  }
+  const fmtQ = (q, v, sig = 4) => fmt(conv(q, v), sig) + (unit(q) ? ' ' + unit(q) : '');
+  const plain = (v, sig = 8) => (Number.isFinite(v) ? Number(v.toPrecision(sig)).toString() : '');
+
+  // ---------------------------------------------------------------- controls
+  function el(tag, attrs = {}, html = '') {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (html) e.innerHTML = html;
+    return e;
+  }
+  /* spec: {id, label, sym(html), q, min, max, step, log, int, sig, help}
+     values are SI internally; the number box shows/accepts the active unit system. */
+  function slider(container, spec, value, onChange) {
+    const q = spec.q || 'none';
+    const wrap = el('div', { class: 'ctl' });
+    const lab = el('label', { for: spec.id + '-num' }, `<span class="sym">${spec.sym || ''}</span><span>${spec.label}</span>`);
+    const row = el('div', { class: 'ctl-row' });
+    const r = el('input', { type: 'range', id: spec.id, min: 0, max: 1000, step: 1, 'aria-label': spec.label });
+    const nbox = el('input', { type: 'number', id: spec.id + '-num', inputmode: 'decimal', step: 'any' });
+    const u = el('span', { class: 'unit' });
+    row.append(r, nbox, u);
+    wrap.append(lab, row);
+    if (spec.help) wrap.append(el('p', { class: 'help', id: spec.id + '-help' }, spec.help));
+    container.append(wrap);
+    let v = value;
+    const toPos = (x) => spec.log ? 1000 * Math.log(x / spec.min) / Math.log(spec.max / spec.min) : 1000 * (x - spec.min) / (spec.max - spec.min);
+    const fromPos = (p) => {
+      let x = spec.log ? spec.min * Math.pow(spec.max / spec.min, p / 1000) : spec.min + (spec.max - spec.min) * p / 1000;
+      if (spec.int) x = Math.round(x);
+      else if (spec.step) x = Math.round(x / spec.step) * spec.step;
+      return Math.min(spec.max, Math.max(spec.min, x));
+    };
+    const show = () => {
+      r.value = String(Math.round(toPos(v)));
+      const shown = conv(q, v);
+      nbox.value = spec.int ? String(Math.round(shown)) : String(Number(shown.toPrecision(spec.sig || 4)));
+      u.textContent = unit(q);
+      r.setAttribute('aria-valuetext', `${nbox.value} ${unit(q)}`.trim());
+    };
+    r.addEventListener('input', () => { v = fromPos(+r.value); show(); onChange(v); });
+    nbox.addEventListener('change', () => {
+      const x = parseFloat(nbox.value);
+      if (!Number.isFinite(x)) { show(); return; }
+      v = Math.min(spec.max, Math.max(spec.min, unconv(q, x)));
+      if (spec.int) v = Math.round(v);
+      show(); onChange(v);
+    });
+    onSystem(show);
+    show();
+    return { set: (x) => { v = x; show(); }, get: () => v, el: wrap, range: r, box: nbox };
+  }
+
+  function segmented(container, options, value, onChange, label) {
+    const g = el('div', { class: 'seg', role: 'group', 'aria-label': label || '' });
+    const btns = options.map(([val, text]) => {
+      const b = el('button', { type: 'button', 'aria-pressed': String(val === value), 'data-v': val }, text);
+      b.addEventListener('click', () => { btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); onChange(val); });
+      g.append(b);
+      return b;
+    });
+    container.append(g);
+    return { set: (val) => btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === val))) };
+  }
+
+  // ---------------------------------------------------------------- CSV export
+  function toCSV(header, rows) {
+    const esc = (x) => { const s = String(x); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    return [header.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n') + '\n';
+  }
+  /* Saves the CSV and always also shows it in `panel` (a <details> with a textarea and a Copy
+     button). Hosted on claude.ai the page asks the viewer through the `downloads` capability (the
+     viewer confirms each save); opened as a local file it uses an ordinary browser download. */
+  let dlPromise = null;
+  function hostDownloads() {
+    if (!dlPromise) {
+      const c = window.claude;
+      dlPromise = c && typeof c.use === 'function' ? Promise.resolve(c.use('downloads')).catch(() => null) : Promise.resolve(null);
+    }
+    return dlPromise;
+  }
+  if (typeof window !== 'undefined' && window.claude) hostDownloads();
+  function anchorDownload(filename, text) {
+    try {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) { /* download blocked: the panel still has the data */ }
+  }
+  function exportCSV(filename, text, panel) {
+    if (window.claude && typeof window.claude.use === 'function') {
+      hostDownloads().then((dl) => {
+        if (dl) return dl.save({ filename, data: text }).catch(() => { /* declined or unavailable: use the panel */ });
+        anchorDownload(filename, text);
+      });
+    } else anchorDownload(filename, text);
+    if (panel) {
+      panel.hidden = false;
+      panel.open = true;
+      panel.querySelector('.fname').textContent = filename;
+      panel.querySelector('textarea').value = text;
+    }
+  }
+  function wireCopy(panel) {
+    const btn = panel.querySelector('.copy');
+    const ta = panel.querySelector('textarea');
+    const msg = panel.querySelector('.copy-msg');
+    btn.addEventListener('click', () => {
+      const done = (t) => { msg.textContent = t; setTimeout(() => (msg.textContent = ''), 2500); };
+      const fallback = () => { ta.focus(); ta.select(); done('Selected: press Ctrl/Cmd+C to copy'); };
+      try {
+        navigator.clipboard.writeText(ta.value).then(() => done('Copied'), fallback);
+      } catch (e) { fallback(); }
+    });
+  }
+
+  // ---------------------------------------------------------------- SVG plot
+  const DASH = { theory: '', numeric: '7 4', measured: '', third: '7 3 1.5 3', fourth: '1.5 3', muted: '3 3', accent: '' };
+  function niceStep(span, target) {
+    const raw = span / Math.max(1, target);
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+  }
+  function ticks(lo, hi, target) {
+    const st = niceStep(hi - lo, target);
+    const out = [];
+    for (let t = Math.ceil(lo / st - 1e-9) * st; t <= hi + st * 1e-9; t += st) out.push(Math.abs(t) < st * 1e-9 ? 0 : t);
+    return out;
+  }
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  class Plot {
+    /* opts: {xlabel, ylabel, aspect, logx, logy, xfmt, yfmt, legend: true} */
+    constructor(container, opts = {}) {
+      this.c = container;
+      this.o = Object.assign({ aspect: 0.6, minH: 210, maxH: 430, xfmt: (v) => fmt(v, 3), yfmt: (v) => fmt(v, 3) }, opts);
+      this.c.classList.add('plot');
+      this.svgHolder = el('div');
+      this.tip = el('div', { class: 'tip' }); this.tip.hidden = true;
+      this.legendEl = el('div', { class: 'legend' });
+      this.c.append(this.svgHolder, this.tip, this.legendEl);
+      this.data = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        let last = 0;
+        new ResizeObserver(() => { const w = this.c.clientWidth; if (Math.abs(w - last) > 4 && this.data) { last = w; this.draw(this.data); } }).observe(this.c);
+      }
+      this.svgHolder.addEventListener('pointermove', (e) => this.hover(e));
+      this.svgHolder.addEventListener('pointerleave', () => { this.tip.hidden = true; const d = this.svgHolder.querySelector('.hov'); if (d) d.setAttribute('visibility', 'hidden'); });
+    }
+    /* d: {series:[{x,y,role,label,width,markers,opacity,hover}], bands:[{x0,x1,label,labelPos:'top'|'bottom'}], points:[{x,y,role,shape,label,size}],
+           segs:[{x0,y0,x1,y1,role,dash,width,label}], xlim, ylim, desc, texts:[{x,y,text,anchor,role,dx,dy (pixels)}]} */
+    draw(d) {
+      this.data = d;
+      const o = this.o;
+      const W = Math.max(280, this.c.clientWidth || 600);
+      const H = Math.round(Math.min(o.maxH, Math.max(o.minH, W * o.aspect)));
+      const m = { l: 58, r: 14, t: 12, b: 42 };
+      const pw = W - m.l - m.r, ph = H - m.t - m.b;
+      const tx = (v) => (o.logx ? Math.log10(v) : v), ty = (v) => (o.logy ? Math.log10(v) : v);
+      let [x0, x1] = d.xlim, [y0, y1] = d.ylim;
+      if (o.logx) { x0 = Math.log10(x0); x1 = Math.log10(x1); }
+      if (o.logy) { y0 = Math.log10(y0); y1 = Math.log10(y1); }
+      const sx = (v) => m.l + (tx(v) - x0) / (x1 - x0) * pw;
+      const sy = (v) => m.t + ph - (ty(v) - y0) / (y1 - y0) * ph;
+      this.map = { sx, sy, m, pw, ph };
+      const id = 'c' + Math.random().toString(36).slice(2, 8);
+      const parts = [];
+      parts.push(`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(d.desc || o.ylabel + ' versus ' + o.xlabel)}" xmlns="http://www.w3.org/2000/svg">`);
+      parts.push(`<defs><clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}"/></clipPath></defs>`);
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:var(--panel)"/>`);
+      // bands (regions where an assumption fails)
+      for (const b of d.bands || []) {
+        const a = Math.max(m.l, sx(b.x0)), z = Math.min(m.l + pw, sx(b.x1));
+        if (z > a) {
+          parts.push(`<rect x="${a}" y="${m.t}" width="${z - a}" height="${ph}" style="fill:var(--fail);opacity:.16"/>`);
+          parts.push(`<line x1="${a}" y1="${m.t}" x2="${a}" y2="${m.t + ph}" style="stroke:var(--fail);stroke-width:1.2;stroke-dasharray:2 2"/>`);
+          if (b.label) parts.push(`<text x="${a + 5}" y="${b.labelPos === 'bottom' ? m.t + ph - 6 : m.t + 13}" style="fill:var(--fail-ink);font-size:11px;font-weight:600">${esc(b.label)}</text>`);
+        }
+      }
+      // grid + ticks
+      const fs = 11;
+      const xt = o.logx ? decades(d.xlim, Math.max(2, Math.floor(pw / 45))) : ticks(d.xlim[0], d.xlim[1], Math.max(3, Math.floor(pw / 85)));
+      const yt = o.logy ? decades(d.ylim, Math.max(2, Math.floor(ph / 26))) : ticks(d.ylim[0], d.ylim[1], Math.max(3, Math.floor(ph / 45)));
+      for (const t of xt) { const X = sx(o.logx ? 10 ** t : t); if (X < m.l - 0.5 || X > m.l + pw + 0.5) continue;
+        parts.push(`<line x1="${X}" y1="${m.t}" x2="${X}" y2="${m.t + ph}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${X}" y1="${m.t + ph}" x2="${X}" y2="${m.t + ph + 4}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${X}" y="${m.t + ph + 16}" text-anchor="middle" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logx ? supExp(t) : o.xfmt(t))}</text>`); }
+      for (const t of yt) { const Y = sy(o.logy ? 10 ** t : t); if (Y < m.t - 0.5 || Y > m.t + ph + 0.5) continue;
+        parts.push(`<line x1="${m.l}" y1="${Y}" x2="${m.l + pw}" y2="${Y}" style="stroke:var(--grid);stroke-width:1"/>`);
+        parts.push(`<line x1="${m.l - 4}" y1="${Y}" x2="${m.l}" y2="${Y}" style="stroke:var(--muted)"/>`);
+        parts.push(`<text x="${m.l - 7}" y="${Y + 4}" text-anchor="end" style="fill:var(--muted);font-size:${fs}px" class="num">${esc(o.logy ? supExp(t) : o.yfmt(t))}</text>`); }
+      parts.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" style="fill:none;stroke:var(--line)"/>`);
+      parts.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.xlabel)}</text>`);
+      parts.push(`<text transform="translate(13 ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--ink);font-size:12px">${esc(o.ylabel)}</text>`);
+      parts.push(`<g clip-path="url(#${id})">`);
+      // segments
+      for (const s of d.segs || []) {
+        parts.push(`<line x1="${sx(s.x0)}" y1="${sy(s.y0)}" x2="${sx(s.x1)}" y2="${sy(s.y1)}" style="stroke:var(--${s.role || 'mutedline'});stroke-width:${s.width || 1.2};stroke-dasharray:${s.dash || '4 3'};opacity:${s.opacity || 1}"/>`);
+      }
+      // series
+      this.hoverPts = [];
+      for (const s of d.series || []) {
+        const n = Math.min(s.x.length, s.y.length);
+        if (!n) continue;
+        const col = `var(--${s.role || 'theory'})`;
+        if (s.markers) {
+          const stride = Math.max(1, Math.ceil(n / (s.maxMarkers || 350)));
+          const r = s.r || 2.3;
+          let g = '';
+          for (let i = 0; i < n; i += stride) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+            g += `<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${r}"/>`;
+            if (s.hover !== false) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<g style="fill:none;stroke:${col};stroke-width:1;opacity:${s.opacity || 0.85}">${g}</g>`);
+        } else {
+          let p = '', pen = false;
+          for (let i = 0; i < n; i++) {
+            const X = sx(s.x[i]), Y = sy(s.y[i]);
+            if (!Number.isFinite(X) || !Number.isFinite(Y) || Math.abs(Y) > 1e5) { pen = false; continue; }
+            p += (pen ? 'L' : 'M') + X.toFixed(1) + ' ' + Y.toFixed(1);
+            pen = true;
+            if (s.hover !== false && (i % Math.max(1, Math.floor(n / 400)) === 0 || i === n - 1)) this.hoverPts.push([X, Y, s.x[i], s.y[i], s.label]);
+          }
+          parts.push(`<path d="${p}" style="fill:none;stroke:${col};stroke-width:${s.width || 2};stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1};stroke-linejoin:round;stroke-linecap:round"/>`);
+        }
+      }
+      parts.push('</g>');
+      // points (markers with labels)
+      for (const p of d.points || []) {
+        const X = sx(p.x), Y = sy(p.y);
+        if (!Number.isFinite(X) || !Number.isFinite(Y)) continue;
+        const col = `var(--${p.role || 'ink'})`, z = p.size || 5;
+        if (p.shape === 'diamond') parts.push(`<path d="M${X} ${Y - z - 1}L${X + z + 1} ${Y}L${X} ${Y + z + 1}L${X - z - 1} ${Y}Z" style="fill:var(--panel);stroke:${col};stroke-width:2"/>`);
+        else if (p.shape === 'x') parts.push(`<path d="M${X - z} ${Y - z}L${X + z} ${Y + z}M${X - z} ${Y + z}L${X + z} ${Y - z}" style="stroke:${col};stroke-width:2.2"/>`);
+        else if (p.shape === 'ring') parts.push(`<circle cx="${X}" cy="${Y}" r="${z + 2}" style="fill:none;stroke:${col};stroke-width:2.5"/><circle cx="${X}" cy="${Y}" r="2" style="fill:${col}"/>`);
+        else parts.push(`<circle cx="${X}" cy="${Y}" r="${z}" style="fill:${p.fill ? col : 'var(--panel)'};stroke:${col};stroke-width:2"/>`);
+        if (p.label) {
+          const right = X < m.l + pw * 0.72;
+          parts.push(`<text x="${X + (right ? 9 : -9)}" y="${Y - 8}" text-anchor="${right ? 'start' : 'end'}" style="fill:var(--ink);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(p.label)}</text>`);
+        }
+      }
+      for (const t of d.texts || []) {
+        parts.push(`<text x="${sx(t.x) + (t.dx || 0)}" y="${sy(t.y) + (t.dy || 0)}" text-anchor="${t.anchor || 'start'}" style="fill:var(--${t.role || 'muted'});font-size:11px;paint-order:stroke;stroke:var(--panel);stroke-width:3px">${esc(t.text)}</text>`);
+      }
+      parts.push(`<circle class="hov" r="4.5" visibility="hidden" style="fill:var(--accent);stroke:var(--panel);stroke-width:2"/>`);
+      parts.push('</svg>');
+      this.svgHolder.innerHTML = parts.join('');
+      // legend
+      if (this.o.legend !== false) {
+        const items = (d.series || []).filter((s) => s.label && s.legend !== false).map((s) => {
+          const col = `var(--${s.role || 'theory'})`;
+          const sw = s.markers
+            ? `<svg viewBox="0 0 26 10"><circle cx="13" cy="5" r="3" style="fill:none;stroke:${col};stroke-width:1.2"/></svg>`
+            : `<svg viewBox="0 0 26 10"><line x1="1" y1="5" x2="25" y2="5" style="stroke:${col};stroke-width:2.2;stroke-dasharray:${s.dash !== undefined ? s.dash : DASH[s.role] || ''};opacity:${s.opacity || 1}"/></svg>`;
+          return `<span>${sw}${esc(s.label)}</span>`;
+        });
+        for (const b of d.bands || []) if (b.legend) items.push(`<span><svg viewBox="0 0 26 10"><rect x="1" y="1" width="24" height="8" style="fill:var(--fail);opacity:.35"/></svg>${esc(b.legend)}</span>`);
+        this.legendEl.innerHTML = items.join('');
+      }
+    }
+    hover(e) {
+      if (!this.hoverPts || !this.hoverPts.length) return;
+      const svg = this.svgHolder.querySelector('svg');
+      const r = svg.getBoundingClientRect();
+      const k = svg.viewBox.baseVal.width / r.width;
+      const X = (e.clientX - r.left) * k, Y = (e.clientY - r.top) * k;
+      let best = null, bd = 1e9;
+      for (const p of this.hoverPts) { const dd = (p[0] - X) ** 2 + (p[1] - Y) ** 2; if (dd < bd) { bd = dd; best = p; } }
+      const dot = svg.querySelector('.hov');
+      if (!best || bd > 900 * k * k) { this.tip.hidden = true; dot.setAttribute('visibility', 'hidden'); return; }
+      dot.setAttribute('cx', best[0]); dot.setAttribute('cy', best[1]); dot.setAttribute('visibility', 'visible');
+      this.tip.hidden = false;
+      this.tip.textContent = `${best[4] ? best[4] + ': ' : ''}${this.o.xfmt(best[2])}, ${this.o.yfmt(best[3])}`;
+      const left = best[0] / k + 12, top = best[1] / k - 30;
+      this.tip.style.left = Math.min(left, r.width - this.tip.offsetWidth - 4) + 'px';
+      this.tip.style.top = Math.max(0, top) + 'px';
+    }
+  }
+  function decades(lim, maxN = 99) { const all = []; for (let e = Math.ceil(Math.log10(lim[0]) - 1e-9); e <= Math.floor(Math.log10(lim[1]) + 1e-9); e++) all.push(e); const step = Math.max(1, Math.ceil(all.length / maxN)); return all.filter((e) => e % step === 0); }
+  function supExp(e) { if (e === 0) return '1'; if (e === 1) return '10'; return '10' + String(e).split('').map((c) => SUP[c] || c).join(''); }
+
+  // least-squares slope of log(y) vs log(x)
+  function logSlope(xs, ys) {
+    const pts = xs.map((x, i) => [Math.log(x), Math.log(ys[i])]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+    const n = pts.length; if (n < 2) return NaN;
+    const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+    let sxy = 0, sxx = 0; for (const [a, b] of pts) { sxy += (a - mx) * (b - my); sxx += (a - mx) ** 2; }
+    return sxy / sxx;
+  }
+
+  return { setSystem, onSystem, getSystem, conv, unconv, unit, csvUnit, fmt, fmtQ, plain, slider, segmented, toCSV, exportCSV, wireCopy, Plot, el, logSlope };
+})();
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const M = Lab1Model, S = SimCore, $ = (id) => document.getElementById(id);
+  const SAMPLE = JSON.parse(document.getElementById('sample-data').textContent);
+  let p = Object.assign({}, M.PRESETS.steel, M.SPECIMEN);
+  let preset = 'steel';
+  let progress = 0.62;
+  let R = null;              // latest results
+
+  // ---------------------------------------------------------------- controls
+  const ctl = {};
+  const mk = (group, spec) => { ctl[spec.id] = S.slider($(group), spec, p[spec.id], (v) => { p[spec.id] = v; markCustom(spec.id); update(); }); };
+  mk('g-material', { id: 'E', label: 'Elastic modulus', sym: 'E', q: 'modulus', min: 40e9, max: 220e9, step: 0.1e9 });
+  mk('g-material', { id: 'sigma_e', label: 'Elastic limit', sym: 'σ<sub>e</sub>', q: 'stress', min: 50e6, max: 900e6, step: 0.1e6 });
+  mk('g-material', { id: 'K', label: 'Strength coefficient', sym: 'K', q: 'stress', min: 150e6, max: 2000e6, step: 0.1e6 });
+  mk('g-material', { id: 'n', label: 'Hardening exponent', sym: 'n', q: 'none', min: 0.02, max: 0.6, step: 0.0001, help: 'Sets how much the material strengthens as it stretches. Considère: necking at ε<sub>0</sub> + ε<sub>p</sub> = n.' });
+  mk('g-specimen', { id: 'd0', label: 'Initial diameter', sym: 'd<sub>0</sub>', q: 'length', min: 4e-3, max: 16e-3, step: 0.01e-3 });
+  mk('g-specimen', { id: 'L0', label: 'Gage length', sym: 'L<sub>0</sub>', q: 'length', min: 10e-3, max: 100e-3, step: 0.1e-3, help: 'Reduced section is taken as 1.2 L<sub>0</sub>.' });
+  mk('g-specimen', { id: 'delta', label: 'Area imperfection at the neck site', sym: 'δ', q: 'percent', min: 0, max: 0.03, step: 0.0001, help: 'A 0.015 mm diameter error on 10 mm gives δ ≈ 0.3 %.' });
+  mk('g-specimen', { id: 'neckOverD', label: 'Neck zone length / d<sub>0</sub>', sym: 'ℓ/d<sub>0</sub>', q: 'none', min: 0.2, max: 3, step: 0.01 });
+  mk('g-specimen', { id: 'eps_f', label: 'True fracture strain in the neck', sym: 'ε<sub>f</sub>', q: 'none', min: 0.03, max: 1.6, step: 0.001, help: '<span id="ra-txt"></span>' });
+  mk('g-machine', { id: 'Cm', label: 'Machine + grip compliance', sym: 'C<sub>m</sub>', q: 'compliance', min: 0, max: 30e-9, step: 0.05e-9, help: 'Crosshead travel = specimen stretch + C<sub>m</sub>P. Typical: 0.005–0.015 mm/kN.' });
+  mk('g-solver', { id: 'steps', label: 'Load steps', sym: 'M', q: 'none', min: 8, max: 2048, log: true, int: true, help: 'Step size h = 1/M along the path. The convergence study below varies M automatically.' });
+  mk('g-solver', { id: 'N', label: 'Elements in the gage (mesh mode)', sym: 'N', q: 'none', min: 2, max: 200, log: true, int: true, help: 'Only used when the neck length is set by the mesh.' });
+  const neckSeg = S.segmented($('neckmode'), [['physical', 'Physical ℓ = c·d₀'], ['mesh', 'Mesh ℓ = L₀/N']], p.neckMode, (v) => { p.neckMode = v; update(); }, 'Neck length set by');
+  S.segmented($('units-toggle'), [['SI', 'SI'], ['US', 'US customary']], 'SI', (v) => { S.setSystem(v); update(); }, 'Unit system');
+
+  function markCustom(id) {
+    if (['E', 'sigma_e', 'K', 'n'].includes(id) && preset !== 'custom') { preset = 'custom'; $('preset').value = 'custom'; }
+  }
+  function setAll() { for (const k of Object.keys(ctl)) ctl[k].set(p[k]); neckSeg.set(p.neckMode); }
+  $('preset').addEventListener('change', (e) => {
+    preset = e.target.value;
+    Object.assign(p, M.PRESETS[preset]);
+    if (preset === 'steel' || preset === 'al') { $('overlay').value = preset; }
+    setAll(); update();
+  });
+  $('reset').addEventListener('click', () => {
+    if (preset === 'custom') preset = 'steel';
+    $('preset').value = preset;
+    p = Object.assign({}, M.PRESETS[preset], M.SPECIMEN);
+    setAll(); update();
+  });
+  $('overlay').addEventListener('change', () => draw());
+  $('showch').addEventListener('change', () => draw());
+
+  // ---------------------------------------------------------------- progress + play
+  $('progress').addEventListener('input', (e) => { progress = +e.target.value / 1000; draw(); });
+  let playing = null;
+  $('play').addEventListener('click', () => {
+    if (playing) { cancelAnimationFrame(playing); playing = null; $('play').textContent = 'Play'; return; }
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now(), start = progress >= 0.999 ? 0 : progress, dur = reduce ? 1 : 7000 * (1 - start);
+    $('play').textContent = 'Pause';
+    const step = (t) => {
+      progress = Math.min(1, start + (1 - start) * (t - t0) / dur);
+      $('progress').value = String(Math.round(progress * 1000));
+      draw();
+      if (progress < 1) playing = requestAnimationFrame(step); else { playing = null; $('play').textContent = 'Play'; }
+    };
+    playing = requestAnimationFrame(step);
+  });
+
+  // ---------------------------------------------------------------- plots
+  const pct = (v) => S.fmt(v, 3);
+  const sfx = () => (v) => S.fmt(v, 3);
+  const plots = {
+    main: new S.Plot($('plot-main'), { xlabel: 'Engineering strain, ε (%)', ylabel: '', aspect: 0.5, xfmt: pct, yfmt: sfx() }),
+    zoom: new S.Plot($('plot-zoom'), { xlabel: 'Engineering strain, ε (%)', ylabel: '', aspect: 0.72, xfmt: pct, yfmt: sfx() }),
+    tru: new S.Plot($('plot-true'), { xlabel: 'True strain, εt', ylabel: '', aspect: 0.72, xfmt: (v) => S.fmt(v, 3), yfmt: sfx() }),
+    conv: new S.Plot($('plot-conv'), { xlabel: 'Load steps, M (step size h = 1/M)', ylabel: 'Relative error vs. M = 8192', aspect: 0.72, logx: true, logy: true, xfmt: (v) => S.fmt(v, 4), yfmt: (v) => S.fmt(v, 2) }),
+    mesh: new S.Plot($('plot-mesh'), { xlabel: 'Elements in the gage, N', ylabel: 'Elongation after fracture (%)', aspect: 0.72, logx: true, xfmt: (v) => S.fmt(v, 3), yfmt: (v) => S.fmt(v, 3) }),
+  };
+
+  // ---------------------------------------------------------------- compute
+  let convTimer = null;
+  function update() {
+    const errs = M.validate(p);
+    $('errors').hidden = !errs.length;
+    $('errors').textContent = errs.join(' ');
+    if (errs.length) return;
+    const cf = M.closedForms(p);
+    const path = M.simulate(p, p.steps);
+    const ex = M.extract(path, p);
+    const perfect = M.extract(M.simulate(Object.assign({}, p, { delta: 0 }), Math.max(p.steps, 800)), p);
+    R = Object.assign(R || {}, { cf, path, ex, perfect, p: Object.assign({}, p) });
+    $('ra-txt').textContent = `Reduction of area at fracture ≈ ${S.fmt(100 * ex.RA, 3)} %`;
+    draw();
+    clearTimeout(convTimer);
+    convTimer = setTimeout(() => { R.conv = M.convergence(p); R.mesh = M.meshStudy(p); drawConvergence(); renderReadout(); }, 60);
+  }
+
+  const stressQ = (v) => S.conv('stress', v);
+  function draw() {
+    if (!R) return;
+    const { cf, path, ex } = R;
+    const n = path.P.length;
+    const i = Math.min(n - 1, Math.round(progress * (n - 1)));
+    const su = S.unit('stress');
+    // stage
+    let stage, cls;
+    if (path.epz[i] === 0) { stage = 'elastic'; cls = 'ok'; }
+    else if (i < ex.imax) { stage = path.epr[i] > 0 ? 'uniform plastic stretching' : 'yielding starts at the weakest section'; cls = 'info'; }
+    else if (i < n - 1) { stage = 'necking: deformation localized'; cls = 'warn'; }
+    else { stage = ex.fracBeforeNeck ? 'fractured before necking' : 'fracture'; cls = 'bad'; }
+    $('stage').textContent = stage; $('stage').className = 'chip stage ' + cls;
+    $('progress-txt').textContent = `ε = ${S.fmt(100 * path.e[i], 3)} %`;
+    const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+    $('stats').innerHTML = [
+      st('Load P', S.fmtQ('force', path.P[i], 4)),
+      st('σ = P/A₀', S.fmtQ('stress', path.s[i], 4)),
+      st('ε (gage)', S.fmt(100 * path.e[i], 3) + ' %'),
+      st('σ(1+ε)', S.fmtQ('stress', path.s[i] * (1 + path.e[i]), 4)),
+      st('σ in neck', S.fmtQ('stress', path.sz[i], 4)),
+      st('Neck diameter', S.fmtQ('length', path.dz[i], 4)),
+    ].join('');
+
+    // ---- main plot
+    const sample = SAMPLE[$('overlay').value];
+    const series = [];
+    const uni = M.uniformCurve(p, Math.min(p.eps_f, Math.max(cf.ep_u, 1e-4)));
+    const uniTail = M.uniformCurve(p, p.eps_f);
+    let xmax = Math.max(100 * ex.e_f, 100 * ex.e_u) * 1.06;
+    let ymax = Math.max(...path.s) * 1.12;
+    if (sample) {
+      const sx = sample.ext.map((r) => 100 * r[0]), sy = sample.ext.map((r) => S.conv('stress', r[1] * 1e6));
+      series.push({ x: sx, y: sy, role: 'measured', markers: true, label: 'Sample data, extensometer', maxMarkers: 260 });
+      if ($('showch').checked) series.push({ x: sample.ch.map((r) => 100 * r[0]), y: sample.ch.map((r) => S.conv('stress', r[1] * 1e6)), role: 'mutedline', markers: true, r: 1.6, label: 'Sample data, raw crosshead / Lc', maxMarkers: 220, opacity: 0.7 });
+      xmax = Math.max(xmax, 100 * Math.max(...sample.ch.map((r) => r[0])) * 1.04);
+      ymax = Math.max(ymax, S.unconv('stress', Math.max(...sy)) * 1.08);
+    }
+    const tailStart = uniTail.e.findIndex((e) => e > cf.e_u);
+    series.push({ x: uni.e.map((v) => 100 * v), y: uni.s.map(stressQ), role: 'theory', label: 'Closed form, perfect uniform bar' });
+    if (tailStart > 0) series.push({ x: uniTail.e.slice(tailStart - 1).map((v) => 100 * v), y: uniTail.s.slice(tailStart - 1).map(stressQ), role: 'theory', opacity: 0.35, width: 1.5, label: 'Uniform-bar formula past necking (invalid)', hover: false });
+    series.push({ x: path.e.map((v) => 100 * v), y: path.s.map(stressQ), role: 'numeric', label: 'Numerical virtual specimen (gage)' });
+    if ($('showch').checked) series.push({ x: path.ech.map((v) => 100 * v), y: path.s.map(stressQ), role: 'third', label: 'Virtual specimen, crosshead / Lc' });
+    const pts = [
+      { x: 100 * ex.eY, y: stressQ(ex.sigY), role: 'numeric', shape: 'diamond', label: '0.2 % offset' },
+      { x: 100 * ex.e_u, y: stressQ(ex.sigU), role: 'numeric', label: 'max load' },
+      { x: 100 * ex.e_f, y: stressQ(ex.s_f), role: 'numeric', shape: 'x', label: 'fracture' },
+      { x: 100 * path.e[i], y: stressQ(path.s[i]), role: 'accent', shape: 'ring' },
+    ];
+    plots.main.o.ylabel = `Engineering stress, σ (${su})`;
+    plots.main.draw({ series, points: pts, xlim: [0, xmax], ylim: [0, S.conv('stress', ymax)],
+      bands: ex.fracBeforeNeck ? [] : [{ x0: 100 * ex.e_u, x1: xmax, label: 'necking: P/A₀ ≠ stress in the neck', legend: 'Uniform-strain assumption fails' }],
+      desc: `Engineering stress-strain curve. Ultimate strength ${S.fmtQ('stress', ex.sigU)} at ${S.fmt(100 * ex.e_u, 3)} percent strain; fracture at ${S.fmt(100 * ex.e_f, 3)} percent.` });
+    $('cap-main').innerHTML = `Maximum load at ε = ${S.fmt(100 * ex.e_u, 3)} % (closed form: ${S.fmt(100 * cf.e_u, 3)} %). Past it the stretch concentrates in the neck zone (ℓ = ${S.fmtQ('length', cf.ell, 3)}), so the gage strain no longer describes the material.`;
+
+    // ---- zoom plot
+    const zx = Math.max(1.2, 100 * ex.eY * 1.9), zy = Math.max(cf.sigY, p.sigma_e) * 1.25;
+    const zs = [];
+    if (sample) zs.push({ x: sample.ext.map((r) => 100 * r[0]), y: sample.ext.map((r) => S.conv('stress', r[1] * 1e6)), role: 'measured', markers: true, label: 'Sample data, extensometer', maxMarkers: 400 });
+    zs.push({ x: uni.e.map((v) => 100 * v), y: uni.s.map(stressQ), role: 'theory', label: 'Closed form' });
+    zs.push({ x: path.e.map((v) => 100 * v), y: path.s.map(stressQ), role: 'numeric', label: 'Numerical' });
+    zs.push({ x: [0, 100 * zy / p.E], y: [0, stressQ(zy)], role: 'theory', width: 1, opacity: 0.6, dash: '2 2', label: "Hooke's law σ = Eε", hover: false });
+    plots.zoom.o.ylabel = `Engineering stress, σ (${su})`;
+    plots.zoom.draw({ series: zs, xlim: [0, zx], ylim: [0, stressQ(zy)],
+      segs: [{ x0: 0.2, y0: 0, x1: 0.2 + 100 * zy / p.E, y1: stressQ(zy), role: 'mutedline', dash: '5 3', width: 1.2 }],
+      points: [{ x: 100 * Math.expm1(p.sigma_e / p.E), y: stressQ(p.sigma_e), role: 'theory', label: 'σe' }, { x: 100 * ex.eY, y: stressQ(ex.sigY), role: 'numeric', shape: 'diamond', label: `σY = ${S.fmtQ('stress', ex.sigY, 4)}` }],
+      desc: `Elastic region. The 0.2 percent offset yield strength is ${S.fmtQ('stress', ex.sigY)}.` });
+
+    // ---- true stress + Considere
+    const epC = Math.min(p.eps_f, Math.max(cf.ep_u * 2.2, 0.05));
+    const cc = M.considereCurves(p, epC);
+    const ts = [];
+    ts.push({ x: cc.et, y: cc.st.map(stressQ), role: 'theory', label: 'Material law σt(εt)' });
+    ts.push({ x: cc.et, y: cc.h.map(stressQ), role: 'fourth', label: 'Hardening rate dσt/dεt' });
+    ts.push({ x: path.e.map((v) => Math.log1p(v)), y: path.s.map((v, k) => stressQ(v * (1 + path.e[k]))), role: 'numeric', label: 'σ(1+ε) vs ln(1+ε), from gage' });
+    ts.push({ x: path.etz, y: path.sz.map(stressQ), role: 'third', label: 'Actual stress in neck' });
+    const tymax = Math.max(...path.sz) * 1.08;
+    plots.tru.o.ylabel = `True stress, σt (${su})`;
+    plots.tru.draw({ series: ts, xlim: [0, Math.max(...path.etz) * 1.03], ylim: [0, stressQ(tymax)],
+      bands: ex.fracBeforeNeck ? [] : [{ x0: Math.log1p(ex.e_u), x1: 10, label: 'σ(1+ε) invalid' }],
+      points: [{ x: cf.et_u, y: stressQ(cf.sig_t_u), role: 'theory', shape: 'ring', label: 'Considère: dσt/dεt = σt' }, { x: path.etz[i], y: stressQ(path.sz[i]), role: 'accent', shape: 'ring' }],
+      desc: `True stress-strain. Considère predicts necking at true strain ${S.fmt(cf.et_u, 3)}.` });
+
+    drawSpecimen(i);
+    renderCards(i);
+    renderWarnings(i);
+    if (R.conv) renderReadout();
+  }
+
+  // ---------------------------------------------------------------- specimen drawing
+  function drawSpecimen(i) {
+    const { path, cf } = R;
+    const L0 = p.L0, Lc = cf.Lc;
+    const lenZ = cf.ell * Math.exp(path.etz[i]), lenR = (L0 - cf.ell) * Math.exp(path.etr[i]);
+    const lenOut = (Lc - L0) * Math.exp(path.etr[i]);
+    const total = lenZ + lenR + lenOut;
+    const W = Math.round(Math.max(360, Math.min(900, $('spec-svg').clientWidth || 900))), H = 230;
+    const mx = W < 600 ? 62 : 120, scale = (W - 2 * mx - (W < 600 ? 60 : 120)) / Math.max(total, Lc);
+    const cy = H / 2, dr = path.dr[i] * scale, dz = path.dz[i] * scale, d0 = p.d0 * scale;
+    const x0 = mx + (W < 600 ? 30 : 60), xL = x0 + lenOut / 2 * scale, xZ0 = xL + lenR / 2 * scale, xZ1 = xZ0 + lenZ * scale, xR = xZ1 + lenR / 2 * scale, x1 = xR + lenOut / 2 * scale;
+    // outline: smooth neck (cosine blend) between xZ0 and xZ1, extended a little for a natural shape
+    const top = [], bot = [];
+    const N = 120;
+    for (let k = 0; k <= N; k++) {
+      const x = x0 + (x1 - x0) * k / N;
+      let r = dr / 2;
+      const zc = (xZ0 + xZ1) / 2, half = Math.max((xZ1 - xZ0) / 2, 2);
+      const t = Math.abs(x - zc) / (half * 1.6);
+      if (t < 1) r = dr / 2 - (dr / 2 - dz / 2) * 0.5 * (1 + Math.cos(Math.PI * t));
+      top.push(`${x.toFixed(1)},${(cy - r).toFixed(1)}`); bot.push(`${x.toFixed(1)},${(cy + r).toFixed(1)}`);
+    }
+    const shoulderH = d0 * 1.5;
+    const P = path.P[i];
+    const arrow = (x, dir) => `<line x1="${x}" y1="${cy}" x2="${x + dir * 44}" y2="${cy}" style="stroke:var(--numeric);stroke-width:3"/><path d="M${x + dir * 52} ${cy}L${x + dir * 40} ${cy - 7}L${x + dir * 40} ${cy + 7}Z" style="fill:var(--numeric)"/>`;
+    const gx0 = xL, gx1 = xR;
+    const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Specimen outline at the current point: neck diameter ${S.fmtQ('length', path.dz[i])}, diameter elsewhere ${S.fmtQ('length', path.dr[i])}.">
+      <rect x="${x0 - (W < 600 ? 22 : 50)}" y="${cy - shoulderH / 2}" width="${W < 600 ? 22 : 50}" height="${shoulderH}" style="fill:var(--panel-2);stroke:var(--muted)"/>
+      <rect x="${x1}" y="${cy - shoulderH / 2}" width="${W < 600 ? 22 : 50}" height="${shoulderH}" style="fill:var(--panel-2);stroke:var(--muted)"/>
+      <polygon points="${top.join(' ')} ${bot.reverse().join(' ')}" style="fill:var(--panel-2);stroke:var(--ink);stroke-width:1.5"/>
+      <rect x="${xZ0}" y="${cy - dr / 2 - 16}" width="${Math.max(2, xZ1 - xZ0)}" height="8" style="fill:var(--fail);opacity:.55"/>
+      <text x="${(xZ0 + xZ1) / 2}" y="${cy - dr / 2 - 22}" text-anchor="middle" style="fill:var(--fail-ink);font-size:13px;font-weight:600">neck zone ℓ</text>
+      <line x1="${gx0}" y1="${cy + d0 / 2 + 6}" x2="${gx0}" y2="${cy + d0 / 2 + 26}" style="stroke:var(--ink);stroke-width:1.5"/>
+      <line x1="${gx1}" y1="${cy + d0 / 2 + 6}" x2="${gx1}" y2="${cy + d0 / 2 + 26}" style="stroke:var(--ink);stroke-width:1.5"/>
+      <line x1="${gx0}" y1="${cy + d0 / 2 + 18}" x2="${gx1}" y2="${cy + d0 / 2 + 18}" style="stroke:var(--muted);stroke-width:1"/>
+      <text x="${(gx0 + gx1) / 2}" y="${cy + d0 / 2 + 40}" text-anchor="middle" style="fill:var(--ink);font-size:13px">gage length L = ${S.fmtQ('length', lenZ + lenR, 4)} (L₀ = ${S.fmtQ('length', L0, 3)})</text>
+      ${P > 0 ? arrow(x0 - (W < 600 ? 26 : 56), -1) + arrow(x1 + (W < 600 ? 26 : 56), 1) : ''}
+      <text x="${x0 - 60}" y="${cy - 14}" text-anchor="end" style="fill:var(--numeric);font-size:13px;font-weight:600">P</text>
+      <text x="${x1 + 60}" y="${cy - 14}" text-anchor="start" style="fill:var(--numeric);font-size:13px;font-weight:600">P</text>
+      <text x="${W / 2}" y="${H - 8}" text-anchor="middle" style="fill:var(--numeric);font-size:13px;font-weight:600">P = ${S.fmtQ('force', P, 3)}</text>
+    </svg>`;
+    $('spec-svg').innerHTML = svg;
+    $('spec-txt').textContent = `neck d = ${S.fmtQ('length', path.dz[i], 4)} · elsewhere d = ${S.fmtQ('length', path.dr[i], 4)} · drawn to scale`;
+  }
+
+  // ---------------------------------------------------------------- readout table
+  function renderReadout() {
+    const { cf, ex, perfect, conv } = R;
+    const pctd = (a, b) => (100 * (a - b) / b);
+    const chip = (ok, text) => `<span class="chip ${ok === true ? 'ok' : ok === 'break' ? 'bad' : 'warn'}">${text}</span>`;
+    const rows = [];
+    const add = (name, q, c, nu, status, why, cls = '') => rows.push({ name, q, c, nu, status, why, cls });
+    // E
+    const dE = pctd(ex.E_num, p.E);
+    const predE = -100 * (3 * 0.375 * p.sigma_e / p.E + p.delta * cf.ell / (p.L0 * (1 - p.delta)));
+    add('Elastic modulus from gage, <i>E</i>', 'modulus', p.E, ex.E_num, Math.abs(dE - predE) < 0.06 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Slope of σ vs ε for 15–60 % of σe. Gap ${S.fmt(dE, 2)} % (expected ${S.fmt(predE, 2)} %): finite-strain definitions of σ and ε (≈ −3σ/E) and the weaker neck zone (≈ −δℓ/L₀). Both are far below measurement uncertainty.`);
+    // E_app
+    const dEa = pctd(ex.E_app_num, cf.E_app);
+    add('Apparent modulus from crosshead, <i>E</i><sub>app</sub> = 1/(1/<i>E</i> + <i>A</i><sub>0</sub><i>C</i><sub>m</sub>/<i>L</i><sub>c</sub>)', 'modulus', cf.E_app, ex.E_app_num, Math.abs(dEa) < 0.3 ? chip(true, 'agree') : chip(false, 'gap'),
+      `Springs in series. Crosshead strain reads only ${S.fmt(100 * cf.E_app / p.E, 3)} % of the true modulus: never take E from crosshead travel.`);
+    // sigma_Y
+    const dY = pctd(ex.sigY, cf.sigY), predY = -100 * (0.002 + cf.sigY / p.E);
+    add('0.2 % offset yield strength, <i>σ</i><sub>Y</sub> ≈ <i>K</i>(<i>ε</i><sub>0</sub> + 0.002)<sup><i>n</i></sup>', 'stress', cf.sigY, ex.sigY, Math.abs(dY - predY) < 0.25 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Gap ${S.fmt(dY, 2)} %; expected ≈ −ε<sub>Y</sub> = ${S.fmt(predY, 2)} % because the closed form treats true and engineering stress as equal at small strain.`);
+    // sigma_U
+    const dU = pctd(ex.sigU, cf.sigU), predU = -100 * p.delta;
+    add('Ultimate strength (Considère), <i>σ</i><sub>U</sub> = <i>K n<sup>n</sup></i> e<sup>−<i>ε</i><sub>t,U</sub></sup>', 'stress', cf.sigU, ex.sigU, Math.abs(dU - predU) < 0.05 ? chip(true, 'explained') : chip(false, 'gap'),
+      `Gap ${S.fmt(dU, 2)} %; expected −δ = ${S.fmt(predU, 2)} %: the weakest section sets the maximum load.`);
+    // e_u
+    const dEuPerf = pctd(perfect.e_u, cf.e_u);
+    add('Uniform elongation, <i>ε</i><sub>u</sub> = exp(<i>n</i> − <i>ε</i><sub>0</sub> + <i>σ</i><sub>t,U</sub>/<i>E</i>) − 1', 'percent', cf.e_u, ex.e_u, Math.abs(dEuPerf) < 1 ? chip(true, 'explained by δ') : chip(false, 'gap'),
+      `Perfect bar (δ = 0), numerical: ${S.fmt(100 * perfect.e_u, 4)} % (${S.fmt(dEuPerf, 2)} %; the closed form neglects elastic strain in the hardening rate). With δ the neck site reaches its peak first and the rest of the gage stops stretching early.`);
+    // imperfection asymptotic
+    const dnum = cf.et_u - Math.log1p(ex.e_u);
+    const okImp = p.delta > 0 ? Math.abs(dnum - cf.dEps_imp) / cf.dEps_imp < 0.2 : true;
+    add('Imperfection drop in true uniform strain, (1 − ℓ/<i>L</i><sub>0</sub>)√(2<i>n</i>δ)', 'none', cf.dEps_imp, dnum, p.delta === 0 ? chip(true, 'δ = 0') : okImp ? chip(true, 'asymptotic OK') : chip(false, 'beyond small-δ'),
+      `Expansion of the load capacity about its peak: valid for small δ. Push δ to 3 % to watch the estimate degrade.`);
+    // energy
+    const dWperf = pctd(perfect.uU, cf.uU);
+    add('Energy per volume to max load, <i>u</i><sub>U</sub> = ∫<i>σ</i><sub>t</sub>d<i>ε</i><sub>t</sub>', 'energy', cf.uU, ex.uU, Math.abs(dWperf) < 1 ? chip(true, 'explained by δ') : chip(false, 'gap'),
+      `Trapezoid rule up to the largest sample. Perfect bar (δ = 0): ${S.fmtQ('energy', perfect.uU, 4)} (${S.fmt(dWperf, 2)} %). The imperfect specimen stops stretching uniformly earlier, so it stores ${S.fmt(-pctd(ex.uU, cf.uU), 3)} % less energy before necking.`);
+    // fracture true stress (model break)
+    const dF = pctd(ex.sig_t_formula_f, ex.sig_neck_f);
+    add('True stress at fracture: <i>σ</i>(1 + <i>ε</i>) from gage vs. <i>P</i>/<i>A</i> in neck', 'stress', ex.sig_t_formula_f, ex.sig_neck_f, ex.fracBeforeNeck ? chip(true, 'no neck') : chip('break', 'model breaks'),
+      ex.fracBeforeNeck ? 'Fracture came before necking, so deformation stayed uniform and the formula holds.' : `The formula assumes the whole gage stretched uniformly. It is ${S.fmt(dF, 3)} % off once a neck forms.`, ex.fracBeforeNeck ? '' : 'break');
+    if (cf.breaksFirst) add('Considère never reached', 'none', NaN, NaN, chip(false, 'brittle-like'), 'The fracture strain is below the necking strain: σU is the fracture stress and the Considère closed forms do not apply.');
+    const th = '<tr><th scope="col">Quantity</th><th scope="col">Closed form</th><th scope="col">Numerical</th><th scope="col">Status</th><th scope="col">Why they differ</th></tr>';
+    const val = (q, v) => q === 'percent' ? S.fmt(100 * v, 4) + ' %' : q === 'none' ? S.fmt(v, 4) : S.fmtQ(q, v, 4);
+    $('readout').innerHTML = th + rows.map((r) => `<tr class="${r.cls}"><td>${r.name}</td><td class="v">${val(r.q, r.c)}</td><td class="v">${val(r.q, r.nu)}</td><td>${r.status}</td><td class="why">${r.why}</td></tr>`).join('');
+    R.readoutRows = rows.map((r) => [r.name.replace(/<[^>]+>/g, ''), r.q, r.c, r.nu]);
+    const st = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="val">${v}</div></div>`;
+    $('ductility').innerHTML = [
+      st('Elongation after fracture', S.fmt(100 * ex.EL, 3) + ' %'),
+      st('Reduction of area', S.fmt(100 * ex.RA, 3) + ' %'),
+      st('Modulus of resilience σe²/2E', S.fmtQ('energy', cf.u_res, 3)),
+      st('Crosshead strain at fracture', S.fmt(100 * ex.ech_f, 3) + ' %'),
+    ].join('');
+  }
+
+  // ---------------------------------------------------------------- convergence plots
+  function drawConvergence() {
+    const { conv, mesh, cf } = R;
+    const Ms = conv.rows.map((r) => r.M);
+    const series = [
+      { x: Ms, y: conv.rows.map((r) => r.errU), role: 'numeric', label: `σU, largest sample: slope ${S.fmt(-conv.slopeU, 2)}` },
+      { x: Ms, y: conv.rows.map((r) => r.errY), role: 'third', label: `σY, offset intersection: slope ${S.fmt(-conv.slopeY, 2)}` },
+      { x: Ms, y: conv.rows.map((r) => r.errW), role: 'fourth', label: `u(ε*), trapezoid to ε*: slope ${S.fmt(-conv.slopeW, 2)}` },
+    ];
+    const all = conv.rows.flatMap((r) => [r.errU, r.errY, r.errW]).filter((v) => v > 0);
+    const lo = Math.pow(10, Math.floor(Math.log10(Math.min(...all)))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max(...all))));
+    const e0 = Math.max(...conv.rows.slice(0, 2).map((r) => r.errY)) * 1.5;
+    series.push({ x: [10, 610], y: [e0, e0 * Math.pow(10 / 610, 2)], role: 'theory', width: 1, opacity: 0.7, dash: '2 3', label: 'reference slope: error ∝ h²', hover: false });
+    plots.conv.draw({ series, xlim: [8, 800], ylim: [lo, hi], desc: `Convergence study: offset-yield error falls with slope ${S.fmt(-conv.slopeY, 2)} on log-log axes.` });
+    $('cap-conv').innerHTML = `All three converge at about second order (error ∝ <i>h</i><sup>2</sup>, slope ≈ 2), as expected for linear interpolation and the trapezoid rule on a smooth curve. The σ<sub>U</sub> points scatter because the error of "largest sample" depends on how close a sample happens to fall to the true peak. Energy is integrated to a fixed strain ε* = ${S.fmt(100 * conv.eStar, 3)} %: integrating to the largest sample instead moves the endpoint by up to one step and drops the method to first order.`;
+    const Ns = mesh.map((r) => r.N);
+    plots.mesh.draw({
+      series: [
+        { x: Ns, y: mesh.map((r) => 100 * r.ELmesh), role: 'numeric', label: 'Neck length set by mesh, ℓ = L₀/N' },
+        { x: [2, 200], y: [100 * R.ex.EL, 100 * R.ex.EL], role: 'third', label: p.neckMode === 'mesh' ? 'Current setting' : 'Physical neck length, ℓ = c·d₀' },
+        { x: [2, 200], y: [100 * cf.e_u, 100 * cf.e_u], role: 'theory', width: 1.2, label: 'Uniform elongation εu (closed form)' },
+      ],
+      xlim: [1.8, 220], ylim: [0, Math.max(...mesh.map((r) => 100 * r.ELmesh), 100 * R.ex.EL) * 1.12],
+      desc: 'Mesh study: elongation after fracture keeps falling as the mesh is refined when nothing physical sets the neck length.' });
+    $('cap-mesh').innerHTML = `With the neck length tied to the mesh, elongation after fracture never converges: it falls toward ε<sub>u</sub> as <i>N</i> grows. A one-dimensional model contains no length scale for the neck; real necks are about one diameter long, which is why %EL depends on the gage-length-to-diameter ratio.`;
+  }
+
+  // ---------------------------------------------------------------- push past assumptions
+  const EXPERIMENTS = [
+    ['Refine a model with no neck length', 'Switch the neck length to the mesh and use N = 200 elements.', () => { p.neckMode = 'mesh'; p.N = 200; }],
+    ['Large imperfection', 'Set δ = 3 %. The small-δ estimate of the uniform-strain drop degrades and σU falls by 3 %.', () => { p.delta = 0.03; }],
+    ['Soft testing machine', 'Set Cm = 0.03 mm/kN. Compare the crosshead curve with the gage curve.', () => { p.Cm = 30e-9; }],
+    ['Breaks before it necks', 'Set the fracture strain below n. Considère never applies and σU becomes the fracture stress.', () => { p.eps_f = Math.max(0.03, 0.4 * Math.max(0.01, M.closedForms(p).ep_u)); }],
+    ['Almost no hardening', 'Set n = 0.03. Necking starts almost at yield.', () => { p.n = 0.03; markCustom('n'); }],
+    ['Short gage length', 'Set L₀ = 2 d₀. Same material, larger elongation after fracture.', () => { p.L0 = 2 * p.d0; }],
+  ];
+  $('experiments').innerHTML = EXPERIMENTS.map((x, k) => `<div class="exp"><h3>${x[0]}</h3><p>${x[1]}</p><div><button class="btn" type="button" data-exp="${k}">Run</button></div></div>`).join('');
+  $('experiments').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-exp]'); if (!b) return;
+    EXPERIMENTS[+b.dataset.exp][2](); setAll(); update();
+  });
+  function renderWarnings(i) {
+    const { path, ex, cf } = R;
+    const W = [];
+    const s = path.s[i], e = path.e[i];
+    if (path.epz[i] > 0) {
+      const ratio = p.E * e / s;
+      W.push(['warn', ratio < 2 ? `Hooke's law: Eε = ${S.fmtQ('stress', p.E * e, 4)} vs actual σ = ${S.fmtQ('stress', s, 4)} (${S.fmt(100 * (ratio - 1), 3)} % too high): the material is past its elastic limit.`
+        : `Hooke's law would give Eε = ${S.fmtQ('stress', p.E * e, 3)}, ${S.fmt(ratio, 3)} times the actual stress: almost all of this strain is plastic.`]);
+    }
+    if (i > ex.imax) W.push(['bad', `Necking: σ = P/A₀ = ${S.fmtQ('stress', s, 4)}, but the stress in the neck is ${S.fmtQ('stress', path.sz[i], 4)}.`]);
+    if (p.neckMode === 'mesh') W.push(['bad', `Neck length set by the mesh (ℓ = ${S.fmtQ('length', cf.ell, 3)}): post-necking results depend on N.`]);
+    if (p.delta > 0.01) W.push(['warn', `δ = ${S.fmt(100 * p.delta, 3)} %: the small-imperfection expansion √(2nδ) is losing accuracy.`]);
+    if (cf.E_app / p.E < 0.5) W.push(['warn', `Crosshead modulus is ${S.fmt(100 * cf.E_app / p.E, 3)} % of E: compliance dominates the crosshead reading.`]);
+    if (cf.breaksFirst) W.push(['bad', 'Fracture before necking: Considère closed forms do not apply.']);
+    if (!W.length) W.push(['ok', 'At this point every assumption behind the textbook formulas holds.']);
+    $('warnings').innerHTML = W.map(([c, t]) => `<li><span class="chip ${c}">${c === 'ok' ? 'valid' : c === 'warn' ? 'approx.' : 'fails'}</span><span>${t}</span></li>`).join('');
+  }
+
+  // ---------------------------------------------------------------- formula cards
+  function renderCards(i) {
+    const { path, ex, cf } = R;
+    const d = M.derived(p);
+    const s = path.s[i], e = path.e[i];
+    const hr = M.hardRate(p, d, path.epz[i]);
+    const necked = i > ex.imax;
+    const card = (eq, origin, terms, state, live) => `<article class="card"><div class="row"><div class="eq">${eq}</div>${state}</div><p><b>From:</b> ${origin}</p><p><b>Terms:</b> ${terms}</p><div class="live">${live}</div></article>`;
+    const chip = (c, t) => `<span class="chip ${c}">${t}</span>`;
+    const cards = [
+      card('<i>σ</i> = <i>P</i> / <i>A</i><sub>0</sub>', 'equilibrium of a cut through the gage: the internal force <i>P</i> balances the load.', '<i>A</i><sub>0</sub> is the original area, so this is a nominal stress. It equals the real stress only while the section has not shrunk much and away from the grips (Saint-Venant).',
+        necked ? chip('bad', 'not the neck stress') : chip('ok', 'uniform'), `P/A₀ = ${S.fmtQ('stress', s, 4)} · stress in neck = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('<i>ε</i> = <i>δ</i> / <i>L</i><sub>0</sub>', 'geometry: the average stretch per unit length between the gage marks.', 'An average. After necking the neck strains far more than the rest of the gage.',
+        necked ? chip('warn', 'average only') : chip('ok', 'uniform'), `gage ε = ${S.fmt(100 * e, 3)} % · neck ε = ${S.fmt(100 * Math.expm1(path.etz[i]), 3)} %`),
+      card('<i>σ</i> = <i>E ε</i>', 'Hooke\'s law, the linear constitutive law (Beer §2.1D).', '<i>E</i> is the slope. Valid only below the elastic limit <i>σ</i><sub>e</sub>.',
+        path.epz[i] > 0 ? chip('bad', 'past σe') : chip('ok', 'elastic'), `Eε = ${S.fmtQ('stress', p.E * e, 4)} vs σ = ${S.fmtQ('stress', s, 4)}`),
+      card('<i>σ</i><sub>t</sub> = <i>σ</i>(1+<i>ε</i>), <i>ε</i><sub>t</sub> = ln(1+<i>ε</i>)', 'volume constancy <i>AL</i> = <i>A</i><sub>0</sub><i>L</i><sub>0</sub> during plastic flow (Beer §2.1C).', 'Converts nominal to true values. Exact while the gage deforms uniformly; wrong after necking.',
+        necked ? chip('bad', 'invalid') : chip('ok', 'exact'), `σ(1+ε) = ${S.fmtQ('stress', s * (1 + e), 4)} · neck σt = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('d<i>σ</i><sub>t</sub>/d<i>ε</i><sub>t</sub> = <i>σ</i><sub>t</sub>', 'd<i>P</i> = 0 with <i>P</i> = <i>σ</i><sub>t</sub><i>A</i> and d<i>A</i>/<i>A</i> = −d<i>ε</i><sub>t</sub> (Considère).', 'While hardening outpaces the area loss, the bar stays uniform; when it no longer can, a neck forms. For the Swift law: <i>ε</i><sub>0</sub> + <i>ε</i><sub>p</sub> = <i>n</i>.',
+        path.epz[i] === 0 ? chip('info', 'elastic') : hr > path.sz[i] ? chip('ok', 'stable') : chip('warn', 'neck site unstable'), `dσt/dεt = ${S.fmtQ('stress', hr, 4)} vs σt = ${S.fmtQ('stress', path.sz[i], 4)}`),
+      card('<i>E</i><sub>app</sub> = 1 / (1/<i>E</i> + <i>A</i><sub>0</sub><i>C</i><sub>m</sub>/<i>L</i><sub>c</sub>)', 'springs in series: the specimen and the machine carry the same <i>P</i>; their stretches add.', '<i>C</i><sub>m</sub> lumps frame, grips and shoulders. Crosshead strain overstates elastic strain.',
+        cf.E_app / p.E < 0.9 ? chip('warn', `${S.fmt(100 * cf.E_app / p.E, 3)} % of E`) : chip('ok', 'stiff machine'), `E = ${S.fmtQ('modulus', p.E, 4)} · E_app = ${S.fmtQ('modulus', cf.E_app, 4)}`),
+    ];
+    $('cards').innerHTML = cards.join('');
+  }
+
+  // ---------------------------------------------------------------- export
+  const panel = $('export-panel');
+  S.wireCopy(panel);
+  const u = (q) => S.csvUnit(q);
+  $('exp-curve').addEventListener('click', () => {
+    const { path } = R;
+    const rows = path.P.map((P, k) => [k, S.plain(S.conv('force', P)), S.plain(path.e[k]), S.plain(S.conv('stress', path.s[k])), S.plain(path.ech[k]),
+      S.plain(Math.log1p(path.e[k])), S.plain(S.conv('stress', path.s[k] * (1 + path.e[k]))), S.plain(path.etz[k]), S.plain(S.conv('stress', path.sz[k])), S.plain(S.conv('length', path.dz[k]))]);
+    const head = ['point', `load_${u('force')}`, 'eng_strain_gage', `eng_stress_${u('stress')}`, 'crosshead_strain', 'true_strain_formula', `true_stress_formula_${u('stress')}`, 'true_strain_neck', `true_stress_neck_${u('stress')}`, `neck_diameter_${u('length')}`];
+    S.exportCSV('lab01_virtual_test.csv', S.toCSV(head, rows), panel);
+  });
+  $('exp-readout').addEventListener('click', () => {
+    if (!R.readoutRows) return;
+    const conv = (q, v) => q === 'none' ? v : q === 'percent' ? 100 * v : S.conv(q, v);
+    const rows = R.readoutRows.map(([n, q, c, v]) => [n, S.plain(conv(q, c)), S.plain(conv(q, v)), q === 'none' ? '' : q === 'percent' ? '%' : S.unit(q), S.plain(100 * (v - c) / c, 4)]);
+    S.exportCSV('lab01_readout.csv', S.toCSV(['quantity', 'closed_form', 'numerical', 'unit', 'difference_pct'], rows), panel);
+  });
+  $('exp-conv').addEventListener('click', () => {
+    if (!R.conv) return;
+    const rows = R.conv.rows.map((r) => [r.M, S.plain(r.h), S.plain(S.conv('stress', r.sigU)), S.plain(S.conv('stress', r.sigY)), S.plain(S.conv('energy', r.uStar)), S.plain(r.errU), S.plain(r.errY), S.plain(r.errW)]);
+    rows.push(['reference_8192', S.plain(1 / 8192), S.plain(S.conv('stress', R.conv.ref.sigU)), S.plain(S.conv('stress', R.conv.ref.sigY)), S.plain(S.conv('energy', R.conv.ref.uStar)), '', '', '']);
+    S.exportCSV('lab01_convergence.csv', S.toCSV(['steps_M', 'h', `sigU_${u('stress')}`, `sigY_${u('stress')}`, `energy_to_eps_star_${u('energy')}`, 'rel_err_sigU', 'rel_err_sigY', 'rel_err_energy'], rows), panel);
+  });
+
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (R) drawSpecimen(Math.min(R.path.P.length - 1, Math.round(progress * (R.path.P.length - 1)))); }, 150); });
+  $('overlay').value = 'steel';
+  update();
+})();
+</script>
+</body>
+</html>

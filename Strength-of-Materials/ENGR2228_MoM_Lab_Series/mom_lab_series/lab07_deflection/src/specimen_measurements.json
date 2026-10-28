@@ -1,0 +1,75 @@
+{
+ "bar": {
+  "b_mm": [
+   25.42,
+   25.44,
+   25.43
+  ],
+  "h_mm": [
+   6.361,
+   6.363,
+   6.362,
+   6.362
+  ]
+ },
+ "A": {
+  "span_mm": 800.0,
+  "load_x_mm": [
+   200.0,
+   600.0
+  ],
+  "gage_x_mm": [
+   200.0,
+   400.0,
+   600.0
+  ]
+ },
+ "B": {
+  "L_mm": 700.0,
+  "gage_x_mm": [
+   350.0,
+   700.0
+  ],
+  "tip_load_x_mm": 700.0,
+  "mid_load_x_mm": 350.0,
+  "settle_mm": 0.5
+ },
+ "C": {
+  "b_mm": [
+   12.7,
+   12.71,
+   12.69
+  ],
+  "t_mm": [
+   0.787,
+   0.788,
+   0.786,
+   0.787
+  ],
+  "L_mm": 250.0,
+  "rho_kg_m3": 7850.0,
+  "hanger_kg": 0.02
+ },
+ "g": 9.80665,
+ "mass_tolerance_pct": 0.1,
+ "caliper_accuracy_mm": 0.02,
+ "micrometer_accuracy_mm": 0.003,
+ "rule_accuracy_mm": 0.5,
+ "indicator_accuracy_mm": 0.003,
+ "indicator_resolution_mm": 0.001,
+ "loadcell_accuracy_pct": 0.5,
+ "loadcell_resolution_N": 0.01,
+ "grid_reading_mm": 0.5,
+ "prop_screw_accuracy_mm": 0.005,
+ "reference": {
+  "E_st_GPa": 205.2,
+  "u_E_st_GPa": 1.2,
+  "sY_st_MPa": 296.2,
+  "u_sY_st_MPa": 1.1,
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0,
+  "sY_spring_MPa_min": 1300.0
+ }
+}

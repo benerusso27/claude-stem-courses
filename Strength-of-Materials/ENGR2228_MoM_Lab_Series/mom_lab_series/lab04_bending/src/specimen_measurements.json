@@ -1,0 +1,59 @@
+{
+ "b_mm": [
+  25.43,
+  25.41,
+  25.42
+ ],
+ "h_mm": [
+  50.79,
+  50.77,
+  50.78
+ ],
+ "ts_mm": [
+  6.37,
+  6.35,
+  6.36
+ ],
+ "span_mm": 600.0,
+ "a1_mm": 200.0,
+ "a2_mm": 400.0,
+ "x_bottom_mm": [
+  100.0,
+  150.0
+ ],
+ "yA_mm": [
+  5.65,
+  15.18,
+  25.49,
+  35.15,
+  45.62
+ ],
+ "yB_mm": [
+  10.28,
+  20.21,
+  30.4,
+  40.09,
+  50.25
+ ],
+ "caliper_accuracy_mm": 0.02,
+ "height_gage_accuracy_mm": 0.05,
+ "load_position_accuracy_mm": 0.5,
+ "gage_factor_tolerance_pct": 1.0,
+ "load_cell_accuracy_pct": 0.5,
+ "bar_length_mm": 700.0,
+ "straightedge_gap_mm": 2.85,
+ "feeler_resolution_mm": 0.05,
+ "reference": {
+  "E_al_GPa": 68.46,
+  "u_E_al_GPa": 0.47,
+  "nu_al": 0.33,
+  "u_nu_al": 0.003,
+  "E_st_GPa": 205.0,
+  "u_E_st_GPa": 3.0,
+  "sY_al_MPa": 273.7,
+  "u_sY_al_MPa": 1.0,
+  "sY_st_MPa": 296.2,
+  "u_sY_st_MPa": 1.1,
+  "m_RO": 17
+ }
+}
