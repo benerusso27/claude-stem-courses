@@ -1,0 +1,374 @@
+<!--title: Forces on Submerged Surfaces (Ch 4)-->
+<!--short: Ch 4 Static forces-->
+<!--eyebrow: Weeks 2–3 · Chapter 4-->
+<!--desc: Lecture companion for Mott Chapter 4: resultant force and center of pressure on plane and curved submerged surfaces, the dam problem, and pressurized tanks, with a live gate solver.-->
+<header class="hero">
+  <p class="eyebrow">Weeks 2–3 · Mott Chapter 4 (Forces Due to Static Fluids) · Slide deck CH 4</p>
+  <h1>Forces on <em>Submerged</em> Surfaces</h1>
+  <p class="lede">Pressure grows with depth, so a wall or gate feels more push at the bottom than at the top. Two numbers capture all of it: the size of the resultant force, \(F_R = \gamma h_c A\), and where it acts, the center of pressure, always a little below the centroid.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#cases">The seven cases</a><a href="#derive">Derivation</a><a href="#solver">Gate solver</a><a href="#dam">Dam</a><a href="#curved">Curved surfaces</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#cases">The seven cases</a></li><li><a href="#derive">Derivation</a></li><li><a href="#solver">Gate solver</a></li><li><a href="#dam">Dam stability</a></li><li><a href="#curved">Curved surfaces</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="cases">
+  <div class="sec-head"><p class="eyebrow">Slides 3–14, 21, 24, 28, 34 · Mott §4.2–4.11</p><h2>One method, seven cases</h2><p class="dek">The slides build up from the easy cases to the general one. Every case answers the same three questions: how big is the force, where does it act, and which way does it point.</p></div>
+  <div class="read"><p><b>Direction is the easy one.</b> Pressure always pushes perpendicular to a surface, so the resultant on a flat surface is perpendicular to that surface. Size and location take the rest of the chapter.</p></div>
+  <div class="scroll-x">
+    <table class="tbl">
+      <thead><tr><th>Case (slide)</th><th>Situation</th><th>Magnitude</th><th>Acts at</th></tr></thead>
+      <tbody>
+        <tr><td>Simple #1 (s8)</td><td>Gas, or a very high pressure, so depth hardly matters</td><td>\(F = pA\)</td><td>centroid of the area</td></tr>
+        <tr><td>Simple #2 (s9)</td><td>Horizontal surface (tank bottom)</td><td>\(F = \gamma h A\)</td><td>centroid of the area</td></tr>
+        <tr><td>#1 (s13)</td><td>Vertical wall, top at the free surface</td><td>\(F_R = \gamma h_c A\)</td><td>\(L_p = L_c + I_c/(L_cA)\); for a rectangle, \(h/3\) up from the bottom</td></tr>
+        <tr><td>#2 (s21)</td><td>Inclined wall, top at the free surface</td><td>\(F_R = \gamma h_c A\), \(h_c\) = vertical depth to centroid</td><td>same formula, \(L\) measured along the incline</td></tr>
+        <tr><td>#3, #4 (s24)</td><td>Gate fully submerged, vertical or inclined</td><td>same</td><td>same; \(L_c\) measured from the surface line, not from the gate</td></tr>
+        <tr><td>#5, #6 (s28)</td><td>Same, in a pressurized tank</td><td>replace the surface pressure by an extra depth \(p_a/\gamma\)</td><td>same, with \(L\) from the equivalent surface</td></tr>
+        <tr><td>#7 (s34)</td><td>Curved surface</td><td>\(F_H\) = force on the vertical projection; \(F_V\) = weight of the fluid above</td><td>\(F_H\) at the projection's center of pressure; \(F_R\) passes through the center of curvature</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="two">
+    <div class="read">
+      <h3>Slide 8: why hydraulics multiply force</h3>
+      <p>When the pressure is high, a few metres of depth hardly change it, so the pressure is the same everywhere in the fluid. Force is pressure times area, so a big piston fed from the same fluid as a small one gets a force bigger by the ratio of the areas. An excavator's cylinders run at around 20–35 MPa (typical industry figures, not from the slides), so a 100 mm bore cylinder pushes with roughly 160–270 kN.</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="jF1">Force on small piston <span class="unit">N</span></label><input id="jF1" type="text" inputmode="decimal" value="200"></div>
+        <div class="field"><label for="jD1">Small piston diameter <span class="unit">mm</span></label><input id="jD1" type="text" inputmode="decimal" value="20"></div>
+        <div class="field"><label for="jD2">Large piston diameter <span class="unit">mm</span></label><input id="jD2" type="text" inputmode="decimal" value="200"></div>
+      </div>
+      <div class="out"><div class="stat"><span class="lbl">Pressure (same everywhere)</span><span class="val" id="jP"></span></div><div class="stat hot"><span class="lbl">Force on large piston</span><span class="val" id="jF2"></span></div></div>
+      <p class="small muted">The catch: the large piston moves 100 times less far. Energy is conserved.</p>
+    </div></div>
+  </div>
+</section>
+
+<section id="derive">
+  <div class="sec-head"><p class="eyebrow">Slides 13–16 · Mott §4.6</p><h2>Where F<sub>R</sub> = γh<sub>c</sub>A and L<sub>p</sub> come from</h2><p class="dek">Slides 15 and 16 ask you to finish the derivation. Here it is, for a plane surface at any angle.</p></div>
+  <figure class="panel" style="padding:12px">
+    <svg viewBox="0 0 640 300" style="width:100%;display:block" role="img" aria-label="An inclined plane surface in a liquid. L is measured along the plane from the line where the plane meets the free surface; a thin strip of area dA at distance L has depth h = L cos theta.">
+      <defs><marker id="dA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="svg-ink"/></marker></defs>
+      <rect x="20" y="60" width="600" height="220" class="fl-water" fill-opacity=".12"/>
+      <line x1="20" y1="60" x2="620" y2="60" class="st-water" stroke-width="2"/>
+      <text x="26" y="52" font-size="12" class="fl-water">free surface (p = 0 gauge)</text>
+      <line x1="360" y1="60" x2="250" y2="290" class="st-ink" stroke-width="3"/>
+      <line x1="360" y1="60" x2="360" y2="290" class="st-ink2" stroke-dasharray="4 4"/>
+      <path d="M360,110 A50,50 0 0 0 339,105" fill="none" class="st-ink2"/><text x="343" y="128" font-size="13" class="svg-ink">θ</text>
+      <line x1="306" y1="173" x2="292" y2="202" class="st-dye" stroke-width="9"/>
+      <text x="286" y="192" font-size="13" text-anchor="end" class="fl-dye">strip dA</text>
+      <line x1="390" y1="60" x2="335" y2="175" class="st-ink" stroke-width="1.2" marker-end="url(#dA)"/><text x="372" y="120" font-size="13" class="svg-ink">L</text>
+      <line x1="470" y1="60" x2="470" y2="187" class="st-ink" stroke-width="1.2" marker-end="url(#dA)"/><text x="478" y="130" font-size="13" class="svg-ink">h = L cos θ</text>
+      <line x1="299" y1="187" x2="470" y2="187" class="st-ink2" stroke-dasharray="3 3"/>
+      <text x="380" y="250" font-size="13" class="svg-ink">pressure on the strip:</text><text x="380" y="268" font-size="13" class="svg-ink">p = γh = γL cos θ</text>
+    </svg>
+    <figcaption>Measure \(L\) along the plane from where the plane (extended if needed) meets the free surface. θ is the plane's angle from vertical; Mott uses the angle from the surface, so check which one a figure gives you.</figcaption>
+  </figure>
+  <ol class="steps">
+    <li><span class="sn">1</span><div class="sb"><h4>Add up the pressure on every strip</h4><p>A strip at distance \(L\) is at depth \(h = L\cos\theta\), so the force on it is \(dF = p\,dA = \gamma L\cos\theta\,dA\). Integrate over the surface:</p>\[ F_R = \int_A \gamma L\cos\theta\,dA = \gamma\cos\theta\int_A L\,dA \]</div></li>
+    <li><span class="sn">2</span><div class="sb"><h4>Recognize the first moment of area</h4><p>By definition of the centroid, \(\int_A L\,dA = L_c A\). So</p>\[ F_R = \gamma\,(L_c\cos\theta)\,A = \gamma\,h_c\,A = p_c\,A \]<p class="why">The resultant equals the pressure <b>at the centroid</b> times the area. Slide 13 calls this \(P_{avg}\): the average pressure over the surface is the pressure at its centroid.</p></div></li>
+    <li><span class="sn">3</span><div class="sb"><h4>Find where it acts: balance moments</h4><p>The resultant must produce the same moment about the surface line as all the strips together (slide 16):</p>\[ F_R\,L_p = \int_A L\,dF = \gamma\cos\theta\int_A L^2\,dA = \gamma\cos\theta\,I_s \]<p>\(I_s\) is the second moment of area about the surface line. The parallel-axis theorem moves it to the centroid: \(I_s = I_c + A L_c^2\).</p></div></li>
+    <li class="final"><span class="sn">4</span><div class="sb"><h4>Divide by F<sub>R</sub></h4>\[ L_p = \frac{\gamma\cos\theta\,(I_c + AL_c^2)}{\gamma\cos\theta\,L_cA} \]<div class="boxed">\[ L_p = L_c + \frac{I_c}{L_c A} \]</div><p class="why">The extra term is always positive, so the center of pressure is always <b>below</b> the centroid. It shrinks as the gate goes deeper (\(L_c\) grows), because the pressure becomes more uniform across the gate.</p></div></li>
+  </ol>
+  <div class="traps">
+    <div class="trap"><span class="tag">Trap</span><p>\(L_c\) and \(L_p\) are measured from the <b>free surface line</b> along the plane (slide 13: "always measure from the water surface"), not from the top of the gate.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>\(I_c\) is about the centroidal axis that is <b>horizontal</b> (parallel to the surface line). For a rectangle of width b and height h along the slope, \(I_c = bh^3/12\), with h the dimension along the slope.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>Force uses the <b>vertical depth</b> \(h_c\); location uses distances <b>along the plane</b>, \(L\). On a vertical wall the two are the same, which is why mixing them up only shows on inclined gates.</p></div>
+  </div>
+</section>
+
+<section id="solver">
+  <div class="sec-head"><p class="eyebrow">Cases #1–#6 in one tool</p><h2>Gate solver</h2><p class="dek">Pick a shape, tilt it, sink it, pressurize the tank. The drawing shows the pressure on the gate, the centroid and the center of pressure; the work below shows each number.</p></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Plane surface in a liquid</h3><div class="seg" role="group" aria-label="Unit system" id="gSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="gFields">
+        <div class="field"><label for="gShape">Shape</label><select id="gShape"><option value="rect">Rectangle</option><option value="circle">Circle</option><option value="tri">Triangle (base up)</option><option value="semi">Semicircle (flat side up)</option><option value="slot">Rounded-end slot (rectangle + two half-circles)</option></select></div>
+        <div class="field" id="gBf"><label for="gB" id="gBL">Width b</label><input id="gB" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="gH" id="gHL">Height along the plane h</label><input id="gH" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="gT">Angle from vertical θ <span class="mono" id="gTv"></span></label><input id="gT" type="range" min="0" max="80" step="1" value="0"></div>
+        <div class="field"><label for="gD" id="gDL">Depth of top edge</label><input id="gD" type="text" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="gSg">Liquid sg</label><input id="gSg" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="gP" id="gPL">Surface pressure (gauge)</label><input id="gP" type="text" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="gG" id="gGL">g</label><input id="gG" type="text" inputmode="decimal" value="9.81"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-g="q1">Q1 (s30)</button><button type="button" class="chip" data-g="q2">Q2</button><button type="button" class="chip" data-g="q3">Q3</button><button type="button" class="chip" data-g="q4">Q4: +1 MPa</button><button type="button" class="chip" data-g="p417">Prob 4.17 oil wall</button><button type="button" class="chip" data-g="s26">Slide 26 view port</button><button type="button" class="chip" data-g="p431">Prob 4.31 tank end</button><button type="button" class="chip" data-g="p430">Prob 4.30 filler pipe</button></div>
+      <div class="two">
+        <svg id="gSvg" viewBox="0 0 420 340" style="width:100%;display:block" role="img" aria-label="Side view: the liquid, the gate drawn as a line at the chosen angle, pressure arrows along it, the centroid and the center of pressure."></svg>
+        <div style="display:grid;gap:10px;align-content:start">
+          <div class="out">
+            <div class="stat hot"><span class="lbl">Resultant force F<sub>R</sub></span><span class="val" id="gF"></span></div>
+            <div class="stat"><span class="lbl">Depth to centroid h<sub>c</sub></span><span class="val" id="gHc"></span></div>
+            <div class="stat"><span class="lbl">L<sub>c</sub> (along plane)</span><span class="val" id="gLc"></span></div>
+            <div class="stat hot"><span class="lbl">L<sub>p</sub> (along plane)</span><span class="val" id="gLp"></span></div>
+            <div class="stat"><span class="lbl">L<sub>p</sub> − L<sub>c</sub></span><span class="val" id="gDl"></span></div>
+            <div class="stat"><span class="lbl">Depth to center of pressure h<sub>p</sub></span><span class="val" id="gHp"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="workline" id="gWork"></div>
+      <p class="small muted" id="gNote"></p>
+    </div>
+  </div>
+</section>
+
+<section id="dam">
+  <div class="sec-head"><p class="eyebrow">Slides 18–20 · 2018 Midterm I, Problem 3</p><h2>Will the dam slide or tip over?</h2><p class="dek">A rectangular earth dam of height H and width W holds water of depth D. Per metre of dam length, compare the water's push with what the dam's weight can resist.</p></div>
+  <div class="two">
+    <ol class="steps">
+      <li><span class="sn">1</span><div class="sb"><h4>Water force and its moment</h4><p>Vertical wall, top at the surface: \(F_w = \gamma_w (D/2)(D\cdot 1) = \gamma_w D^2/2\), acting \(D/3\) above the base. About the downstream toe A: \(M_w = \gamma_w D^3/6\).</p></div></li>
+      <li><span class="sn">2</span><div class="sb"><h4>Sliding</h4><p>Friction can supply \(\mu\,\gamma_e H W\). Require \(\mu\gamma_e H W \ge \gamma_w D^2/2\). With \(\mu = 0.5\):</p>\[ W \ge \frac{\gamma_w D^2}{\gamma_e H} \]</div></li>
+      <li class="final"><span class="sn">3</span><div class="sb"><h4>Overturning about A</h4><p>The dam's weight acts at \(W/2\) from A: \(M_r = \gamma_e H W \cdot W/2\). Require \(M_r \ge M_w\):</p>\[ W \ge \sqrt{\frac{\gamma_w D^3}{3\gamma_e H}} \]<p class="why">Both match the slide's answers. Real dams also check uplift: water seeping under the base pushes up and reduces both friction and the restoring moment.</p></div></li>
+    </ol>
+    <div class="panel"><div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="dD">Water depth D <span class="unit">m</span></label><input id="dD" type="text" inputmode="decimal" value="10"></div>
+        <div class="field"><label for="dH">Dam height H <span class="unit">m</span></label><input id="dH" type="text" inputmode="decimal" value="12"></div>
+        <div class="field"><label for="dW">Dam width W <span class="unit">m</span></label><input id="dW" type="text" inputmode="decimal" value="5"></div>
+        <div class="field"><label for="dSg">Dam material sg (γe/γw)</label><input id="dSg" type="text" inputmode="decimal" value="2.0"></div>
+        <div class="field"><label for="dMu">Friction μ</label><input id="dMu" type="text" inputmode="decimal" value="0.5"></div>
+      </div>
+      <svg id="dSvg" viewBox="0 0 320 200" style="width:100%;display:block" role="img" aria-label="Rectangular dam with water on the left and the triangular pressure distribution."></svg>
+      <div class="out">
+        <div class="stat"><span class="lbl">Minimum W, sliding</span><span class="val" id="dWs"></span></div>
+        <div class="stat"><span class="lbl">Minimum W, overturning</span><span class="val" id="dWo"></span></div>
+        <div class="stat hot"><span class="lbl">Safety factors at this W</span><span class="val" id="dFS" style="font-size:16px"></span></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<section id="curved">
+  <div class="sec-head"><p class="eyebrow">Slides 34–37 · Mott §4.8–4.11, Example 4.8</p><h2>Curved surfaces</h2><p class="dek">Integrating pressure around a curve is messy. Instead, split the force into horizontal and vertical parts and get each from something you already know.</p></div>
+  <div class="read">
+    <ul>
+      <li><b>Horizontal component</b> \(F_H\): the force on the curve's <b>vertical projection</b>, a flat rectangle of height \(s\) (slide 34: "it may sound like word play, but it is true"). So \(F_H = \gamma s w\,h_c\) with \(h_c = h_1 + s/2\), acting at \(h_p = h_c + s^2/(12h_c)\).</li>
+      <li><b>Vertical component</b> \(F_V\): the <b>weight of the fluid above the curve</b>, up to the free surface. It acts through the centroid of that fluid volume. Slide 34 says finding that point needs calculus; Mott gets it with the composite-area method and Appendix L, which is what the tool below does.</li>
+      <li><b>Resultant</b>: \(F_R = \sqrt{F_H^2 + F_V^2}\) at \(\phi = \tan^{-1}(F_V/F_H)\) above horizontal. Every bit of pressure on a circular surface points along a radius, so \(F_R\) passes through the <b>center of curvature</b>. That is a free check on your answer.</li>
+      <li><b>Fluid below the curve</b> (Mott §4.10): imagine the fluid extending up to the free surface anyway. The magnitudes are the same; the directions flip.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Quarter-cylinder tank bottom (Mott Example 4.8 geometry)</h3><div class="chips"><button type="button" class="chip" data-c="ex48">Example 4.8</button><button type="button" class="chip" data-c="press">Ex 4.8 with 25 kPa on top</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="cFields">
+        <div class="field"><label for="cR">Radius R <span class="unit">m</span></label><input id="cR" type="text" inputmode="decimal" value="1.5"></div>
+        <div class="field"><label for="cW">Width w <span class="unit">m</span></label><input id="cW" type="text" inputmode="decimal" value="2.5"></div>
+        <div class="field"><label for="cH1">Depth to top of curve h<sub>1</sub> <span class="unit">m</span></label><input id="cH1" type="text" inputmode="decimal" value="3.0"></div>
+        <div class="field"><label for="cSg">Liquid sg</label><input id="cSg" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="cP">Surface pressure <span class="unit">kPa gauge</span></label><input id="cP" type="text" inputmode="decimal" value="0"></div>
+      </div>
+      <div class="two">
+        <svg id="cSvg" viewBox="0 0 360 320" style="width:100%;display:block" role="img" aria-label="Tank cross-section with a quarter-circle bottom corner, the imaginary volume of fluid above the curve shaded, and the force components drawn."></svg>
+        <div style="display:grid;gap:10px;align-content:start">
+          <div class="out">
+            <div class="stat"><span class="lbl">F<sub>H</sub></span><span class="val" id="cFH"></span></div>
+            <div class="stat"><span class="lbl">F<sub>V</sub></span><span class="val" id="cFV"></span></div>
+            <div class="stat hot"><span class="lbl">F<sub>R</sub></span><span class="val" id="cFR"></span></div>
+            <div class="stat"><span class="lbl">Angle φ above horizontal</span><span class="val" id="cPhi"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="workline" id="cWork"></div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Every worked problem in the CH 4 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s29–33</span>Q1 · 1 m × 1 m vertical gate, top at the surface</span><span class="s">Water, g = 10 m/s²</span><span class="ans">5.0 kN at 0.667 m</span></summary><div class="dbody"><ol><li>\(h_c = L_c = 0.5\) m, \(A = 1\) m², \(\gamma = 1000 \times 10 = 10{,}000\) N/m³.</li><li>\(F_R = \gamma h_c A = (10{,}000)(0.5)(1) = 5000\) N.</li><li>\(I_c = bh^3/12 = 1/12\) m⁴, so \(L_p = 0.5 + \dfrac{1/12}{(0.5)(1)} = 0.667\) m: two-thirds of the way down, the classic \(h/3\) from the bottom.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s29–33</span>Q2 · 2 m × 1 m gate tilted 60° from vertical</span><span class="s">Top edge at the surface; 2 m along the slope, 1 m wide</span><span class="ans">10 kN at L<sub>p</sub> = 1.33 m</span></summary><div class="dbody"><ol><li>\(L_c = 1.0\) m along the slope. Vertical depth \(h_c = L_c\cos 60° = 0.5\) m.</li><li>\(F_R = (10{,}000)(0.5)(2) = 10{,}000\) N. Twice Q1's area at the same centroid depth: twice the force.</li><li>\(I_c = (1)(2)^3/12 = 0.667\) m⁴, so \(L_p = 1.0 + \dfrac{0.667}{(1.0)(2)} = 1.333\) m along the slope (depth 0.667 m).</li></ol><p class="note">"Tilted by 60 degrees (so rather horizontal)" means 60° away from vertical, which is 30° above horizontal. That is the reading used here and in the solver.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s29–33</span>Q3 · Same gate, 1 m lower</span><span class="s">Top edge now 1 m below the surface (vertically)</span><span class="ans">30 kN at L<sub>p</sub> = 3.11 m</span></summary><div class="dbody"><ol><li>The top edge is 1 m deep, so along the slope it is \(1/\cos 60° = 2.0\) m from the surface line. \(L_c = 2.0 + 1.0 = 3.0\) m, \(h_c = 3.0\cos 60° = 1.5\) m.</li><li>\(F_R = (10{,}000)(1.5)(2) = 30{,}000\) N.</li><li>\(L_p = 3.0 + \dfrac{0.667}{(3.0)(2)} = 3.111\) m. The offset \(L_p - L_c\) dropped from 0.333 to 0.111 m: deeper gates see more uniform pressure.</li></ol><p class="note">If "1 m lower" means 1 m further along the slope instead, \(L_c = 2.0\) m, \(h_c = 1.0\) m, \(F_R = 20\) kN and \(L_p = 2.17\) m. Check which your instructor intends.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s29–33</span>Q4 · Same as Q3 with 1 MPa on the surface</span><span class="s">Pressurized tank (cases #5, #6)</span><span class="ans">2.03 MN, almost at the centroid</span></summary><div class="dbody"><ol><li>Replace the surface pressure by an equivalent depth: \(h_a = p/\gamma = 10^6/10^4 = 100\) m of water.</li><li>\(h_c = 100 + 1.5 = 101.5\) m, so \(F_R = (10{,}000)(101.5)(2) = 2.03\times10^6\) N. Of that, \(pA = 2.0\) MN is the surface pressure and 30 kN is the water.</li><li>Measured from the equivalent surface, \(L_c = 101.5/\cos60° = 203\) m and \(L_p - L_c = \dfrac{0.667}{(203)(2)} = 0.0016\) m. With pressure this uniform, the center of pressure sits on the centroid: this is simple case #1, "depth is irrelevant."</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s26</span>Circular view port at 30°</span><span class="s">Orange drink sg 1.10; centroid 3.0 m deep; radius 2.4 m (the slide's "diameter" is a typo)</span><span class="ans">585.8 kN</span></summary><div class="dbody"><ol><li>\(A = \pi(2.4)^2 = 18.10\) m², \(\gamma = 1.10 \times 9.81 = 10.79\) kN/m³.</li><li>\(F_R = \gamma h_c A = (10.79)(3.0)(18.10) = 585.8\) kN.</li><li>The plane is 30° from vertical, so \(L_c = h_c/\cos30° = 3.0/0.866 = 3.464\) m.</li><li>Circle: \(I_c = \pi D^4/64\), so \(I_c/A = D^2/16 = (4.8)^2/16 = 1.44\) m². \(L_p - L_c = 1.44/3.464 = 0.416\) m. All three values match the slide. Load it in the solver.</li></ol><p class="note">As the slide says, a 4.8 m port can't physically fit a 4.6 m tank. It's practice for the formulas.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott problems shown on the CH 4 slides (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">4.9</span>Mercury pushing out a stopper</span><span class="s">0.75 in stopper in the bottom of a vat, mercury 28.0 in deep</span><span class="ans">6.05 lb</span></summary><div class="dbody"><ol><li>Horizontal surface: \(p = \gamma h = (13.54)(62.4)(28.0/12) = 1971\) lb/ft² \(= 13.7\) psi.</li><li>\(A = \pi(0.75)^2/4 = 0.442\) in², so \(F = pA = 13.7 \times 0.442 = 6.05\) lb, matching the book.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">4.10</span>Shower tank flapper valve</span><span class="s">Water 1.80 m deep; 75 mm opening; hinge 10 mm beyond the opening's edge; pull applied 65 mm from the hinge (slide 10)</span><span class="ans">78 N on the valve; 57 N to open</span></summary><div class="dbody"><ol><li>Pressure on the valve: \(p = \gamma h = 9.81 \times 1.80 = 17.66\) kPa.</li><li>Water acts only over the opening (the rest of the flapper rests on the tank bottom): \(A = \pi(0.075)^2/4 = 4.42\times10^{-3}\) m², so \(F_w = pA = 78.0\) N, at the opening's center.</li><li>That center is \(37.5 + 10 = 47.5\) mm from the hinge. Moments about the hinge: \(F(65) = 78.0(47.5)\), so \(F = 57.0\) N, ignoring the flapper's weight.</li></ol><p class="note">If your instructor only wants the force on the valve ("horizontal surface only"), the answer is 78 N.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">4.14</span>Reservoir gate with latches</span><span class="s">Gate 4.0 ft tall × 8.0 ft wide, hinged at the bottom; water 3.6 ft deep; latches at the top</span><span class="ans">3235 lb; 485 lb per latch</span></summary><div class="dbody"><ol><li>Only the bottom 3.6 ft is wet. Treat that rectangle as a vertical wall with its top at the surface: \(h_c = 1.8\) ft, \(A = 3.6 \times 8.0 = 28.8\) ft².</li><li>\(F_R = (62.4)(1.8)(28.8) = 3235\) lb, acting \(3.6/3 = 1.2\) ft above the hinge (center of pressure at 2.4 ft depth).</li><li>Moments about the hinge: \(F_{latch}(4.0) = 3235(1.2)\), so the two latches carry 971 lb together, 485 lb each.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">4.17</span>Inclined wall holding oil</span><span class="s">Oil sg 0.86, 1.4 m deep, wall at 45°, 4 m long (slide 23)</span><span class="ans">46.8 kN; h<sub>p</sub> = 0.933 m</span></summary><div class="dbody"><ol><li>Wetted length along the wall: \(1.4/\sin45° = 1.98\) m. \(A = 1.98 \times 4 = 7.92\) m², \(h_c = 0.70\) m.</li><li>\(F_R = (0.86)(9.81)(0.70)(7.92) = 46.8\) kN.</li><li>Top at the surface, rectangle: \(L_p = \tfrac23(1.98) = 1.32\) m along the wall, depth \(h_p = \tfrac23(1.4) = 0.933\) m. All match the book.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">4.31</span>Gasoline tank end, filled to the top</span><span class="s">End is a 600 × 300 mm rectangle with semicircular ends of radius 150 mm; sg 0.67</span><span class="ans">247 N; L<sub>p</sub> = 196.5 mm</span></summary><div class="dbody"><ol><li>Area: \(0.60 \times 0.30 + \pi(0.15)^2 = 0.1800 + 0.0707 = 0.2507\) m². Centroid at mid-height, \(h_c = 0.150\) m.</li><li>\(F_R = (0.67)(9810)(0.150)(0.2507) = 247\) N.</li><li>\(I_c = (0.60)(0.30)^3/12 + \pi(0.30)^4/64 = 1.350\times10^{-3} + 3.98\times10^{-4} = 1.748\times10^{-3}\) m⁴ (the two half-circles together make one full circle).</li><li>\(L_p - L_c = 1.748\times10^{-3}/(0.150 \times 0.2507) = 0.0465\) m, so \(L_p = 196.5\) mm. Matches the book.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">4.30</span>Same tank, filled up the filler pipe</span><span class="s">Gasoline stands 375 mm above the top of the tank</span><span class="ans">865 N; L<sub>p</sub> = 538 mm</span></summary><div class="dbody"><ol><li>\(h_c = 0.375 + 0.150 = 0.525\) m. \(F_R = (0.67)(9810)(0.525)(0.2507) = 865\) N, 3.5 times Problem 4.31's for the same end.</li><li>\(L_p - L_c = 1.748\times10^{-3}/(0.525 \times 0.2507) = 0.0133\) m, so \(L_p = 0.538\) m below the gasoline surface in the pipe.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 4.8</span>Quarter-cylinder tank bottom</span><span class="s">R = 1.50 m, w = 2.50 m, h₁ = 3.00 m, water</span><span class="ans">F<sub>R</sub> = 206.5 kN at 48.1°</span></summary><div class="dbody"><ol><li>\(F_V\) = weight above: area \(= (3.00)(1.50) + \pi(1.50)^2/4 = 6.267\) m², so \(F_V = (9.81)(6.267)(2.50) = 153.7\) kN.</li><li>\(F_H\): projection is 1.50 m tall, \(h_c = 3.75\) m, so \(F_H = (9.81)(1.50)(2.50)(3.75) = 138.0\) kN at \(h_p = 3.75 + 1.5^2/(12 \times 3.75) = 3.80\) m.</li><li>\(F_R = \sqrt{153.7^2 + 138.0^2} = 206.5\) kN at \(\tan^{-1}(153.7/138.0) = 48.1°\).</li><li>Check: \(F_V\) acts 0.718 m from the center line; \(F_H\) acts 0.80 m below the center. \(138.0 \times 0.80 = 110.4\) and \(153.7 \times 0.718 = 110.4\): the moments about the center cancel, so \(F_R\) passes through it.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. A vertical rectangular wall holds water with its top at the surface. The resultant acts</p><div class="opts"><button class="opt" data-k="a">at mid-height</button><button class="opt" data-k="b">at the bottom</button><button class="opt" data-k="c">one-third of the way up from the bottom</button><button class="opt" data-k="d">one-third of the way down from the top</button></div><p class="fb" hidden>The pressure prism is a triangle; its centroid is h/3 above the base, i.e. L_p = 2h/3 below the surface.</p></div>
+    <div class="q" data-answer="b"><p class="qt">2. A submerged gate is lowered deeper without changing its shape or tilt. L<sub>p</sub> − L<sub>c</sub></p><div class="opts"><button class="opt" data-k="a">grows</button><button class="opt" data-k="b">shrinks</button><button class="opt" data-k="c">stays the same</button><button class="opt" data-k="d">becomes negative</button></div><p class="fb" hidden>L_p − L_c = I_c/(L_cA). Bigger L_c, smaller offset: the pressure across a deep gate is nearly uniform.</p></div>
+    <div class="q" data-answer="d"><p class="qt">3. The vertical force on a curved surface with liquid above it equals</p><div class="opts"><button class="opt" data-k="a">γh<sub>c</sub> times the curved area</button><button class="opt" data-k="b">the force on its vertical projection</button><button class="opt" data-k="c">the weight of the whole tank's liquid</button><button class="opt" data-k="d">the weight of the liquid directly above the curve</button></div><p class="fb" hidden>F_V is the weight of the fluid volume between the curve and the free surface. Option b is F_H.</p></div>
+    <div class="q" data-answer="a"><p class="qt">4. A closed tank of water has air at 19.6 kPa(gage) above the water. To use the open-tank formulas, add to every depth</p><div class="opts"><button class="opt" data-k="a">2.0 m</button><button class="opt" data-k="b">19.6 m</button><button class="opt" data-k="c">0.2 m</button><button class="opt" data-k="d">nothing; gas pressure acts only on the surface</button></div><p class="fb" hidden>h_a = p/γ = 19.6/9.81 = 2.0 m of water (piezometric head).</p></div>
+  </div>
+  <div class="dlist">
+    <details class="qa"><summary><span class="t">Why is the center of pressure always below the centroid?</span><span class="ans">answer</span></summary><div class="dbody"><p>Pressure increases with depth, so the lower part of the surface is pushed harder than the upper part. The resultant shifts toward the high-pressure end. Mathematically \(L_p - L_c = I_c/(L_cA) > 0\) because \(I_c\), \(L_c\) and \(A\) are all positive.</p></div></details>
+    <details class="qa"><summary><span class="t">Why does the resultant on a circular-arc surface pass through the center of the arc?</span><span class="ans">answer</span></summary><div class="dbody"><p>Each small pressure force is perpendicular to the surface, which on a circle means along a radius. Every one of them passes through the center, so they have zero moment about it, and so does their resultant.</p></div></details>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Resultant on a plane</span>\[ F_R = \gamma h_c A \]<span class="wh">h<sub>c</sub>: vertical depth of the centroid.</span></div>
+    <div><span class="nm">Center of pressure</span>\[ L_p = L_c + \frac{I_c}{L_c A} \]<span class="wh">L measured along the plane from the surface line.</span></div>
+    <div><span class="nm">Vertical rectangle, top at surface</span>\[ F_R = \tfrac12\gamma h^2 b, \quad h_p = \tfrac23 h \]<span class="wh">The pressure-prism shortcut.</span></div>
+    <div><span class="nm">Pressurized surface</span>\[ h_a = \frac{p_a}{\gamma} \]<span class="wh">Add to every depth (piezometric head).</span></div>
+    <div><span class="nm">Second moments, I<sub>c</sub></span>\[ \tfrac{bh^3}{12}\ \text{(rect)},\ \tfrac{\pi D^4}{64}\ \text{(circle)},\ \tfrac{bh^3}{36}\ \text{(triangle)} \]<span class="wh">About the horizontal centroidal axis.</span></div>
+    <div><span class="nm">Curved surface</span>\[ F_H = \gamma s w\left(h + \tfrac{s}{2}\right),\quad F_V = \gamma V_{above} \]<span class="wh">h<sub>p</sub> = h<sub>c</sub> + s²/(12h<sub>c</sub>); F<sub>R</sub> through the center of curvature.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* jack */
+  function jack() { const F1 = num('#jF1'), d1 = num('#jD1') / 1000, d2 = num('#jD2') / 1000; const p = F1 / (Math.PI * d1 * d1 / 4); $('#jP').textContent = `${f(p / 1000, 4)} kPa`; $('#jF2').textContent = `${f(p * Math.PI * d2 * d2 / 4, 4)} N`; }
+  ['#jF1', '#jD1', '#jD2'].forEach((i) => onInputs(i, jack)); jack();
+
+  /* gate solver */
+  let gsys = 'SI';
+  const GPRE = {
+    q1: ['SI', 'rect', 1, 1, 0, 0, 1, 0, 10, 'Slide 29 Q1 uses g = 10 m/s².'],
+    q2: ['SI', 'rect', 1, 2, 60, 0, 1, 0, 10, '60° from vertical (30° above horizontal), 2 m along the slope.'],
+    q3: ['SI', 'rect', 1, 2, 60, 1, 1, 0, 10, 'Top edge 1 m below the surface, measured vertically.'],
+    q4: ['SI', 'rect', 1, 2, 60, 1, 1, 1000, 10, '1 MPa = 1000 kPa on the surface: equivalent to 100 m of extra water.'],
+    p417: ['SI', 'rect', 4, 1.979899, 45, 0, 0.86, 0, 9.81, 'Prob 4.17: the wetted length along the 45° wall is 1.4/sin 45° = 1.98 m.'],
+    s26: ['SI', 'circle', 0, 4.8, 30, 3.0 - 2.4 * Math.cos(Math.PI / 6), 1.10, 0, 9.81, 'Slide 26: radius 2.4 m (D = 4.8 m), centroid 3.0 m deep, 30° from vertical.'],
+    p431: ['SI', 'slot', 0.6, 0.3, 0, 0, 0.67, 0, 9.81, 'Prob 4.31: b is the straight 600 mm part; the half-circle ends add one full circle of diameter 300 mm.'],
+    p430: ['SI', 'slot', 0.6, 0.3, 0, 0.375, 0.67, 0, 9.81, 'Prob 4.30: same end, gasoline 375 mm up the filler pipe.'],
+  };
+  function gLabels() {
+    const us = gsys === 'US', L = us ? 'ft' : 'm', k = $('#gShape').value;
+    $('#gBf').hidden = (k === 'circle' || k === 'semi');
+    $('#gBL').innerHTML = `${k === 'slot' ? 'Straight width b' : 'Width b'} <span class="unit">${L}</span>`;
+    $('#gHL').innerHTML = `${k === 'circle' || k === 'semi' ? 'Diameter D' : 'Height along the plane h'} <span class="unit">${L}</span>`;
+    $('#gDL').innerHTML = `Vertical depth of top edge <span class="unit">${L}</span>`;
+    $('#gPL').innerHTML = `Surface pressure (gauge) <span class="unit">${us ? 'psi' : 'kPa'}</span>`;
+    $('#gGL').innerHTML = `g <span class="unit">${us ? 'ft/s²' : 'm/s²'}</span>`;
+  }
+  function gate() {
+    const us = gsys === 'US', k = $('#gShape').value, b = num('#gB'), h = num('#gH'), th = num('#gT'), dTop = num('#gD'), sg = num('#gSg'), g = num('#gG');
+    $('#gTv').textContent = `${th}°`;
+    const rhoW = us ? 1.94 : 1000, gamma = sg * rhoW * g; // N/m3 or lb/ft3
+    const pS = num('#gP') * (us ? 144 : 1000);
+    const dims = k === 'circle' || k === 'semi' ? { D: h } : { b, h };
+    if (!(h > 0 && sg > 0 && g > 0 && dTop >= 0 && (k === 'circle' || k === 'semi' || b > 0))) { $('#gWork').textContent = 'Enter positive dimensions (top-edge depth can be 0).'; return; }
+    const r = C.planeForce({ kind: k, dims, theta: th, dTop, gamma, pSurf: pS });
+    const LU = us ? 'ft' : 'm', FU = us ? 'lb' : 'N';
+    const F = us ? r.F : r.F; const fF = us ? `${f(F, 4)} lb` : (F > 1e4 ? `${f(F / 1000, 4)} kN` : `${f(F, 4)} N`);
+    $('#gF').textContent = fF; $('#gHc').textContent = `${f(r.hcReal, 4)} ${LU}`; $('#gLc').textContent = `${f(r.LcReal, 4)} ${LU}`; $('#gLp').textContent = `${f(r.LpReal, 4)} ${LU}`; $('#gDl').textContent = `${f(r.LpLc, 4)} ${LU}`; $('#gHp').textContent = `${f(r.hpReal, 4)} ${LU}`;
+    const c = Math.cos(th * Math.PI / 180);
+    const ha = r.ha > 0 ? `<div>Surface pressure → equivalent depth h_a = p/γ = ${f(pS, 4)} ÷ ${f(gamma, 4)} = ${f(r.ha, 4)} ${LU}; distances below are from this equivalent surface.</div>` : '';
+    $('#gWork').innerHTML = `${ha}<div>A = ${f(r.A, 4)} ${LU}²,  I_c = ${f(r.Ic, 4)} ${LU}⁴,  γ = sg·ρw·g = ${sg}×${rhoW}×${g} = ${f(gamma, 4)} ${us ? 'lb/ft³' : 'N/m³'}</div><div>L_c = ${f(r.Lc, 4)} ${LU},  h_c = L_c·cos θ = ${f(r.Lc, 4)}×${f(c, 4)} = ${f(r.hc, 4)} ${LU}</div><div>F_R = γ·h_c·A = ${f(gamma, 4)} × ${f(r.hc, 4)} × ${f(r.A, 4)} = ${f(r.F, 4)} ${FU}</div><div>L_p = L_c + I_c/(L_c·A) = ${f(r.Lc, 4)} + ${f(r.Ic, 4)}/(${f(r.Lc, 4)}×${f(r.A, 4)}) = ${f(r.Lp, 4)} ${LU}</div>`;
+    drawGate(r, th, dTop, C.planeShape(k, dims).H, k);
+  }
+  function drawGate(r, th, dTop, h, k) {
+    const s = $('#gSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const t = th * Math.PI / 180, c = Math.cos(t), sn = Math.sin(t);
+    const Ltop = dTop / c, Lbot = Ltop + h, x0 = 330, y0 = 40;   // free surface at y0; plane meets it at x0
+    const sc = Math.min(260 / Math.max(Lbot * c, 1e-9), 290 / Math.max(Lbot * sn, 1e-9), 260 / Math.max(h, 1e-9)) * 0.92;
+    const P = (L) => [x0 - L * sn * sc, y0 + L * c * sc];
+    // liquid: the region on the upper-left side of the wall line
+    const yb = 330, xAtBottom = x0 - (yb - y0) * sn / Math.max(c, 1e-9);
+    const poly = xAtBottom >= 10 ? `10,${y0} ${x0},${y0} ${xAtBottom},${yb} 10,${yb}` : `10,${y0} ${x0},${y0} 10,${y0 + (x0 - 10) * c / sn}`;
+    el('polygon', { points: poly, class: 'fl-water', 'fill-opacity': 0.16 }, s);
+    el('line', { x1: 10, x2: x0 + 20, y1: y0, y2: y0, class: 'st-water', 'stroke-width': 2 }, s);
+    text(s, 14, y0 - 8, r.ha > 0 ? `free surface (plus ${f(r.ha, 3)} of pressure head, not to scale)` : 'free surface', { 'font-size': 11.5, class: 'fl-water' });
+    const [ax, ay] = P(Ltop), [bx, by] = P(Lbot);
+    const [ex, ey] = [x0 - (Lbot * 1.25) * sn * sc, y0 + (Lbot * 1.25) * c * sc];
+    el('line', { x1: x0, y1: y0, x2: ex, y2: Math.min(ey, yb), class: 'st-ink2', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, s);
+    el('line', { x1: ax, y1: ay, x2: bx, y2: by, class: 'st-ink', 'stroke-width': 5, 'stroke-linecap': 'round' }, s);
+    const nx = -c, ny = -sn;                                       // unit normal pointing into the liquid
+    const pmax = r.ha + dTop + h * c, arrowId = FM.arrowDef(s, 'fl-dye', 'gpa');
+    for (let i = 0; i <= 8; i++) {
+      const L = Ltop + h * i / 8, len = 60 * (r.ha + L * c) / pmax, [px, py] = P(L);
+      if (len > 3) el('line', { x1: px + nx * (len + 4), y1: py + ny * (len + 4), x2: px + nx * 4, y2: py + ny * 4, class: 'st-dye', 'stroke-width': 1.6, 'marker-end': arrowId }, s);
+    }
+    const [cx, cy] = P(r.LcReal), [qx, qy] = P(r.LpReal);
+    el('circle', { cx, cy, r: 5, class: 'fl-water', stroke: 'var(--surface)', 'stroke-width': 1.5 }, s);
+    el('circle', { cx: qx, cy: qy, r: 5, class: 'fl-dye', stroke: 'var(--surface)', 'stroke-width': 1.5 }, s);
+    const off = 12, gap = Math.abs(qy - cy) < 16 ? 16 : 0;
+    text(s, cx + c * off, cy + sn * off - gap / 2 + 4, 'centroid', { 'font-size': 11.5, class: 'fl-water' });
+    text(s, qx + c * off, qy + sn * off + gap / 2 + 4, 'center of pressure', { 'font-size': 11.5, class: 'fl-dye' });
+    if (th > 0) { el('path', { d: `M${x0},${y0 + 36} A36,36 0 0 1 ${x0 - 36 * sn},${y0 + 36 * c}`, fill: 'none', class: 'st-ink2' }, s); text(s, x0 + 6, y0 + 40, `θ = ${th}°`, { 'font-size': 12 }); }
+    else text(s, x0 + 8, y0 + 40, 'vertical wall', { 'font-size': 12 });
+  }
+  $$('[data-g]').forEach((bt) => bt.addEventListener('click', () => {
+    const v = GPRE[bt.dataset.g]; gsys = v[0]; $$('#gSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === gsys)));
+    $('#gShape').value = v[1]; $('#gB').value = v[2]; $('#gH').value = +v[3].toFixed ? +(+v[3]).toFixed(4) : v[3]; $('#gT').value = v[4]; $('#gD').value = +(+v[5]).toFixed(4); $('#gSg').value = v[6]; $('#gP').value = v[7]; $('#gG').value = v[8];
+    $('#gNote').textContent = v[9]; gLabels(); gate();
+  }));
+  segmented($('#gSys'), (v) => { gsys = v; $('#gG').value = v === 'US' ? 32.2 : 9.81; $('#gNote').textContent = ''; gLabels(); gate(); });
+  $('#gShape').addEventListener('change', () => { gLabels(); gate(); });
+  onInputs('#gFields', gate); gLabels(); gate();
+
+  /* dam */
+  function dam() {
+    const D = num('#dD'), H = num('#dH'), W = num('#dW'), sg = num('#dSg'), mu = num('#dMu');
+    if (!(D > 0 && H > 0 && W > 0 && sg > 0 && mu > 0)) return;
+    const r = C.damCheck({ D, H, W, gw: 9.81, ge: sg * 9.81, mu });
+    $('#dWs').textContent = `${f(r.Wslide, 3)} m`; $('#dWo').textContent = `${f(r.Wover, 3)} m`;
+    $('#dFS').innerHTML = `sliding ${f(r.slideFS, 3)} ${r.slideFS >= 1 ? '<span class="ok">OK</span>' : '<span class="err">slides</span>'} · overturning ${f(r.overFS, 3)} ${r.overFS >= 1 ? '<span class="ok">OK</span>' : '<span class="err">tips</span>'}`;
+    const s = $('#dSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const sc = 150 / Math.max(H, D), base = 180, x0 = 170;
+    el('rect', { x: 10, y: base, width: 300, height: 10, class: 'fl-rule' }, s);
+    el('rect', { x: 20, y: base - D * sc, width: x0 - 20, height: D * sc, class: 'fl-water', 'fill-opacity': 0.3 }, s);
+    el('rect', { x: x0, y: base - H * sc, width: Math.min(W * sc, 130), height: H * sc, class: 'fl-amber', 'fill-opacity': 0.55, stroke: 'var(--ink-2)' }, s);
+    el('path', { d: `M${x0},${base - D * sc} L${x0},${base} L${x0 - D * sc * 0.5},${base} Z`, class: 'fl-dye', 'fill-opacity': 0.25 }, s);
+    const id = FM.arrowDef(s, 'fl-dye', 'damA');
+    el('line', { x1: x0 - 60, y1: base - D * sc / 3, x2: x0 - 2, y2: base - D * sc / 3, class: 'st-dye', 'stroke-width': 2.5, 'marker-end': id }, s);
+    text(s, 24, base - D * sc / 3 - 8, 'F_w, at D/3 above the base', { 'font-size': 11, class: 'svg-ink' });
+    el('circle', { cx: x0 + Math.min(W * sc, 130), cy: base, r: 4, class: 'fl-ink', fill: 'var(--ink)' }, s); text(s, x0 + Math.min(W * sc, 130) + 6, base - 4, 'A', { 'font-size': 12, class: 'svg-ink' });
+  }
+  ['#dD', '#dH', '#dW', '#dSg', '#dMu'].forEach((i) => onInputs(i, dam)); dam();
+
+  /* curved */
+  function curved() {
+    const R = num('#cR'), w = num('#cW'), h1 = num('#cH1'), sg = num('#cSg'), p = num('#cP') * 1000;
+    if (!(R > 0 && w > 0 && h1 >= 0 && sg > 0)) return;
+    const r = C.curvedQuarter({ R, w, h1, gamma: sg * 9810, pSurf: p });
+    const kN = (x) => `${f(x / 1000, 4)} kN`;
+    $('#cFH').textContent = kN(r.FH); $('#cFV').textContent = kN(r.FV); $('#cFR').textContent = kN(r.FR); $('#cPhi').textContent = `${f(r.phi, 3)}°`;
+    const hh = h1 + r.ha;
+    $('#cWork').innerHTML = `${r.ha > 0 ? `<div>pressure head h_a = ${f(r.ha, 4)} m added to the depth</div>` : ''}<div>F_V = γ·w·(h·R + πR²/4) = ${f(sg * 9.81, 4)}×${w}×(${f(hh, 4)}×${R} + ${f(r.A2, 4)}) = ${kN(r.FV)}</div><div>F_V acts x̄ = ${f(r.xbar, 4)} m from the center line</div><div>h_c = h + s/2 = ${f(r.hc, 4)} m;  F_H = γ·s·w·h_c = ${kN(r.FH)}</div><div>h_p = h_c + s²/(12h_c) = ${f(r.hp, 4)} m${r.ha > 0 ? ` (${f(r.hpReal, 4)} m below the real surface)` : ''}</div><div>F_R = √(F_H² + F_V²) = ${kN(r.FR)},  φ = tan⁻¹(F_V/F_H) = ${f(r.phi, 3)}°</div><div>check through center: F_H·(h_p − h) = ${f(r.FH * (r.hp - hh) / 1000, 4)}, F_V·x̄ = ${f(r.FV * r.xbar / 1000, 4)} kN·m</div>`;
+    const s = $('#cSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const sc = 250 / (h1 + R + 0.3), x0 = 70, y0 = 40, cxp = x0 + R * sc, cyp = y0 + h1 * sc;
+    el('path', { d: `M${x0},${y0} L${x0},${cyp} A${R * sc},${R * sc} 0 0 0 ${cxp},${cyp + R * sc} L${cxp + 150},${cyp + R * sc} L${cxp + 150},${y0} Z`, class: 'fl-water', 'fill-opacity': 0.15 }, s);
+    el('path', { d: `M${x0},${y0} L${x0},${cyp} A${R * sc},${R * sc} 0 0 0 ${cxp},${cyp + R * sc} L${cxp},${y0} Z`, class: 'fl-water', 'fill-opacity': 0.35 }, s);
+    el('line', { x1: cxp, x2: cxp, y1: y0, y2: cyp + R * sc, class: 'st-ink2', 'stroke-dasharray': '4 4' }, s);
+    el('path', { d: `M${x0},${y0 - 20} L${x0},${cyp} A${R * sc},${R * sc} 0 0 0 ${cxp},${cyp + R * sc} L${cxp + 150},${cyp + R * sc} L${cxp + 150},${y0 - 20}`, fill: 'none', class: 'st-ink', 'stroke-width': 2.5 }, s);
+    el('line', { x1: x0 - 10, x2: cxp + 160, y1: y0, y2: y0, class: 'st-water', 'stroke-width': 2 }, s);
+    el('circle', { cx: cxp, cy: cyp, r: 3.5, fill: 'var(--ink)' }, s); text(s, cxp + 6, cyp - 6, 'center', { 'font-size': 11 });
+    const id = FM.arrowDef(s, 'fl-dye', 'cA'), ux = Math.cos(r.phi * Math.PI / 180), uy = Math.sin(r.phi * Math.PI / 180);
+    el('line', { x1: cxp - ux * R * sc * 1.02, y1: cyp + uy * R * sc * 1.02, x2: cxp - ux * R * sc * 1.7, y2: cyp + uy * R * sc * 1.7, class: 'st-dye', 'stroke-width': 3, 'marker-end': id }, s);
+    el('line', { x1: cxp, y1: cyp, x2: cxp - ux * R * sc, y2: cyp + uy * R * sc, class: 'st-dye', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, s);
+    const ly = Math.min(cyp + uy * R * sc * 1.7 + 16, 300);
+    text(s, 6, ly, 'F_R on the curve; its line', { 'font-size': 11.5, class: 'fl-dye' });
+    text(s, 6, ly + 14, 'of action passes through the center', { 'font-size': 11.5, class: 'fl-dye' });
+    text(s, cxp + 8, y0 + 20, '← fluid above the curve:', { 'font-size': 11, class: 'svg-ink' });
+    text(s, cxp + 8, y0 + 34, '   its weight is F_V', { 'font-size': 11, class: 'svg-ink' });
+  }
+  const CPRE = { ex48: [1.5, 2.5, 3.0, 1, 0], press: [1.5, 2.5, 3.0, 1, 25] };
+  $$('[data-c]').forEach((b) => b.addEventListener('click', () => { const v = CPRE[b.dataset.c]; ['cR', 'cW', 'cH1', 'cSg', 'cP'].forEach((id, i) => ($('#' + id).value = v[i])); curved(); }));
+  onInputs('#cFields', curved); curved();
+})();
+</script>

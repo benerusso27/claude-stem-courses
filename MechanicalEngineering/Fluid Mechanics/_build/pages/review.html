@@ -1,0 +1,142 @@
+<!--title: Final Exam Review-->
+<!--short: Final review-->
+<!--eyebrow: Week 15 · Review-->
+<!--desc: The whole of ENGR/EGTG 4254 on one page: a guide to which principle fits which problem, the key equations by chapter, what the slides say is or isn't on the exam, and twelve original mixed practice problems with worked solutions.-->
+<header class="hero">
+  <p class="eyebrow">Week 15 · Final exam review · Chapters 1–17</p>
+  <h1>Final <em>Review</em></h1>
+  <p class="lede">Most of the course rests on four ideas: pressure grows with depth, mass is conserved, energy is conserved (with losses), and momentum changes only when a force acts. The hard part on an exam is picking the right one. Start with the guide below, then work the mixed problems without looking at the solutions.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#guide">Which principle?</a><a href="#map">Equations by chapter</a><a href="#exam">Exam hints</a><a href="#practice">Mixed practice</a><a href="#traps">Common traps</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Which principle do I need?</h3><span class="eyebrow">Answer a question or two</span></div>
+    <div class="panel-b">
+      <div id="gBox" aria-live="polite"></div>
+      <div class="chips" id="gChips"></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#guide">Which principle?</a></li><li><a href="#map">Equations by chapter</a></li><li><a href="#exam">What the slides say about exams</a></li><li><a href="#practice">Mixed practice</a></li><li><a href="#traps">Common traps</a></li></ol>
+  </nav>
+  <main>
+
+<section id="guide">
+  <div class="sec-head"><p class="eyebrow">The decision in words</p><h2>Which principle?</h2></div>
+  <div class="scroll-x"><table class="tbl">
+    <thead><tr><th>If the problem…</th><th>Use</th><th>Page</th></tr></thead>
+    <tbody>
+      <tr><td>has a fluid at rest and asks for a pressure</td><td>\(\Delta p = \gamma h\), manometer walk</td><td><a href="ch03-pressure.html">Ch 3</a></td></tr>
+      <tr><td>asks for a force on a wall, gate or curved surface in still fluid</td><td>\(F_R = \gamma h_cA\), \(L_p = L_c + I_c/(L_cA)\); curved: \(F_H\), \(F_V\)</td><td><a href="ch04-static-forces.html">Ch 4</a></td></tr>
+      <tr><td>has something floating or submerged</td><td>\(F_b = \gamma_fV_d\), free-body diagram; stability: \(MB = I/V_d\)</td><td><a href="ch05-buoyancy.html">Ch 5</a></td></tr>
+      <tr><td>has flow, no losses, no pump, and asks for p, v or z</td><td>continuity + Bernoulli</td><td><a href="ch06-bernoulli.html">Ch 6</a></td></tr>
+      <tr><td>has a pump, turbine or losses</td><td>general energy equation; \(P = h\gamma Q\)</td><td><a href="ch07-energy.html">Ch 7</a></td></tr>
+      <tr><td>needs the size of a friction loss</td><td>\(N_R\), then \(f\) (64/N<sub>R</sub> or Moody/Colebrook), Darcy</td><td><a href="ch08-reynolds-friction.html">Ch 8</a></td></tr>
+      <tr><td>has a duct that isn't round</td><td>\(R = A/WP\), use \(4R\) for D</td><td><a href="ch09-noncircular.html">Ch 9</a></td></tr>
+      <tr><td>has valves, elbows, size changes, entrances or exits</td><td>\(h_L = K\,v^2/2g\), \(K = f_T(L_e/D)\)</td><td><a href="ch10-minor-losses.html">Ch 10</a></td></tr>
+      <tr><td>has several pipes</td><td>series: losses add; parallel: losses equal, flows add</td><td><a href="ch11-pipe-systems.html">Ch 11–12</a></td></tr>
+      <tr><td>asks you to pick or rescale a pump</td><td>pump curve ∩ system curve; NPSH; affinity laws</td><td><a href="ch13-pumps.html">Ch 13</a></td></tr>
+      <tr><td>asks for the force a moving stream exerts</td><td>\(\vec F = \dot m(\vec v_{out} - \vec v_{in})\) + pressure forces</td><td><a href="ch16-momentum.html">Ch 16</a></td></tr>
+      <tr><td>has a body moving through a fluid</td><td>\(F_D = C_D\tfrac12\rho V^2A\), \(F_L = C_L\tfrac12\rho V^2A\)</td><td><a href="ch17-drag-lift.html">Ch 17</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="map">
+  <div class="sec-head"><p class="eyebrow">One line per idea</p><h2>Key equations by chapter</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Ch 1–2 · Properties</span>\[ \gamma = \rho g,\ \ \text{sg} = \rho/\rho_w,\ \ \tau = \eta\frac{dv}{dy},\ \ \nu = \eta/\rho \]<span class="wh">p<sub>abs</sub> = p<sub>gauge</sub> + p<sub>atm</sub>.</span></div>
+    <div><span class="nm">Ch 3 · Static pressure</span>\[ \Delta p = \gamma h \]<span class="wh">Down: add γh. Up: subtract.</span></div>
+    <div><span class="nm">Ch 4 · Submerged surfaces</span>\[ F_R = \gamma h_cA,\quad L_p = L_c + \frac{I_c}{L_cA} \]<span class="wh">Curved: F<sub>H</sub> on projection, F<sub>V</sub> = weight above.</span></div>
+    <div><span class="nm">Ch 5 · Buoyancy</span>\[ F_b = \gamma_fV_d,\quad MB = \frac{I}{V_d} \]<span class="wh">Floating stable if y<sub>mc</sub> &gt; y<sub>cg</sub>.</span></div>
+    <div><span class="nm">Ch 6 · Bernoulli</span>\[ \frac{p}{\gamma} + z + \frac{v^2}{2g} = \text{const},\quad A_1v_1 = A_2v_2 \]<span class="wh">Torricelli v = √(2gh).</span></div>
+    <div><span class="nm">Ch 7 · Energy</span>\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} + h_A - h_R - h_L = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]<span class="wh">P<sub>A</sub> = h<sub>A</sub>γQ, e<sub>M</sub> = P<sub>A</sub>/P<sub>I</sub>.</span></div>
+    <div><span class="nm">Ch 8 · Friction</span>\[ N_R = \frac{vD}{\nu},\quad h_L = f\frac{L}{D}\frac{v^2}{2g},\quad f_{lam} = \frac{64}{N_R} \]<span class="wh">Laminar &lt; 2000 &lt; critical &lt; 4000 &lt; turbulent.</span></div>
+    <div><span class="nm">Ch 9 · Noncircular</span>\[ R = \frac{A}{WP},\quad D \to 4R \]<span class="wh">Annulus: R = (D<sub>o</sub> − d<sub>i</sub>)/4.</span></div>
+    <div><span class="nm">Ch 10 · Minor losses</span>\[ h_L = K\frac{v^2}{2g},\quad K = f_T\frac{L_e}{D} \]<span class="wh">Exit K = 1; sudden enlargement [1 − (D<sub>1</sub>/D<sub>2</sub>)²]².</span></div>
+    <div><span class="nm">Ch 11–12 · Systems</span>\[ \text{series: } h = \sum h_i;\quad \text{parallel: } Q = \sum Q_i \]<span class="wh">Class I direct; II and III iterate.</span></div>
+    <div><span class="nm">Ch 13 · Pumps</span>\[ \text{NPSH}_A = h_{sp} \pm h_s - h_f - h_{vp},\quad Q \propto N,\ h \propto N^2,\ P \propto N^3 \]<span class="wh">NPSH<sub>A</sub> &gt; 1.10 NPSH<sub>R</sub>.</span></div>
+    <div><span class="nm">Ch 16 · Momentum</span>\[ \vec F = \dot m(\vec v_{out} - \vec v_{in}) \]<span class="wh">Moving vane: use V − V<sub>0</sub>.</span></div>
+    <div><span class="nm">Ch 17 · Drag and lift</span>\[ F = C\,\frac{\rho V^2}{2}\,A \]<span class="wh">Wings: planform area.</span></div>
+  </div>
+</section>
+
+<section id="exam">
+  <div class="sec-head"><p class="eyebrow">Collected from the slide decks</p><h2>What the slides say about exams</h2><p class="dek">The syllabus says only that there are two quizzes and a final (20 % each) and doesn't list the final's topics. I don't know exactly what will be on it; these are the instructor's own hints in the decks.</p></div>
+  <div class="scroll-x"><table class="tbl">
+    <thead><tr><th>Deck</th><th>Hint</th></tr></thead>
+    <tbody>
+      <tr><td>CH 7, slides 32–33</td><td>Pipe sizes and schedules: "not on exam, but can be important."</td></tr>
+      <tr><td>CH 10, slide 6</td><td>Don't memorize the K formulas, but expect qualitative questions about how K behaves.</td></tr>
+      <tr><td>CH 11, slide 5</td><td>Parallel networks: solvable, "but we won't do it because it is extremely time-consuming."</td></tr>
+      <tr><td>CH 13, slide 19</td><td>Pump selection from a target flow and head, or from a system curve: on the exam. Computing the system curve from a full piping layout: not on the exam.</td></tr>
+      <tr><td>CH 13, slide 20</td><td>A past final asks for the smallest impeller for a duty point on a pump chart; small eyeballing errors are accepted.</td></tr>
+      <tr><td>CH 16</td><td>A past final (slide 10) uses a jet split by a cone; several slides are marked "3 min, speculation only."</td></tr>
+      <tr><td>CH 17, slides 19–21</td><td>Wing problems read C<sub>L</sub> and C<sub>D</sub> off the airfoil chart at a given angle of attack.</td></tr>
+      <tr><td>Past midterms in the decks</td><td>CH 4 (dam stability), CH 6 (garden hose), CH 10 (tank level with exit loss), CH 11 (three pipes in series), CH 13 (best efficiency point).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="practice">
+  <div class="sec-head"><p class="eyebrow">Original problems, one or two per topic</p><h2>Mixed practice</h2><p class="dek">Water is 9.81 kN/m³ and 1000 kg/m³ unless stated; g = 9.81 m/s². Decide the principle first (the guide above), then solve, then open the solution.</p></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src og">P1</span>Viscosity units</span><span class="s">An oil has sg 0.88 and kinematic viscosity 5.0 × 10⁻⁵ m²/s. Find its dynamic viscosity.</span><span class="ans">0.044 Pa·s</span></summary><div class="dbody"><p>\(\eta = \nu\rho = (5.0\times10^{-5})(880) = 0.044\) Pa·s. Check units: m²/s × kg/m³ = kg/(m·s) = Pa·s.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P2</span>Mercury manometer</span><span class="s">A U-tube connects a water pipe to the atmosphere. The mercury is 180 mm higher in the open leg, and the pipe centerline is 300 mm above the mercury surface in the pipe-side leg. Find the pipe pressure.</span><span class="ans">21.0 kPa gauge</span></summary><div class="dbody"><p>Walk from the pipe down to the mercury, then up the open leg: \(p + 9.81(0.30) - 13.54(9.81)(0.18) = 0\), so \(p = 23.91 - 2.94 = 21.0\) kPa gauge.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P3</span>Submerged gate</span><span class="s">A vertical rectangular gate 1.5 m wide and 2.0 m tall has its top edge 1.0 m below the water surface. Find the resultant force and where it acts.</span><span class="ans">58.9 kN at 2.17 m depth</span></summary><div class="dbody"><ol><li>\(h_c = 1.0 + 1.0 = 2.0\) m, \(A = 3.0\) m²: \(F_R = 9.81(2.0)(3.0) = 58.9\) kN.</li><li>\(I_c = 1.5(2.0)^3/12 = 1.0\) m⁴: \(L_p = 2.0 + 1.0/(2.0 \times 3.0) = 2.17\) m below the surface, 0.17 m below the centroid.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src og">P4</span>A floating cube</span><span class="s">A solid wooden cube, 0.40 m on a side, sg 0.60, floats with a face down. Is it stable in that position?</span><span class="ans">No (MG ≈ −0.024 m)</span></summary><div class="dbody"><ol><li>Draft: 0.60 × 0.40 = 0.24 m, so \(y_{cb} = 0.12\) m; \(y_{cg} = 0.20\) m.</li><li>\(MB = \dfrac{a^4/12}{a^2(0.24)} = \dfrac{0.16}{2.88} = 0.056\) m, \(y_{mc} = 0.176\) m &lt; 0.20 m: <b>unstable</b>. It rolls until it floats on an edge.</li></ol><p class="note">A known result: a uniform cube floats face-down stably only if its sg is below about 0.21 or above about 0.79.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P5</span>Venturi pressure drop</span><span class="s">Water at 0.030 m³/s passes from a 150 mm pipe at 120 kPa into a 75 mm horizontal throat. Neglect losses. Find the throat pressure.</span><span class="ans">98.4 kPa</span></summary><div class="dbody"><ol><li>\(v_1 = 0.030/0.01767 = 1.70\) m/s, \(v_2 = 4v_1 = 6.79\) m/s.</li><li>\(p_2 = p_1 - \tfrac{\rho}{2}(v_2^2 - v_1^2) = 120 - 0.5(46.1 - 2.88) = 98.4\) kPa.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src og">P6</span>Pump power</span><span class="s">A pump moves 0.040 m³/s of water between two open reservoirs whose surfaces differ by 25 m. Pipe losses total 4.5 m and the pump is 75 % efficient. Find the input power.</span><span class="ans">15.4 kW</span></summary><div class="dbody"><p>\(h_A = 25 + 4.5 = 29.5\) m; \(P_A = 29.5(9810)(0.040) = 11.6\) kW; \(P_I = 11.6/0.75 = 15.4\) kW.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P7</span>Laminar loss</span><span class="s">Oil (ν = 1.0 × 10⁻⁴ m²/s) flows at 1.2 m/s through 30 m of 50 mm tube. Find the head loss.</span><span class="ans">4.70 m</span></summary><div class="dbody"><p>\(N_R = (1.2)(0.05)/10^{-4} = 600\): laminar, \(f = 64/600 = 0.107\). \(h_L = 0.107 \times \dfrac{30}{0.05} \times \dfrac{1.2^2}{19.62} = 4.70\) m.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P8</span>A real line</span><span class="s">Water at 20 °C, 0.010 m³/s, through 60 m of 3-in Schedule 40 steel pipe with two standard elbows and an open gate valve. Find the total head loss.</span><span class="ans">≈ 3.65 m</span></summary><div class="dbody"><ol><li>ID 77.9 mm, \(v = 2.10\) m/s, \(v^2/2g = 0.224\) m. \(N_R = (2.10)(0.0779)/1.02\times10^{-6} = 1.6\times10^5\), \(\varepsilon/D = 5.9\times10^{-4}\), Colebrook f = 0.0197.</li><li>Pipe: \(0.0197(60/0.0779)(0.224) = 3.39\) m.</li><li>Fittings with \(f_T = 0.017\): elbows \(2(0.017)(30) = 1.02\), gate valve \(0.017(8) = 0.14\); \(\Sigma K = 1.16\), so 0.26 m.</li><li>Total ≈ 3.65 m. Check it in the <a href="ch10-minor-losses.html#system">Ch 10 system builder</a> (US units there).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src og">P9</span>Parallel split</span><span class="s">Two parallel pipes of the same diameter and roughness share 0.030 m³/s; pipe B is twice as long as pipe A. Assume both have the same f. Find each flow.</span><span class="ans">17.6 and 12.4 L/s</span></summary><div class="dbody"><p>Equal losses: \(L_Av_A^2 = L_Bv_B^2\), so \(Q_A/Q_B = \sqrt{L_B/L_A} = \sqrt2\). Then \(Q_A = 0.030\sqrt2/(1 + \sqrt2) = 0.0176\) m³/s and \(Q_B = 0.0124\) m³/s. Doubling the length doesn't halve the flow: losses go as Q².</p></div></details>
+    <details><summary><span class="t"><span class="src og">P10</span>Speeding up a pump</span><span class="s">At 1750 rpm a centrifugal pump delivers 300 gal/min at 120 ft using 15 hp. Estimate its performance at 2100 rpm.</span><span class="ans">360 gal/min, 173 ft, 25.9 hp</span></summary><div class="dbody"><p>Ratio 1.2: \(Q \times 1.2 = 360\) gal/min, \(h \times 1.44 = 173\) ft, \(P \times 1.728 = 25.9\) hp. Check the motor can supply it.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P11</span>Jet on a plate</span><span class="s">A 40 mm water jet at 25 m/s hits a flat plate head-on and spreads out radially. Find the force on the plate.</span><span class="ans">785 N</span></summary><div class="dbody"><p>All the axial momentum is destroyed: \(F = \rho AV^2 = 1000\,\pi(0.02)^2(25)^2 = 785\) N, pushing the plate in the jet direction.</p></div></details>
+    <details><summary><span class="t"><span class="src og">P12</span>Cyclist</span><span class="s">A cyclist presents 0.50 m² of frontal area with C<sub>D</sub> = 0.9 in air (1.2 kg/m³) at 10 m/s. Find the drag and the power to overcome it.</span><span class="ans">27 N; 270 W</span></summary><div class="dbody"><p>\(F_D = 0.9 \times \tfrac12(1.2)(10)^2 \times 0.50 = 27\) N; \(P = F_DV = 270\) W. At 12 m/s the power rises by \(1.2^3\): 467 W.</p></div></details>
+  </div>
+</section>
+
+<section id="traps">
+  <div class="sec-head"><p class="eyebrow">Seen across the whole course</p><h2>Common traps</h2></div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Units</span><p>slug vs lbm; kPa vs Pa; gal/min to ft³/s (÷ 449); mm to m. Every head term must end up in m or ft.</p></div>
+    <div class="trap"><span class="tag">Pressure</span><p>Gauge or absolute: be consistent in Bernoulli and the energy equation, use absolute for NPSH and vapor pressure, gauge for forces on pipes and walls open to the air.</p></div>
+    <div class="trap"><span class="tag">Diameter</span><p>Use the inside diameter (pipe schedule tables, OD minus two walls), and 4R for noncircular ducts.</p></div>
+    <div class="trap"><span class="tag">Velocity</span><p>Darcy and K use the average velocity; K for enlargements and exits uses the upstream velocity, contractions and entrances the downstream one.</p></div>
+    <div class="trap"><span class="tag">Signs</span><p>Force on the fluid vs force on the vane; h<sub>s</sub> in NPSH positive when the supply is above the pump.</p></div>
+    <div class="trap"><span class="tag">Distances</span><p>Gate force uses the vertical centroid depth; center of pressure uses distances along the plane from the surface line.</p></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const { $ } = FM;
+  // A small decision tree; each node: [question, [[label, next]...]] or a leaf string with HTML.
+  const T = {
+    start: ['Is the fluid moving?', [['No, it’s at rest', 'static'], ['Yes', 'moving'], ['A body moves through the fluid', 'body']]],
+    static: ['What do you need?', [['A pressure', 'L:Ch 3: Δp = γh, walk the manometer.|ch03-pressure.html'], ['A force on a surface', 'L:Ch 4: F_R = γh_cA and the center of pressure; curved surfaces split into F_H and F_V.|ch04-static-forces.html'], ['Will it float / tip over?', 'L:Ch 5: F_b = γ_f V_d with a free-body diagram; stability with MB = I/V_d.|ch05-buoyancy.html']]],
+    moving: ['What is asked?', [['A force from the moving stream', 'L:Ch 16: momentum, F = ṁ(v_out − v_in), plus pressure forces on the faces.|ch16-momentum.html'], ['A pressure, speed, height, or pump head', 'energy'], ['Choose or rescale a pump', 'L:Ch 13: pump curve meets system curve; check NPSH; affinity laws.|ch13-pumps.html']]],
+    energy: ['Is there a pump, turbine, or friction you must include?', [['No: ideal flow', 'L:Ch 6: continuity + Bernoulli (Torricelli, siphon, venturi, pitot).|ch06-bernoulli.html'], ['Yes', 'loss']]],
+    loss: ['Do you know h_L already?', [['Yes, it’s given', 'L:Ch 7: general energy equation; P = hγQ.|ch07-energy.html'], ['No, I must compute it', 'pipes']]],
+    pipes: ['What does the piping look like?', [['One round pipe', 'L:Ch 8: N_R → f → Darcy; add Ch 10 K values for fittings.|ch08-reynolds-friction.html'], ['A duct that isn’t round', 'L:Ch 9: hydraulic radius, D → 4R.|ch09-noncircular.html'], ['Several pipes', 'L:Ch 11–12: series losses add; parallel flows add, losses equal.|ch11-pipe-systems.html']]],
+    body: ['Drag, lift, or both?', [['Drag or terminal velocity', 'L:Ch 17: F_D = C_D(ρV²/2)A; iterate C_D with N_R for spheres.|ch17-drag-lift.html#sphere'], ['Lift on a wing', 'L:Ch 17: F_L = C_L(ρV²/2)A with planform area.|ch17-drag-lift.html#lift']]],
+  };
+  const trail = [];
+  function show(key) {
+    const box = $('#gBox'), chips = $('#gChips'); chips.innerHTML = '';
+    if (key.startsWith('L:')) {
+      const [msg, href] = key.slice(2).split('|');
+      box.innerHTML = `<p style="margin:0 0 8px"><b>${msg}</b></p><p class="small" style="margin:0"><a href="${href}">Open that page →</a></p>`;
+    } else { const [q, opts] = T[key]; box.innerHTML = `<p style="margin:0 0 8px"><b>${q}</b></p>`; opts.forEach(([lab, nxt]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = lab; b.addEventListener('click', () => { trail.push(key); show(nxt); }); chips.appendChild(b); }); }
+    if (trail.length) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = '← Back'; b.addEventListener('click', () => show(trail.pop())); chips.appendChild(b); const r = document.createElement('button'); r.type = 'button'; r.className = 'chip'; r.textContent = 'Start over'; r.addEventListener('click', () => { trail.length = 0; show('start'); }); chips.appendChild(r); }
+  }
+  show('start');
+})();
+</script>

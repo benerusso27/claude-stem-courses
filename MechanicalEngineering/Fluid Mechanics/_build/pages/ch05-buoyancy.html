@@ -1,0 +1,443 @@
+<!--title: Buoyancy and Stability (Ch 5)-->
+<!--short: Ch 5 Buoyancy-->
+<!--eyebrow: Week 3 · Chapter 5-->
+<!--desc: Lecture companion for Mott Chapter 5: Archimedes' principle, free-body diagrams of floating and submerged bodies, and the metacenter test for floating stability, with a live heel simulator.-->
+<header class="hero">
+  <p class="eyebrow">Week 3 · Mott Chapter 5 (Buoyancy and Stability) · Slide deck CH 5</p>
+  <h1>Buoyancy <em>and</em> Stability</h1>
+  <p class="lede">The fluid pushes up on a body with a force equal to the weight of the fluid it displaces. Part I uses that one fact with a free-body diagram. Part II asks a harder question: once it floats, will it stay upright?</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#arch">Archimedes</a><a href="#fbd">Free-body diagrams</a><a href="#multi">Two bodies</a><a href="#sub">Submerged stability</a><a href="#float">Floating stability</a><a href="#heel">Heel simulator</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Drop a block in a tank</h3><span class="eyebrow">Slides 4–6, 12</span></div>
+    <div class="panel-b">
+      <svg id="heroSvg" viewBox="0 0 640 250" style="width:100%;display:block" role="img" aria-label="A tank of liquid with a block in it. The block floats with part of its height submerged, or rests on the bottom if it is denser than the liquid. Arrows show its weight and the buoyant force."></svg>
+      <div class="fields">
+        <div class="field"><label for="hSg">Block specific gravity <span class="mono" id="hSgV"></span></label><input id="hSg" type="range" min="0.05" max="3" step="0.01" value="0.6"></div>
+        <div class="field"><label for="hFl">Liquid</label><select id="hFl"><option value="1">Fresh water (sg 1.00)</option><option value="1.03">Seawater (sg 1.03)</option><option value="0.68">Gasoline (sg 0.68)</option><option value="1.26">Glycerin (sg 1.26)</option><option value="13.54">Mercury (sg 13.54)</option></select></div>
+      </div>
+      <p class="small" id="heroRead" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#arch">Archimedes' principle</a></li><li><a href="#fbd">Free-body diagrams</a></li><li><a href="#multi">Two bodies</a></li><li><a href="#sub">Submerged stability</a></li><li><a href="#float">Floating stability</a></li><li><a href="#heel">Heel simulator</a></li><li><a href="#tilt">Off-center load</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="arch">
+  <div class="sec-head"><p class="eyebrow">Part I · Slides 4–6 · Mott §5.2</p><h2>Archimedes' principle</h2><p class="dek">Where does the buoyant force come from? From Chapter 3: pressure grows with depth, so the bottom of a body is pushed up harder than its top is pushed down.</p></div>
+  <div class="two">
+    <ol class="steps">
+      <li><span class="sn">1</span><div class="sb"><h4>Pressure on top and bottom</h4><p>Take a block of horizontal area \(A\) and height \(H\), its top at depth \(h\). The fluid pushes down on the top with \(\gamma_f h A\) and up on the bottom with \(\gamma_f (h+H) A\). The side pressures cancel in pairs.</p></div></li>
+      <li><span class="sn">2</span><div class="sb"><h4>Subtract</h4>\[ F_b = \gamma_f (h + H)A - \gamma_f h A = \gamma_f (HA) = \gamma_f V \]<p class="why">The depth \(h\) cancels. A fully submerged body feels the same buoyant force at any depth (for an incompressible fluid).</p></div></li>
+      <li class="final"><span class="sn">3</span><div class="sb"><h4>Any shape</h4><p>Replace the body by fluid of the same shape: that fluid would sit still, so the surrounding pressure must hold up exactly its weight. The pressure doesn't know what's inside the boundary, so</p><div class="boxed">\[ F_b = \gamma_f V_d \]</div><p class="why">\(V_d\) is the <b>displaced</b> volume: the part of the body below the surface. \(F_b\) acts straight up through the centroid of \(V_d\), the <b>center of buoyancy</b>.</p></div></li>
+    </ol>
+    <div class="read">
+      <h3>The four situations on slide 5</h3>
+      <ul>
+        <li><b>Completely submerged</b> and held: an external force makes up the difference between weight and buoyancy.</li>
+        <li><b>Floating</b>: the body sinks until \(\gamma_f V_d = W\). For a uniform body, the submerged fraction is \(\text{sg}_{body}/\text{sg}_{fluid}\).</li>
+        <li><b>Tending to float</b>: average specific weight below the fluid's. Held under, it needs a downward force.</li>
+        <li><b>Tending to sink</b>: average specific weight above the fluid's. It needs an upward force (or the bottom supplies it).</li>
+      </ul>
+      <div class="trap note"><span class="tag">Slide 7</span><p>The linked video has "one error" (the slide's words). I can't check the video from here, so I don't know which error your instructor means. Ask in class.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="fbd">
+  <div class="sec-head"><p class="eyebrow">Slides 8–12 · Mott §5.2 procedure</p><h2>Every buoyancy problem is a free-body diagram</h2><p class="dek">Mott's procedure: draw the body alone, show its weight (down), the buoyant force (up) and any external force, then write \(\Sigma F_y = 0\) with up positive. If you guess the external force's direction wrong, it comes out negative. That's fine.</p></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Body held in a fluid</h3><div class="seg" role="group" aria-label="Unit system" id="bSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="bFields">
+        <div class="field"><label for="bV" id="bVL">Volume of the body</label><input id="bV" type="text" inputmode="decimal" value="0.125"></div>
+        <div class="field"><label for="bGb" id="bGbL">Specific weight of the body</label><input id="bGb" type="text" inputmode="decimal" value="86.9"></div>
+        <div class="field"><label for="bSf">Fluid sg</label><input id="bSf" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="bFr">Fraction submerged <span class="mono" id="bFrV"></span></label><input id="bFr" type="range" min="0" max="1" step="0.01" value="1"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-b="e51a">Ex 5.1 bronze in water</button><button type="button" class="chip" data-b="e51b">Ex 5.1 in mercury</button><button type="button" class="chip" data-b="cu">Slide 10 copper</button><button type="button" class="chip" data-b="e53">Ex 5.3 foam in glycerin</button></div>
+      <div class="two">
+        <svg id="bSvg" viewBox="0 0 300 260" style="width:100%;display:block" role="img" aria-label="Free-body diagram of the body: weight down, buoyant force up, and the external force needed for balance."></svg>
+        <div class="out" style="align-content:start">
+          <div class="stat"><span class="lbl">Weight W</span><span class="val" id="bW"></span></div>
+          <div class="stat"><span class="lbl">Buoyant force F<sub>b</sub></span><span class="val" id="bFb"></span></div>
+          <div class="stat hot"><span class="lbl">External force needed</span><span class="val" id="bFe"></span></div>
+        </div>
+      </div>
+      <div class="workline" id="bWork"></div>
+      <p class="small muted" id="bNote"></p>
+    </div>
+  </div>
+</section>
+
+<section id="multi">
+  <div class="sec-head"><p class="eyebrow">Slide 13 (Exercise #4) · Mott Example 5.4</p><h2>Two bodies on a tether</h2><p class="dek">With two bodies, draw two free-body diagrams. The tether tension appears in both, pulling the bodies toward each other, and links the two equations.</p></div>
+  <div class="two">
+    <div class="read">
+      <p><b>Slide 13.</b> A buoy of volume 1 m³ (sg ≈ 0) floats half out of the water. It is tethered to a 2 m³ weight hanging below it. Find the weight's density and the tether tension.</p>
+      <ol>
+        <li><b>Buoy:</b> it has no weight, so \(T = F_{b,buoy} = \gamma_w (0.5\ \text{m}^3) = 9810 \times 0.5 = 4905\) N.</li>
+        <li><b>Weight:</b> \(W = F_{b,wt} + T\), so \(\rho g (2) = 9810(2) + 4905\), which gives \(\rho = 1250\) kg/m³ (sg 1.25).</li>
+      </ol>
+      <p class="small">Use the tool to see what happens when the weight is denser: the buoy sinks lower until, at \(\rho = 1500\) kg/m³, it is completely under and the pair sinks.</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="tFields">
+        <div class="field"><label for="tVb">Buoy volume <span class="unit">m³</span></label><input id="tVb" type="text" inputmode="decimal" value="1"></div>
+        <div class="field"><label for="tSb">Buoy sg</label><input id="tSb" type="text" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="tVw">Weight volume <span class="unit">m³</span></label><input id="tVw" type="text" inputmode="decimal" value="2"></div>
+        <div class="field"><label for="tRw">Weight density <span class="unit">kg/m³</span> <span class="mono" id="tRwV"></span></label><input id="tRw" type="range" min="1000" max="1600" step="5" value="1250"></div>
+      </div>
+      <svg id="tSvg" viewBox="0 0 300 200" style="width:100%;display:block" role="img" aria-label="A buoy at the surface tethered to a submerged weight."></svg>
+      <div class="out"><div class="stat"><span class="lbl">Buoy fraction submerged</span><span class="val" id="tFr"></span></div><div class="stat hot"><span class="lbl">Tether tension</span><span class="val" id="tT"></span></div></div>
+    </div></div>
+  </div>
+</section>
+
+<section id="sub">
+  <div class="sec-head"><p class="eyebrow">Part II · Slides 18–19 · Mott §5.4</p><h2>Stability of a submerged body</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>A body is <b>stable</b> if, after a small tilt, the forces on it push it back. On a completely submerged body, the weight acts down through the center of gravity (cg) and the buoyant force acts up through the center of buoyancy (cb). The cb is the centroid of the body's outside shape, so it doesn't move relative to the body when the body tilts.</p>
+      <ul>
+        <li><b>cg below cb</b>: a tilt offsets the two forces into a couple that rotates the body back. <b>Stable.</b> Submarines and research submersibles put batteries and ballast low and foam high (slide 19).</li>
+        <li><b>cg above cb</b>: the couple rotates it further. <b>Unstable.</b></li>
+        <li><b>cg at cb</b> (a solid, uniform body): no couple at any angle. <b>Neutral.</b></li>
+      </ul>
+    </div>
+    <figure class="panel" style="padding:12px">
+      <svg viewBox="0 0 320 220" style="width:100%;display:block" role="img" aria-label="Two tilted submerged bodies. Left: cg below cb, the couple turns the body upright. Right: cg above cb, the couple turns it over.">
+        <defs><marker id="sA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fl-dye"/></marker><marker id="sB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fl-water"/></marker></defs>
+        <rect x="0" y="0" width="320" height="220" class="fl-water" fill-opacity=".12"/>
+        <g transform="rotate(20 80 110)"><rect x="50" y="55" width="60" height="110" rx="26" class="fl-amber" fill-opacity=".55" stroke="var(--ink-2)"/></g>
+        <circle cx="80" cy="110" r="4" class="fl-water"/><text x="88" y="106" font-size="11" class="svg-ink">cb</text>
+        <circle cx="91" cy="140" r="4" class="fl-dye"/><text x="99" y="146" font-size="11" class="svg-ink">cg</text>
+        <line x1="80" y1="110" x2="80" y2="45" class="st-water" stroke-width="2.5" marker-end="url(#sB)"/>
+        <line x1="91" y1="140" x2="91" y2="200" class="st-dye" stroke-width="2.5" marker-end="url(#sA)"/>
+        <text x="80" y="214" font-size="12" text-anchor="middle" class="svg-ink">stable: turns back</text>
+        <g transform="rotate(20 240 110)"><rect x="210" y="55" width="60" height="110" rx="26" class="fl-amber" fill-opacity=".55" stroke="var(--ink-2)"/></g>
+        <circle cx="240" cy="110" r="4" class="fl-water"/><text x="222" y="106" font-size="11" class="svg-ink" text-anchor="end">cb</text>
+        <circle cx="229" cy="80" r="4" class="fl-dye"/><text x="219" y="78" font-size="11" class="svg-ink" text-anchor="end">cg</text>
+        <line x1="240" y1="110" x2="240" y2="45" class="st-water" stroke-width="2.5" marker-end="url(#sB)"/>
+        <line x1="229" y1="80" x2="229" y2="200" class="st-dye" stroke-width="2.5" marker-end="url(#sA)"/>
+        <text x="240" y="214" font-size="12" text-anchor="middle" class="svg-ink">unstable: turns over</text>
+      </svg>
+      <figcaption>Both bodies are tilted 20° clockwise. Blue: buoyant force through cb. Red: weight through cg.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="float">
+  <div class="sec-head"><p class="eyebrow">Slides 20–24 · Mott §5.5–5.6</p><h2>Stability of a floating body: the metacenter</h2><p class="dek">Most ships carry their cg <b>above</b> their cb, and they don't capsize. The difference from the submarine: when a floating body tilts, its displaced volume changes shape, and the cb moves toward the side that went down.</p></div>
+  <div class="read">
+    <ul>
+      <li><b>Metacenter (mc):</b> where the vertical line through the new cb crosses the body's centerline, for a small tilt (slide 21). For small angles it stays at one point.</li>
+      <li><b>Test:</b> the floating body is stable if its cg is <b>below the metacenter</b>. Then the weight and the buoyant force form a righting couple.</li>
+      <li><b>Where is it?</b> A distance \(MB = I/V_d\) above the cb. \(I\) is the <b>smallest</b> second moment of the waterplane area (the body's cross section at the water surface), about its centroidal axis; \(V_d\) is the displaced volume.</li>
+      <li><b>Metacentric height</b> \(MG = y_{mc} - y_{cg}\) measures how stable. Mott cites at least 1.5 ft (0.46 m) for small seagoing vessels and more than 3.5 ft (1.07 m) for large ships. Too large makes a stiff, fast roll that causes seasickness (slide 25).</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Mott's 9-step stability check</h3><div class="seg" role="group" aria-label="Hull shape" id="mShape"><button type="button" data-v="box" aria-pressed="true">Box hull</button><button type="button" data-v="cyl" aria-pressed="false">Upright cylinder</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="mFields">
+        <div class="field" id="mBf"><label for="mB">Beam B (width) <span class="unit">m or ft</span></label><input id="mB" type="text" inputmode="decimal" value="2.4"></div>
+        <div class="field" id="mLf"><label for="mL">Length L</label><input id="mL" type="text" inputmode="decimal" value="6.0"></div>
+        <div class="field" id="mDf" hidden><label for="mD">Diameter D</label><input id="mD" type="text" inputmode="decimal" value="3.0"></div>
+        <div class="field"><label for="mW">Total weight W <span class="unit" id="mWu">kN</span></label><input id="mW" type="text" inputmode="decimal" value="150"></div>
+        <div class="field"><label for="mG">Fluid specific weight γ<sub>f</sub> <span class="unit" id="mGu">kN/m³</span></label><input id="mG" type="text" inputmode="decimal" value="9.81"></div>
+        <div class="field"><label for="mY">cg height above bottom y<sub>cg</sub></label><input id="mY" type="text" inputmode="decimal" value="0.80"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-m="e55">Ex 5.5 flatboat</button><button type="button" class="chip" data-m="e56">Ex 5.6 cylinder in oil</button><button type="button" class="chip" data-m="p546">Prob 5.46 scow at B = 27.72 ft</button></div>
+      <div class="out">
+        <div class="stat"><span class="lbl">1. Draft X = W/(γ<sub>f</sub>A)</span><span class="val" id="mX"></span></div>
+        <div class="stat"><span class="lbl">2. y<sub>cb</sub> = X/2</span><span class="val" id="mCb"></span></div>
+        <div class="stat"><span class="lbl">4–6. MB = I/V<sub>d</sub></span><span class="val" id="mMB"></span></div>
+        <div class="stat"><span class="lbl">7. y<sub>mc</sub> = y<sub>cb</sub> + MB</span><span class="val" id="mMc"></span></div>
+        <div class="stat hot"><span class="lbl">8–9. Metacentric height MG</span><span class="val" id="mMG"></span></div>
+      </div>
+      <div class="workline" id="mWork"></div>
+    </div>
+  </div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Trap</span><p>Use the <b>smallest</b> \(I\): a boat tips about its long axis. For a box hull that is \(I = LB^3/12\) with B the beam, not \(BL^3/12\).</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>\(V_d\) is the <b>submerged</b> volume, not the hull's total volume. More load means more \(V_d\), smaller MB, and a higher cg: Problem 5.47 shows a loaded scow needs a wider hull.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>Measure \(y_{cb}\), \(y_{cg}\) and \(y_{mc}\) from the same reference, usually the bottom of the hull.</p></div>
+  </div>
+</section>
+
+<section id="heel">
+  <div class="sec-head"><p class="eyebrow">Beyond the slides · Mott §5.6.1, static stability curve</p><h2>Heel simulator</h2><p class="dek">MB = I/V<sub>d</sub> is a small-angle result. This tool tilts a box hull to any angle, finds the new waterline exactly, and plots the righting arm GZ: the horizontal distance between the weight and the buoyant force. Positive GZ rights the hull.</p></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Box hull, cross-section</h3><div class="chips"><button type="button" class="chip" data-h="e55">Ex 5.5 flatboat</button><button type="button" class="chip" data-h="high">Ex 5.5, cg raised to 1.1 m</button><button type="button" class="chip" data-h="scow">Scow 5.46</button><button type="button" class="chip" data-h="raft">Wide raft</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="hvFields">
+        <div class="field"><label for="hvB">Beam B</label><input id="hvB" type="text" inputmode="decimal" value="2.4"></div>
+        <div class="field"><label for="hvH">Hull height H</label><input id="hvH" type="text" inputmode="decimal" value="1.4"></div>
+        <div class="field"><label for="hvX">Upright draft X</label><input id="hvX" type="text" inputmode="decimal" value="1.0616"></div>
+        <div class="field"><label for="hvY">y<sub>cg</sub></label><input id="hvY" type="text" inputmode="decimal" value="0.80"></div>
+        <div class="field"><label for="hvP">Heel angle <span class="mono" id="hvPV"></span></label><input id="hvP" type="range" min="0" max="90" step="0.5" value="8"></div>
+      </div>
+      <div class="two">
+        <svg id="hvSvg" viewBox="0 0 360 300" style="width:100%;display:block" role="img" aria-label="The hull cross-section tilted to the chosen angle, with the waterline, the center of gravity G, the shifted center of buoyancy B prime, and the vertical line through B prime."></svg>
+        <svg id="hvPlot" style="width:100%;display:block" role="img" aria-label="Righting arm GZ against heel angle, with the small-angle line GM sin(angle) for comparison."></svg>
+      </div>
+      <div class="out">
+        <div class="stat"><span class="lbl">GM (small angle)</span><span class="val" id="hvGM"></span></div>
+        <div class="stat hot"><span class="lbl">GZ at this angle</span><span class="val" id="hvGZ"></span></div>
+        <div class="stat"><span class="lbl">GM·sin(angle)</span><span class="val" id="hvGMs"></span></div>
+        <div class="stat"><span class="lbl">Capsizes past</span><span class="val" id="hvVan"></span></div>
+      </div>
+      <p class="small" id="hvNote" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<section id="tilt">
+  <div class="sec-head"><p class="eyebrow">Slide 25</p><h2>How much does an off-center load tilt the boat?</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>A ship of weight W and metacentric height GM takes on a small weight w a distance Y off the centerline (W ≫ w). The combined cg moves sideways by \(wY/(W+w)\). The ship heels until the new cg is directly under the metacenter, which, for a small angle, sits GM above the cg on the old centerline:</p>
+      \[ \tan\theta = \frac{wY/(W+w)}{GM} \quad\Longrightarrow\quad GM\,(W+w)\tan\theta = wY \]
+      <p>That is the slide's formula. Turn it around and it is how ships measure GM: an <b>inclining experiment</b> moves a known weight across the deck and measures the heel.</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="aFields">
+        <div class="field"><label for="aW">Ship weight W <span class="unit">kN</span></label><input id="aW" type="text" inputmode="decimal" value="150"></div>
+        <div class="field"><label for="aGM">GM <span class="unit">m</span></label><input id="aGM" type="text" inputmode="decimal" value="0.18"></div>
+        <div class="field"><label for="aw">Added weight w <span class="unit">kN</span></label><input id="aw" type="text" inputmode="decimal" value="0.8"></div>
+        <div class="field"><label for="aY">Offset Y <span class="unit">m</span></label><input id="aY" type="text" inputmode="decimal" value="1.0"></div>
+      </div>
+      <div class="out"><div class="stat hot"><span class="lbl">Heel angle θ</span><span class="val" id="aT"></span></div></div>
+      <p class="small muted">Default: an 80 kg person (0.8 kN) stepping 1 m off center on Mott's Example 5.5 flatboat (GM = 0.18 m from Example 5.7).</p>
+    </div></div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Every exercise in the CH 5 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s8</span>Exercise #1 · Styrofoam vs copper</span><span class="s">Same-size cylinders held at the same depth</span><span class="ans">Same buoyancy</span></summary><div class="dbody"><p>\(F_b = \gamma_f V_d\) depends only on the fluid and the displaced volume. Same volume under water, same buoyant force. What differs is the force <i>you</i> apply: you push the foam down and hold the copper up, which the slide says this question is not about.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s10</span>Exercise #2 · Pulling out a copper block</span><span class="s">9 kg in air, sg ≈ 9</span><span class="ans">78.5 N under water; 88.3 N in air</span></summary><div class="dbody"><ol><li>Volume: \(V = m/\rho = 9/9000 = 0.001\) m³. Weight \(W = mg = 88.3\) N.</li><li>Buoyant force while submerged: \(F_b = 9810 \times 0.001 = 9.81\) N.</li><li>Force to lift it while it's under water: \(F = W - F_b = 78.5\) N. As it breaks the surface, \(V_d\) drops and the force climbs to the full 88.3 N once it's out.</li></ol><p class="note">Shortcut: sg 9 means the water takes away 1/9 of its weight.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s12</span>Exercise #3 · When does it float?</span><span class="s">And what fraction floats at sg 0.9?</span><span class="ans">sg &lt; 1; 10 % above water</span></summary><div class="dbody"><ol><li>A submerged body rises only if \(F_b &gt; W\), i.e. \(\gamma_f V &gt; \gamma_b V\): its specific gravity must be <b>less than 1</b> (less than the fluid's, in general).</li><li>Floating: \(\gamma_w V_d = \gamma_b V\), so \(V_d/V = \text{sg} = 0.9\). 90 % is under, <b>10 % floats above</b>. Ice (sg about 0.92) in seawater (1.03) is Mott Problem 5.20.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s13</span>Exercise #4 · Buoy and tethered weight</span><span class="s">1 m³ buoy half out; 2 m³ weight</span><span class="ans">1250 kg/m³; T = 4.91 kN</span></summary><div class="dbody"><p>Worked in the <a href="#multi">two-body section</a>. Free body of the buoy gives T; free body of the weight gives its density.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s15</span>Plate with a passenger</span><span class="s">2 m × 2 m plate, 30 cm thick, sg 0.3; 80 kg person steps on</span><span class="ans">9 cm, then 11 cm</span></summary><div class="dbody"><ol><li>Alone: submerged fraction = sg = 0.3, so draft = 0.3 × 30 cm = <b>9 cm</b>.</li><li>The person adds 80 kg, which must be carried by extra displaced water: \(\Delta V = 80/1000 = 0.08\) m³ spread over 4 m², so \(\Delta x = 0.02\) m.</li><li>New draft = <b>11 cm</b>, still less than the 30 cm thickness, so the plate keeps floating. It would take \(4 \times (0.30 - 0.09) \times 1000 = 840\) kg to sink it to the deck.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s24</span>Location of the metacenter (Mott Ex 5.5)</span><span class="s">Flatboat 2.4 m × 6.0 m, 150 kN, cg 0.80 m up</span><span class="ans">y<sub>mc</sub> = 0.98 m &gt; 0.80 m: stable</span></summary><div class="dbody"><ol><li>Draft: \(X = W/(\gamma_f BL) = 150/(9.81 \times 2.4 \times 6.0) = 1.06\) m; \(y_{cb} = 0.53\) m.</li><li>\(V_d = 6.0 \times 2.4 \times 1.06 = 15.3\) m³; \(I = LB^3/12 = 6.0(2.4)^3/12 = 6.91\) m⁴.</li><li>\(MB = 6.91/15.3 = 0.45\) m, so \(y_{mc} = 0.98\) m. That is above \(y_{cg} = 0.80\) m: stable, with \(MG = 0.18\) m (Mott Ex 5.7). Load it in the stability check.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s25</span>Heel from an off-center weight</span><span class="s">Derive GM(W + w) tan θ = wY</span><span class="ans">see the derivation</span></summary><div class="dbody"><p>Derived in the <a href="#tilt">off-center load section</a>. Check the units: both sides are force × length.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Problems shown on the CH 5 slides (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">5.46</span>River scow, minimum width</span><span class="s">Box hull 24 ft tall, cg at mid-height (12 ft), floats 8.00 ft deep in seawater</span><span class="ans">27.7 ft</span></summary><div class="dbody"><ol><li>\(y_{cb} = 8/2 = 4\) ft. For a box, \(MB = \dfrac{LB^3/12}{LB\,X} = \dfrac{B^2}{12X} = \dfrac{B^2}{96}\). The length cancels, and so does seawater's specific weight (the draft is given).</li><li>Neutral stability: \(y_{cb} + MB = y_{cg}\), so \(4 + B^2/96 = 12\), \(B^2 = 768\), \(B_{min} = 27.7\) ft.</li></ol><p class="note">The 24 ft height is read from the slide's figure (cg at the centroid, 12 ft up). Rounding up, any width above 27.7 ft is stable.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">5.47</span>Same scow loaded with coal</span><span class="s">Draft 16.0 ft, cg 13.5 ft above the bottom</span><span class="ans">32.5 ft</span></summary><div class="dbody"><ol><li>\(y_{cb} = 8\) ft, \(MB = B^2/(12 \times 16) = B^2/192\).</li><li>\(8 + B^2/192 = 13.5\), \(B^2 = 1056\), \(B_{min} = 32.5\) ft. Matches the book. Loading a hull deeper both raises its cg and shrinks MB.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 5.6</span>Upright cylinder in oil</span><span class="s">D = 3.0 ft, H = 6.0 ft, 1550 lb, oil sg 0.90</span><span class="ans">unstable (y<sub>mc</sub> 2.09 ft &lt; y<sub>cg</sub> 3.00 ft)</span></summary><div class="dbody"><ol><li>Draft: \(X = \dfrac{4W}{\pi D^2\gamma_o} = \dfrac{4(1550)}{\pi(9)(0.9 \times 62.4)} = 3.90\) ft; \(y_{cb} = 1.95\) ft.</li><li>\(I = \pi D^4/64 = 3.98\) ft⁴, \(V_d = 27.6\) ft³, \(MB = 0.144\) ft, \(y_{mc} = 2.09\) ft.</li><li>The cg is at 3.00 ft, above the metacenter: it falls over and floats on its side. Tall, narrow floating bodies tend to be unstable upright.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 5.1</span>Bronze cube held under</span><span class="s">0.50 m cube, γ = 86.9 kN/m³, in water and in mercury</span><span class="ans">9.64 kN up; 5.74 kN down</span></summary><div class="dbody"><ol><li>\(V = 0.125\) m³, \(W = 86.9 \times 0.125 = 10.86\) kN.</li><li>Water: \(F_b = 9.81 \times 0.125 = 1.23\) kN, so hold it up with \(10.86 - 1.23 = 9.64\) kN.</li><li>Mercury: \(F_b = 13.54 \times 9.81 \times 0.125 = 16.60\) kN, greater than W, so hold it <b>down</b> with 5.74 kN. Bronze floats on mercury.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src og">s14</span>Sphere on a pulley</span><span class="s">Problem shown on slide 14 (not from Mott): 0.025 m³ sphere half in water, held by a rope over two pulleys to a hanging 10 kg mass</span><span class="ans">γ ≈ 8.83 kN/m³; floats 90 % submerged</span></summary><div class="dbody"><p class="given">Assumptions (the problem asks for them): frictionless pulleys, a weightless rope, the sphere submerged exactly to its center as the figure appears to show, fresh water at 9.81 kN/m³.</p><ol><li>Rope tension = weight of the hanging mass: \(T = 10 \times 9.81 = 98.1\) N.</li><li>Sphere: \(W = F_b + T = 9810(0.0125) + 98.1 = 122.6 + 98.1 = 220.7\) N.</li><li>\(\gamma = W/V = 220.7/0.025 = 8830\) N/m³ (sg 0.90).</li><li>Remove the mass and the sphere floats with 90 % of its volume submerged, deeper than before.</li></ol><p class="note">I don't have this book's answer key, so check the numbers against your instructor's solution. If the sphere in the figure is not exactly half submerged, step 2 changes.</p></div></details>
+    <details><summary><span class="t"><span class="src og">s16</span>Inverted bowl in a dense liquid (advanced)</span><span class="s">Problem shown on slide 16 (not from Mott): bowl of 0.9 L of clay (sg 6.1), 100 mm inside diameter, held rim-down 200 mm deep in sg 15.6 liquid; the liquid rises 20 mm inside</span><span class="ans">≈ 156 N downward</span></summary><div class="dbody"><p class="given">Key idea: take the bowl <b>and</b> its trapped air as one body. The air–liquid interface is at hydrostatic pressure, so Archimedes applies to the combined volume. The air's weight is negligible.</p><ol><li>Air volume: I read the slide's 80 mm as the inside height from the rim, so the air column is \(80 - 20 = 60\) mm tall: \(V_{air} = \pi(0.05)^2(0.060) = 0.471\) L.</li><li>Buoyancy: \(F_b = (15.6 \times 9810)(0.9 + 0.471)\times10^{-3} = 153{,}040 \times 1.371\times10^{-3} = 209.8\) N.</li><li>Weight: \(W = (6.1 \times 9810)(0.9\times10^{-3}) = 53.9\) N.</li><li>Hold-down force: \(209.8 - 53.9 = 156\) N downward.</li></ol><p class="note">The 200 mm depth doesn't enter the answer once the 20 mm rise is given (it would only matter for working out how much the air compresses). If the 80 mm is the outside height instead, the inside height and the answer change, and the figure alone doesn't settle that. I don't have this book's answer key.</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. A steel ball rests on the bottom of a pool. You move it to a deeper spot. Its buoyant force</p><div class="opts"><button class="opt" data-k="a">increases, because pressure is higher</button><button class="opt" data-k="b">decreases</button><button class="opt" data-k="c">stays the same</button><button class="opt" data-k="d">becomes zero on the bottom</button></div><p class="fb" hidden>F_b = γ_f V_d. Depth cancels: both top and bottom pressures rise by the same amount.</p></div>
+    <div class="q" data-answer="b"><p class="qt">2. A log floats with 70 % of its volume submerged in fresh water. Its specific gravity is</p><div class="opts"><button class="opt" data-k="a">0.30</button><button class="opt" data-k="b">0.70</button><button class="opt" data-k="c">1.43</button><button class="opt" data-k="d">can't tell without its weight</button></div><p class="fb" hidden>γ_w V_d = γ_log V, so sg = V_d/V = 0.70.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. A floating box hull has its cg above its center of buoyancy. It is</p><div class="opts"><button class="opt" data-k="a">stable if the cg is below the metacenter</button><button class="opt" data-k="b">always unstable</button><button class="opt" data-k="c">always stable</button><button class="opt" data-k="d">stable only if fully submerged</button></div><p class="fb" hidden>cg below cb is the test for submerged bodies. Floating bodies use the metacenter, which can be well above the cg (Ex 5.5).</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. Doubling a box hull's beam (same length, same weight) multiplies MB by</p><div class="opts"><button class="opt" data-k="a">2</button><button class="opt" data-k="b">1/2</button><button class="opt" data-k="c">4</button><button class="opt" data-k="d">8</button></div><p class="fb" hidden>I = LB³/12 grows 8×. V_d stays the same (same weight), so MB = I/V_d grows 8×. Beam is the cheapest way to buy stability.</p></div>
+  </div>
+  <div class="dlist">
+    <details class="qa"><summary><span class="t">Why does a floating body's center of buoyancy move when it tilts, but a submerged body's doesn't?</span><span class="ans">answer</span></summary><div class="dbody"><p>The cb is the centroid of the displaced volume. A submerged body always displaces its whole outside shape, which tilts with it, so the cb stays fixed relative to the body. A floating body displaces only the part below the waterline; tilting pushes a wedge of hull under on one side and lifts one out on the other, so the displaced shape, and its centroid, shifts toward the low side.</p></div></details>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Buoyant force</span>\[ F_b = \gamma_f V_d \]<span class="wh">Up, through the centroid of the displaced volume.</span></div>
+    <div><span class="nm">Equilibrium</span>\[ \Sigma F_y = F_b + F_e - W = 0 \]<span class="wh">Up positive; F<sub>e</sub> is any external force.</span></div>
+    <div><span class="nm">Floating fraction</span>\[ \frac{V_d}{V} = \frac{\text{sg}_{body}}{\text{sg}_{fluid}} \]<span class="wh">Uniform body, floating freely.</span></div>
+    <div><span class="nm">Metacenter</span>\[ MB = \frac{I}{V_d},\quad y_{mc} = y_{cb} + MB \]<span class="wh">I: smallest second moment of the waterplane.</span></div>
+    <div><span class="nm">Stability</span>\[ MG = y_{mc} - y_{cg} > 0 \]<span class="wh">Submerged: cg below cb instead.</span></div>
+    <div><span class="nm">Box hull</span>\[ MB = \frac{B^2}{12X} \]<span class="wh">B beam, X draft.</span></div>
+    <div><span class="nm">Off-center load</span>\[ GM\,(W+w)\tan\theta = wY \]<span class="wh">Small heel angle.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* hero */
+  function hero() {
+    const sg = num('#hSg'), sf = num('#hFl'); $('#hSgV').textContent = sg.toFixed(2);
+    const s = $('#heroSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const top = 70, bot = 230, tx0 = 150, tx1 = 490, Hb = 90, Wb = 120;
+    el('rect', { x: tx0, y: top, width: tx1 - tx0, height: bot - top, class: 'fl-water', 'fill-opacity': sf > 5 ? 0.45 : 0.2 }, s);
+    el('path', { d: `M${tx0},30 L${tx0},${bot} L${tx1},${bot} L${tx1},30`, fill: 'none', class: 'st-ink', 'stroke-width': 2.5 }, s);
+    el('line', { x1: tx0, x2: tx1, y1: top, y2: top, class: 'st-water', 'stroke-width': 2 }, s);
+    const frac = C.floatFraction(sg, sf), sinks = sg > sf;
+    const yTop = sinks ? bot - Hb : top - Hb * (1 - frac), bx = (tx0 + tx1) / 2 - Wb / 2;
+    el('rect', { x: bx, y: yTop, width: Wb, height: Hb, rx: 3, class: 'fl-amber', 'fill-opacity': 0.75, stroke: 'var(--ink-2)' }, s);
+    const sub = sinks ? Hb : Hb * frac;
+    el('rect', { x: bx, y: yTop + Hb - sub, width: Wb, height: sub, class: 'fl-water', 'fill-opacity': 0.25 }, s);
+    const aw = FM.arrowDef(s, 'fl-dye', 'hA1'), ab = FM.arrowDef(s, 'fl-water', 'hA2');
+    const cx = bx + Wb / 2, cy = yTop + Hb / 2, Lw = 55, Lb = sinks ? 55 * sf / sg : 55;
+    el('line', { x1: cx - 14, y1: cy, x2: cx - 14, y2: cy + Lw, class: 'st-dye', 'stroke-width': 3, 'marker-end': aw }, s);
+    el('line', { x1: cx + 14, y1: yTop + Hb - sub / 2, x2: cx + 14, y2: yTop + Hb - sub / 2 - Lb, class: 'st-water', 'stroke-width': 3, 'marker-end': ab }, s);
+    text(s, cx - 20, cy + Lw + 2, 'W', { 'font-size': 13, class: 'fl-dye', 'text-anchor': 'end' });
+    text(s, cx + 20, yTop + Hb - sub / 2 - Lb + 10, 'F_b', { 'font-size': 13, class: 'fl-water' });
+    if (sinks) { const Ln = 55 * (1 - sf / sg); if (Ln > 3) { el('line', { x1: cx + 40, y1: bot + 0, x2: cx + 40, y2: bot - Ln, class: 'st-ink2', 'stroke-width': 3, 'marker-end': FM.arrowDef(s, 'fl-ink2', 'hA3') }, s); text(s, cx + 46, bot - Ln + 10, 'floor', { 'font-size': 12 }); } }
+    $('#heroRead').innerHTML = sinks
+      ? `Block sg ${sg.toFixed(2)} &gt; liquid sg ${sf}: it sinks. Submerged, buoyancy carries only ${f(100 * sf / sg, 3)} % of its weight; the floor carries the rest.`
+      : `Block sg ${sg.toFixed(2)} &lt; liquid sg ${sf}: it floats with V<sub>d</sub>/V = ${sg.toFixed(2)}/${sf} = <b>${f(100 * frac, 3)} %</b> of its volume submerged, where F<sub>b</sub> = W.`;
+  }
+  onInputs('#hSg', hero); onInputs('#hFl', hero); hero();
+
+  /* FBD */
+  let bsys = 'SI';
+  const BPRE = {
+    e51a: ['SI', 0.125, 86.9, 1, 1, 'Mott Ex 5.1(a): a 0.50 m bronze cube, γ = 86.9 kN/m³.'],
+    e51b: ['SI', 0.125, 86.9, 13.54, 1, 'Mott Ex 5.1(b): the same cube in mercury (sg 13.54).'],
+    cu: ['SI', 0.001, 88.29, 1, 1, 'Slide 10: 9 kg of copper (sg 9) is 0.001 m³ and weighs 88.3 N, so γ = 88.29 kN/m³.'],
+    e53: ['SI', 5.12e-4, 7.3575, 1.26, 1, 'Mott Ex 5.3: an 80 mm foam cube floats in water with 60 mm under, so γ = 0.75 × 9.81 = 7.36 kN/m³; hold it under glycerin.'],
+  };
+  function bLabels() { const us = bsys === 'US'; $('#bVL').innerHTML = `Volume of the body <span class="unit">${us ? 'ft³' : 'm³'}</span>`; $('#bGbL').innerHTML = `Specific weight of the body <span class="unit">${us ? 'lb/ft³' : 'kN/m³'}</span>`; }
+  function fbd() {
+    const us = bsys === 'US', V = num('#bV'), gb = num('#bGb'), sf = num('#bSf'), fr = num('#bFr');
+    $('#bFrV').textContent = `${Math.round(fr * 100)} %`;
+    if (!(V > 0 && gb >= 0 && sf > 0)) { $('#bWork').textContent = 'Enter a positive volume and fluid sg.'; return; }
+    const gw = us ? 62.4 : 9.81, gf = sf * gw;
+    const r0 = C.buoyFBD({ V, gammaBody: gb, gammaFluid: gf, Vsub: V * fr });
+    const small = !us && Math.max(r0.W, r0.Fb) < 1, k = small ? 1000 : 1, U = us ? 'lb' : small ? 'N' : 'kN';
+    const r = { W: r0.W * k, Fb: r0.Fb * k, Fe: r0.Fe * k, Vd: r0.Vd };
+    $('#bW').textContent = `${f(r.W, 4)} ${U}`; $('#bFb').textContent = `${f(r.Fb, 4)} ${U}`;
+    $('#bFe').textContent = Math.abs(r.Fe) < 1e-9 * r.W ? 'none (floats freely)' : `${f(Math.abs(r.Fe), 4)} ${U} ${r.Fe > 0 ? 'up' : 'down'}`;
+    $('#bWork').innerHTML = `<div>W = γ_body·V = ${f(gb, 4)} × ${f(V, 4)} = ${f(r0.W, 4)} ${us ? 'lb' : 'kN'}${small ? ` = ${f(r.W, 4)} N` : ''}</div><div>F_b = γ_f·V_d = (${sf} × ${gw}) × ${f(r.Vd, 4)} = ${f(r0.Fb, 4)} ${us ? 'lb' : 'kN'}${small ? ` = ${f(r.Fb, 4)} N` : ''}</div><div>ΣF_y = 0:  F_e = W − F_b = ${f(r.Fe, 4)} ${U}  (${r.Fe >= 0 ? '+ means support upward' : '− means push downward'})</div>${fr === 1 && gb < gf ? `<div>Released, it would float with ${f(100 * gb / gf, 3)} % submerged.</div>` : ''}`;
+    const s = $('#bSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    el('rect', { x: 0, y: 70 + (1 - fr) * 60, width: 300, height: 260, class: 'fl-water', 'fill-opacity': 0.15 }, s);
+    el('line', { x1: 0, x2: 300, y1: 70 + (1 - fr) * 60, y2: 70 + (1 - fr) * 60, class: 'st-water', 'stroke-width': 1.5 }, s);
+    el('rect', { x: 110, y: 100, width: 80, height: 60, rx: 4, class: 'fl-amber', 'fill-opacity': 0.7, stroke: 'var(--ink-2)' }, s);
+    const mx = Math.max(r.W, r.Fb, Math.abs(r.Fe), 1e-12), L = (v) => 12 + 70 * v / mx;
+    const ad = FM.arrowDef(s, 'fl-dye', 'bA1'), aw = FM.arrowDef(s, 'fl-water', 'bA2'), ai = FM.arrowDef(s, 'fl-ink2', 'bA3');
+    el('line', { x1: 135, y1: 130, x2: 135, y2: 130 + L(r.W), class: 'st-dye', 'stroke-width': 3, 'marker-end': ad }, s); text(s, 129, 130 + L(r.W), 'W', { 'text-anchor': 'end', class: 'fl-dye', 'font-size': 13 });
+    el('line', { x1: 165, y1: 160, x2: 165, y2: 160 - L(r.Fb) - 30, class: 'st-water', 'stroke-width': 3, 'marker-end': aw }, s); text(s, 171, 160 - L(r.Fb) - 20, 'F_b', { class: 'fl-water', 'font-size': 13 });
+    if (Math.abs(r.Fe) > 1e-9 * mx) { const up = r.Fe > 0; el('line', up ? { x1: 230, y1: 100, x2: 230, y2: 100 - L(Math.abs(r.Fe)) } : { x1: 230, y1: 100 - L(Math.abs(r.Fe)), x2: 230, y2: 100 }, s).setAttribute('class', 'st-ink2'); s.lastChild.setAttribute('stroke-width', 3); s.lastChild.setAttribute('marker-end', ai); text(s, 238, 100 - L(Math.abs(r.Fe)) / 2, 'F_e', { 'font-size': 13 }); el('line', { x1: 190, y1: 100, x2: 230, y2: 100, class: 'st-ink2', 'stroke-dasharray': '3 3' }, s); }
+  }
+  $$('[data-b]').forEach((b) => b.addEventListener('click', () => { const v = BPRE[b.dataset.b]; bsys = v[0]; $$('#bSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === bsys))); $('#bV').value = v[1]; $('#bGb').value = v[2]; $('#bSf').value = v[3]; $('#bFr').value = v[4]; $('#bNote').textContent = v[5]; bLabels(); fbd(); }));
+  segmented($('#bSys'), (v) => { bsys = v; $('#bNote').textContent = ''; bLabels(); fbd(); });
+  onInputs('#bFields', fbd); bLabels(); fbd();
+
+  /* tether */
+  function tether() {
+    const Vb = num('#tVb'), sb = num('#tSb'), Vw = num('#tVw'), rw = num('#tRw'); $('#tRwV').textContent = rw;
+    if (!(Vb > 0 && Vw > 0 && sb >= 0)) return;
+    // net downward pull of the weight in water (N), carried by the buoy
+    const T = (rw - 1000) * 9.81 * Vw, needSub = (T + sb * 9810 * Vb) / (9810 * Vb);
+    const fr = Math.max(0, needSub), sinks = needSub > 1, floatsUp = T < 0;
+    $('#tFr').textContent = floatsUp ? 'weight floats up' : sinks ? 'over 100 %: both sink' : `${f(100 * fr, 3)} %`;
+    $('#tT').textContent = floatsUp ? 'slack' : sinks ? `${f(9810 * Vb * (1 - sb), 4)} N max` : `${f(T, 4)} N`;
+    const s = $('#tSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    el('rect', { x: 0, y: 50, width: 300, height: 150, class: 'fl-water', 'fill-opacity': 0.18 }, s);
+    el('line', { x1: 0, x2: 300, y1: 50, y2: 50, class: 'st-water', 'stroke-width': 2 }, s);
+    const R = 26, by = sinks ? 50 + R + 30 : 50 + R - 2 * R * Math.min(fr, 1), wy = sinks ? 175 : 150;
+    el('line', { x1: 150, y1: by + R, x2: 150, y2: wy - 18, class: 'st-ink2', 'stroke-width': 1.5 }, s);
+    el('circle', { cx: 150, cy: by, r: R, class: 'fl-surface', stroke: 'var(--ink)', 'stroke-width': 1.5 }, s);
+    el('rect', { x: 110, y: wy - 18, width: 80, height: 32, rx: 6, class: 'fl-amber', 'fill-opacity': 0.75, stroke: 'var(--ink-2)' }, s);
+    text(s, 200, wy + 4, `${rw} kg/m³`, { 'font-size': 11.5 });
+    if (!floatsUp && !sinks) text(s, 158, (by + R + wy - 18) / 2 + 4, `T = ${f(T / 1000, 3)} kN`, { 'font-size': 11.5, class: 'svg-ink' });
+    if (sinks) text(s, 10, 30, 'Buoy fully under: the pair sinks.', { 'font-size': 12, class: 'fl-dye' });
+  }
+  onInputs('#tFields', tether); tether();
+
+  /* metacenter */
+  let mshape = 'box';
+  const MPRE = {
+    e55: ['box', { mB: 2.4, mL: 6.0, mW: 150, mG: 9.81, mY: 0.80 }],
+    e56: ['cyl', { mD: 3.0, mW: 1550, mG: 56.16, mY: 3.0 }],
+    p546: ['box', { mB: 27.72, mL: 1, mW: 27.72 * 8 * 64.0, mG: 64.0, mY: 12 }],
+  };
+  function mLabels() { $('#mBf').hidden = $('#mLf').hidden = mshape === 'cyl'; $('#mDf').hidden = mshape !== 'cyl'; }
+  function meta() {
+    const B = num('#mB'), L = num('#mL'), D = num('#mD'), W = num('#mW'), g = num('#mG'), y = num('#mY');
+    const A = mshape === 'cyl' ? Math.PI * D * D / 4 : B * L;
+    if (!(A > 0 && W > 0 && g > 0)) return;
+    const X = W / (g * A), r = C.metacenter({ shape: mshape, B, L, D, X, ycg: y });
+    $('#mX').textContent = f(X, 4); $('#mCb').textContent = f(r.ycb, 4); $('#mMB').textContent = f(r.MB, 4); $('#mMc').textContent = f(r.ymc, 4);
+    $('#mMG').innerHTML = `${f(r.MG, 3)} ${r.stable ? '<span class="ok">stable</span>' : '<span class="err">unstable</span>'}`;
+    const Itxt = mshape === 'cyl' ? `I = πD⁴/64 = ${f(r.I, 4)}` : `I = L·B³/12 = ${f(L, 4)}×${f(B, 4)}³/12 = ${f(r.I, 4)}`;
+    const minB = mshape === 'box' ? `<div>Minimum beam for this draft and cg (MG = 0): B = √(12·X·(y_cg − X/2)) = ${f(C.boxMinBeam(X, y), 4)}</div>` : '';
+    $('#mWork').innerHTML = `<div>X = W/(γ_f·A) = ${f(W, 4)}/(${f(g, 4)}×${f(A, 4)}) = ${f(X, 4)}${X > 0 && mshape === 'cyl' ? '' : ''}</div><div>${Itxt},  V_d = A·X = ${f(r.Vd, 4)}</div><div>MB = I/V_d = ${f(r.MB, 4)},  y_mc = ${f(r.ycb, 4)} + ${f(r.MB, 4)} = ${f(r.ymc, 4)}  vs  y_cg = ${f(y, 4)}</div>${minB}`;
+  }
+  segmented($('#mShape'), (v) => { mshape = v; mLabels(); meta(); });
+  $$('[data-m]').forEach((b) => b.addEventListener('click', () => { const [sh, vals] = MPRE[b.dataset.m]; mshape = sh; $$('#mShape button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === sh))); FM.setVals(vals); mLabels(); meta(); }));
+  onInputs('#mFields', meta); mLabels(); meta();
+
+  /* heel simulator */
+  const HPRE = { e55: [2.4, 1.4, 1.0616, 0.80, 8], high: [2.4, 1.4, 1.0616, 1.10, 8], scow: [30, 24, 8, 12, 10], raft: [4, 0.5, 0.2, 0.25, 15] };
+  function heelSim() {
+    const B = num('#hvB'), H = num('#hvH'), X = num('#hvX'), y = num('#hvY'), phi = num('#hvP');
+    $('#hvPV').textContent = `${phi}°`;
+    if (!(B > 0 && H > 0 && X > 0 && X < H && y > 0)) { $('#hvNote').textContent = 'Need B, H, X, y_cg > 0 and a draft less than the hull height.'; return; }
+    const GM = X / 2 + B * B / (12 * X) - y, r = C.boxHeel({ B, H, X, ycg: y, phi });
+    // curve
+    const pts = [], lin = []; let vanish = null, prev = null;
+    for (let a = 0; a <= 90.001; a += 0.5) { const g = C.boxHeel({ B, H, X, ycg: y, phi: a }).GZ; pts.push([a, g]); lin.push([a, GM * Math.sin(a * Math.PI / 180)]); if (a > 0.5 && vanish === null && prev !== null && prev > 0 && g <= 0) vanish = a; prev = g; }
+    $('#hvGM').innerHTML = `${f(GM, 3)} ${GM > 0 ? '<span class="ok">stable</span>' : '<span class="err">unstable</span>'}`;
+    $('#hvGZ').textContent = f(r.GZ, 3); $('#hvGMs').textContent = f(GM * Math.sin(phi * Math.PI / 180), 3);
+    $('#hvVan').textContent = GM <= 0 ? 'already unstable' : vanish === null ? 'beyond 90°' : `≈ ${vanish}°`;
+    const ys = pts.concat(lin.filter((q) => q[0] <= 40)).map((q) => q[1]), ymin = Math.min(0, ...ys), ymax = Math.max(0.01, ...pts.map((q) => q[1]));
+    const p = FM.plot($('#hvPlot'), { W: 380, H: 300, m: { l: 66, r: 12, t: 14, b: 44 }, x: { min: 0, max: 90, label: 'heel angle (°)', ticks: [0, 15, 30, 45, 60, 75, 90], fmt: (v) => String(v) }, y: { min: ymin - 0.1 * (ymax - ymin), max: ymax * 1.25, label: 'righting arm GZ', fmt: (v) => f(v, 2) } });
+    el('line', { x1: p.sx(0), x2: p.sx(90), y1: p.sy(0), y2: p.sy(0), class: 'st-ink2', 'stroke-width': 1 }, p.g);
+    FM.line(p, lin.filter((q) => q[0] <= 40), { class: 'st-ink2', 'stroke-dasharray': '5 4', 'stroke-width': 1.5 });
+    FM.line(p, pts, { class: 'st-water', 'stroke-width': 2.5 });
+    FM.dot(p, phi, r.GZ);
+    text(p.g, p.sx(41), p.sy(GM * Math.sin(40 * Math.PI / 180)) - 4, 'GM sin φ', { 'font-size': 11 });
+    // hull drawing
+    const s = $('#hvSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const xs = r.hull.map((q) => q[0]), yr = r.hull.map((q) => q[1] - r.wl);
+    const sc = Math.min(300 / (Math.max(...xs) - Math.min(...xs)), 230 / (Math.max(...yr) - Math.min(...yr) + 1e-9));
+    const ox = 180 - sc * (Math.max(...xs) + Math.min(...xs)) / 2, oy = 50 + Math.max(...yr) * sc;  // earth coords: x right, y up; waterline drawn at oy
+    const P = ([x, yy]) => [ox + x * sc, oy - (yy - r.wl) * sc];
+    el('rect', { x: 0, y: oy, width: 360, height: 300 - oy, class: 'fl-water', 'fill-opacity': 0.2 }, s);
+    el('line', { x1: 0, x2: 360, y1: oy, y2: oy, class: 'st-water', 'stroke-width': 2 }, s);
+    el('polygon', { points: r.hull.map((q) => P(q).join(',')).join(' '), class: 'fl-amber', 'fill-opacity': 0.55, stroke: 'var(--ink-2)', 'stroke-width': 1.5 }, s);
+    el('polygon', { points: r.sub.map((q) => P(q).join(',')).join(' '), class: 'fl-water', 'fill-opacity': 0.3 }, s);
+    const t = phi * Math.PI / 180, cl = (yy) => P([-yy * Math.sin(t), yy * Math.cos(t)]);
+    const [c0x, c0y] = cl(-0.15 * H), [c1x, c1y] = cl(H * 1.6);
+    el('line', { x1: c0x, y1: c0y, x2: c1x, y2: c1y, class: 'st-ink2', 'stroke-dasharray': '4 4' }, s);
+    const [gx, gy] = P([r.xG, r.yG]), [bx, by] = P([r.xB, r.yB]);
+    el('line', { x1: bx, y1: by, x2: bx, y2: 10, class: 'st-water', 'stroke-width': 1.2, 'stroke-dasharray': '2 3' }, s);
+    if (phi > 0.4) { // intersection of vertical through B' with centerline = M for this angle
+      const k = (r.xB - 0) / (-Math.sin(t)); if (isFinite(k) && Math.abs(k) < 4 * H) { const [mx, my] = cl(k); el('circle', { cx: mx, cy: my, r: 4, fill: 'var(--ink)' }, s); text(s, mx + 7, my - 4, 'M', { 'font-size': 12, class: 'svg-ink' }); }
+    }
+    el('circle', { cx: gx, cy: gy, r: 5, class: 'fl-dye' }, s); text(s, gx + 7, gy + 4, 'G', { 'font-size': 12, class: 'fl-dye' });
+    el('circle', { cx: bx, cy: by, r: 5, class: 'fl-water' }, s); text(s, bx - 8, by + 4, "B′", { 'font-size': 12, class: 'fl-water', 'text-anchor': 'end' });
+    const aw = FM.arrowDef(s, 'fl-dye', 'hvA'), ab = FM.arrowDef(s, 'fl-water', 'hvB');
+    el('line', { x1: gx, y1: gy, x2: gx, y2: gy + 45, class: 'st-dye', 'stroke-width': 2.5, 'marker-end': aw }, s);
+    el('line', { x1: bx, y1: by, x2: bx, y2: by - 45, class: 'st-water', 'stroke-width': 2.5, 'marker-end': ab }, s);
+    let note = r.GZ > 0 ? `B′ is ${f(Math.abs(r.GZ), 3)} to the low side of G: the couple rights the hull.` : r.GZ < 0 ? `B′ is on the high side of G: the couple tips the hull further.` : 'Upright: no couple.';
+    if (r.deckWet) note += ' The deck edge is under water, so GZ falls below the small-angle line.';
+    if (r.bottomOut) note += ' The bilge corner has come out of the water.';
+    $('#hvNote').textContent = note;
+  }
+  $$('[data-h]').forEach((b) => b.addEventListener('click', () => { const v = HPRE[b.dataset.h]; ['hvB', 'hvH', 'hvX', 'hvY', 'hvP'].forEach((id, i) => ($('#' + id).value = v[i])); heelSim(); }));
+  onInputs('#hvFields', heelSim); heelSim();
+  document.addEventListener('fm-theme', heelSim);
+
+  /* off-center load */
+  function tilt() { const W = num('#aW'), GM = num('#aGM'), w = num('#aw'), Y = num('#aY'); if (!(W > 0 && GM > 0 && w >= 0)) { $('#aT').textContent = GM <= 0 ? 'GM ≤ 0: unstable' : '—'; return; } $('#aT').textContent = `${f(C.heelAngle({ W, w, Y, GM }), 3)}°`; }
+  onInputs('#aFields', tilt); tilt();
+})();
+</script>

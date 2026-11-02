@@ -1,0 +1,569 @@
+<!--title: Fluid Properties & Viscosity (Ch 1–2)-->
+<!--short: Ch 1–2 Properties-->
+<!--eyebrow: Week 1 · Chapters 1 and 2-->
+<!--desc: Study guide for Mott Chapters 1 and 2: units, density, specific weight, specific gravity, pressure, and viscosity, with calculators and worked examples.-->
+<header class="hero">
+  <p class="eyebrow">Week 1 · Mott Chapters 1 and 2 · Slide decks CH 1 and CH 2</p>
+  <h1>Fluid Properties <em>&amp;</em> Viscosity</h1>
+  <p class="lede">Before anything flows, you need the vocabulary: units you can trust, the three ways to say "how heavy" (density, specific weight, specific gravity), pressure, and viscosity. Viscosity is the property that separates a fluid from a solid, and the shear cell below shows why.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#map">Course map</a><a href="#units">Units</a><a href="#density">Density, γ, sg</a><a href="#pressure">Pressure</a><a href="#viscosity">Viscosity</a><a href="#temperature">Temperature</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Solid or fluid? Push the top plate</h3><span class="eyebrow">Slide 2.4</span></div>
+    <div class="panel-b">
+      <svg id="shearSvg" viewBox="0 0 640 210" style="width:100%;display:block" role="img" aria-label="A block between two plates. A shear force pushes the top plate to the right. A solid leans over to a fixed angle and stops. A fluid keeps deforming as long as the force acts."></svg>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div class="seg" role="group" aria-label="Material" id="shearMat">
+          <button type="button" data-v="solid" aria-pressed="true">Solid (steel)</button>
+          <button type="button" data-v="honey" aria-pressed="false">Honey</button>
+          <button type="button" data-v="water" aria-pressed="false">Water</button>
+        </div>
+        <div class="chips">
+          <button type="button" class="chip" id="shearPush" aria-pressed="false">Apply shear force</button>
+          <button type="button" class="chip" id="shearReset">Reset</button>
+        </div>
+      </div>
+      <p class="small muted" id="shearRead" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol>
+      <li><a href="#map">Course map</a></li><li><a href="#units">Units</a></li><li><a href="#density">Density, γ, sg</a></li><li><a href="#pressure">Pressure</a></li>
+      <li><a href="#viscosity">Viscosity</a></li><li><a href="#temperature">Temperature</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li>
+      <li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li>
+    </ol>
+  </nav>
+  <main>
+
+<section id="map">
+  <div class="sec-head">
+    <p class="eyebrow">CH 1 slides 2–5</p>
+    <h2>Where the course goes</h2>
+    <p class="dek">Fluid Mechanics I is built on one idea from physics: energy is conserved, unless something takes it away. Every chapter after this one adds a piece to that statement.</p>
+  </div>
+  <div class="read">
+    <p>Slide 4 writes the whole course in one line. For a chunk of fluid with volume \(V\) moving at speed \(v\) at height \(h\):</p>
+    \[ \tfrac12 m v^2 + m g h + p V = \text{constant} \qquad \text{(if dissipation is negligible)} \]
+    <p>Kinetic energy, potential energy, and the energy stored as pressure. Divide by \(V\) and you get Bernoulli's equation (Chapter 6). Add pumps, turbines and friction and you get the energy equation (Chapter 7). Chapters 8 to 11 are about the friction term, Chapter 13 about the pump term. Chapter 16 switches from energy to momentum, and Chapter 17 applies it to drag and lift.</p>
+    <p>The elective Fluid Mechanics II works with \(F = ma\) for every fluid particle, the Navier–Stokes equation (slide 4). You don't need it here, but the viscous term \(\mu\nabla^2 V\) in it is the same viscosity you meet in Chapter 2.</p>
+  </div>
+  <ol class="path">
+    <li><span class="n">Wk 1 · Ch 1–2</span><b>Properties</b><span class="eqs">ρ, γ, sg, p, η</span><span class="ref">this page</span></li>
+    <li><span class="n">Wk 2–3 · Ch 3–5</span><b>Statics</b><span class="eqs">\(\Delta p = \gamma h\)</span><span class="ref"><a href="ch03-pressure.html">pressure</a> · <a href="ch04-static-forces.html">forces</a> · <a href="ch05-buoyancy.html">buoyancy</a></span></li>
+    <li class="key"><span class="n">Wk 4–5 · Ch 6–7</span><b>Energy</b><span class="eqs">Bernoulli + \(h_A, h_R, h_L\)</span><span class="ref"><a href="ch06-bernoulli.html">Bernoulli</a> · <a href="ch07-energy.html">energy</a></span></li>
+    <li><span class="n">Wk 6–9 · Ch 8–11</span><b>Losses</b><span class="eqs">\(f\frac{L}{D}\frac{v^2}{2g}\) and \(K\frac{v^2}{2g}\)</span><span class="ref"><a href="ch08-reynolds-friction.html">friction</a> · <a href="ch10-minor-losses.html">minor</a> · <a href="ch11-pipe-systems.html">systems</a></span></li>
+    <li><span class="n">Wk 10–11 · Ch 13</span><b>Pumps</b><span class="eqs">\(P_A = h_A\gamma Q\)</span><span class="ref"><a href="ch13-pumps.html">pumps</a></span></li>
+    <li><span class="n">Wk 13–14 · Ch 16–17</span><b>Momentum</b><span class="eqs">\(F = \dot m(v_2 - v_1)\)</span><span class="ref"><a href="ch16-momentum.html">momentum</a> · <a href="ch17-drag-lift.html">drag &amp; lift</a></span></li>
+  </ol>
+  <div class="read">
+    <p><b>Liquids or gases?</b> Slide 3 separates them by compressibility. Liquids barely change volume under pressure, so we treat them as incompressible: density is constant. Gases compress easily. In this course, gases appear only where their density hardly changes (air in a manometer, air flowing slowly over a car), so the same equations work.</p>
+  </div>
+</section>
+
+<section id="units">
+  <div class="sec-head">
+    <p class="eyebrow">CH 1 slides 6–11 · Mott §1.3–1.7</p>
+    <h2>Units: SI and US customary</h2>
+    <p class="dek">You will work in both systems, often in the same problem set. Most wrong answers in this course are unit errors, not physics errors.</p>
+  </div>
+  <div class="scroll-x" style="max-width:760px">
+    <table class="tbl">
+      <thead><tr><th>Quantity</th><th>SI</th><th>US customary</th><th>Watch out</th></tr></thead>
+      <tbody>
+        <tr><td>Length</td><td>m</td><td>ft</td><td>Pipe sizes are in inches. Convert to ft before using \(g\) = 32.2 ft/s².</td></tr>
+        <tr><td>Mass</td><td>kg</td><td>slug</td><td>1 slug = 32.2 lbm. The lbm is not the US unit of mass in this course.</td></tr>
+        <tr><td>Force</td><td>N = kg·m/s²</td><td>lb (lbf) = slug·ft/s²</td><td>"Pound" in Mott always means pound-force.</td></tr>
+        <tr><td>Pressure</td><td>Pa = N/m²</td><td>psi = lb/in², psf = lb/ft²</td><td>1 psi = 144 psf. Equations need psf (lb/ft²).</td></tr>
+        <tr><td>Time</td><td>s</td><td>s</td><td>Flow rates in gpm or L/min must go to per-second.</td></tr>
+        <tr><td>Temperature</td><td>°C, K</td><td>°F, °R</td><td>Only matters here for looking up properties.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="read">
+    <h3>Mass, weight and the slug</h3>
+    <p>\(F = ma\) ties force to mass, so only one of the two can be a base unit (slide 8). SI picks mass: 1 N is the force that accelerates 1 kg at 1 m/s². The US system picks force: 1 slug is the mass that 1 lb accelerates at 1 ft/s². So</p>
+    \[ 1\ \text{N} = 1\ \text{kg·m/s}^2, \qquad 1\ \text{slug} = 1\ \text{lb·s}^2/\text{ft}. \]
+    <p>The pound-mass (lbm) is a practical unit: the mass that weighs 1 lb on Earth. Since \(w = mg\), 1 lbm = 1 lb ÷ 32.2 ft/s² = 1/32.2 slug. Mixing lbm into \(F = ma\) without that 32.2 is the classic mistake, and it is why Example 1.8 says the "cheap answer" 1.041 lbm is not what we want.</p>
+    <p><b>Consistent units</b> (Mott §1.7): put every quantity in base units (m, kg, s, N or ft, slug, s, lb) before you substitute. Then the answer comes out in base units automatically, and you only convert at the end.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Unit converter</h3><span class="eyebrow">Factors from Mott Appendix K</span></div>
+    <div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="ucKind">Quantity</label>
+          <select id="ucKind">
+            <option value="len">Length</option><option value="area">Area</option><option value="vol">Volume</option><option value="mass">Mass</option>
+            <option value="force">Force</option><option value="pres" selected>Pressure</option><option value="flow">Flow rate</option><option value="vel">Velocity</option>
+            <option value="pow">Power</option><option value="dvis">Dynamic viscosity</option><option value="kvis">Kinematic viscosity</option>
+          </select></div>
+        <div class="field"><label for="ucVal">Value</label><input id="ucVal" type="text" inputmode="decimal" value="14.7"></div>
+        <div class="field"><label for="ucFrom">From</label><select id="ucFrom"></select></div>
+        <div class="field"><label for="ucTo">To</label><select id="ucTo"></select></div>
+      </div>
+      <div class="out"><div class="stat hot"><span class="lbl">Result</span><span class="val" id="ucOut"></span></div></div>
+      <div class="workline" id="ucWork"></div>
+    </div>
+  </div>
+</section>
+
+<section id="density">
+  <div class="sec-head">
+    <p class="eyebrow">CH 1 slides 11–15 · Mott §1.10</p>
+    <h2>Density, specific weight, specific gravity</h2>
+    <p class="dek">In fluids you rarely follow one fixed chunk of mass. You describe how mass and weight are spread through space (slide 12), so these three properties replace m and W.</p>
+  </div>
+  <div class="three">
+    <div class="card k-2"><h4>Density ρ (rho)</h4><p>\(\rho = m/V\). Mass per volume. kg/m³ or slug/ft³. Water: 1000 kg/m³, 1.94 slug/ft³.</p></div>
+    <div class="card k-1"><h4>Specific weight γ (gamma)</h4><p>\(\gamma = W/V = \rho g\). Weight per volume. N/m³ or lb/ft³. Water: 9.81 kN/m³, 62.4 lb/ft³.</p></div>
+    <div class="card k-3"><h4>Specific gravity sg</h4><p>\(sg = \rho/\rho_w = \gamma/\gamma_w\), water at 4 °C. No units, same number in both systems.</p></div>
+  </div>
+  <div class="read">
+    <p><b>Why γ = ρg.</b> Start from \(\gamma = W/V\) and substitute \(W = mg\): \(\gamma = mg/V = (m/V)\,g = \rho g\). Specific weight shows up whenever gravity does the work, so it is the property you will use most in statics (\(\Delta p = \gamma h\)) and in the energy equation (\(p/\gamma\)).</p>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Property calculator</h3>
+      <div class="seg" role="group" aria-label="Unit system" id="dSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div>
+    </div>
+    <div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="dGiven">You know</label><select id="dGiven"><option value="m">Mass</option><option value="W">Weight</option></select></div>
+        <div class="field"><label for="dAmt" id="dAmtL">Mass <span class="unit">kg</span></label><input id="dAmt" type="text" inputmode="decimal" value="825"></div>
+        <div class="field"><label for="dV" id="dVL">Volume <span class="unit">m³</span></label><input id="dV" type="text" inputmode="decimal" value="0.917"></div>
+      </div>
+      <div class="chips" role="group" aria-label="Presets">
+        <button type="button" class="chip" data-d="ex16">Ex 1.5–1.6 oil</button>
+        <button type="button" class="chip" data-d="ex18">Ex 1.8 pint of water</button>
+        <button type="button" class="chip" data-d="ex19">Ex 1.9 gallon of mercury</button>
+        <button type="button" class="chip" data-d="p171">Prob 1.71 gallon of oil</button>
+      </div>
+      <div class="out">
+        <div class="stat"><span class="lbl" id="dmL">Mass</span><span class="val" id="dm"></span></div>
+        <div class="stat"><span class="lbl" id="dWL">Weight</span><span class="val" id="dW"></span></div>
+        <div class="stat hot"><span class="lbl" id="drL">Density ρ</span><span class="val" id="dr"></span></div>
+        <div class="stat hot"><span class="lbl" id="dgL">Specific weight γ</span><span class="val" id="dg"></span></div>
+        <div class="stat"><span class="lbl">Specific gravity</span><span class="val" id="dsg"></span></div>
+      </div>
+      <div class="workline" id="dWork"></div>
+    </div>
+  </div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Trap</span><p>US engineers often call γ in lb/ft³ "density" (slide 13). In this course, density is always ρ, in slug/ft³.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>γ (gamma) and r look alike in handwriting, and so do ρ (rho) and p (pressure). Write them carefully; graders can't award a symbol they can't read.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>sg uses water at 4 °C (ρ = 1000 kg/m³). Water at 20 °C is 998 kg/m³, which is why Mott's tables list sg = 0.998 for it.</p></div>
+  </div>
+</section>
+
+<section id="pressure">
+  <div class="sec-head">
+    <p class="eyebrow">CH 1 slides 16–21 · Mott §1.8, §3.2</p>
+    <h2>Pressure</h2>
+    <p class="dek">Force per unit area, acting perpendicular to every surface the fluid touches. Chapter 3 is all about how it varies with depth. Here you need the definition and the two reference points.</p>
+  </div>
+  <div class="read">
+    <p>\(p = F/A\). In a fluid at rest there is no shear stress, so the only force a fluid can put on a wall is a push straight into it. That is why pressure acts normal to any surface (slide 18).</p>
+    <p><b>What pressure really is.</b> Molecules in a liquid or gas move constantly and bounce off the walls. Each impact is tiny, but there are a lot of them: a cube of water 1 µm on a side holds about 3×10<sup>10</sup> molecules (slide 18 says about 60 billion; 33 billion is closer, but the point is the same). The averaged push of all those impacts is the pressure.</p>
+    <h3>Absolute, gauge and vacuum</h3>
+    <p>Absolute pressure is measured from a perfect vacuum. Gauge pressure is measured from the local atmosphere, which is what most gauges read, because the atmosphere pushes on the gauge's other side. So</p>
+    \[ p_{abs} = p_{gage} + p_{atm}, \qquad \text{psia} = \text{psig} + 14.7 \ \text{(at sea level)} \]
+    <p>A negative gauge pressure is a partial vacuum. Absolute pressure can never be negative.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Gauge vs absolute, at any altitude</h3>
+      <div class="seg" role="group" aria-label="Unit system" id="pSys"><button type="button" data-v="US" aria-pressed="true">psi</button><button type="button" data-v="SI" aria-pressed="false">kPa</button></div>
+    </div>
+    <div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="pVal" id="pValL">Pressure <span class="unit">psi</span></label><input id="pVal" type="text" inputmode="decimal" value="20"></div>
+        <div class="field"><label for="pType">It is</label><select id="pType"><option value="g">Gauge</option><option value="a">Absolute</option></select></div>
+        <div class="field"><label for="pAlt" id="pAltL">Altitude <span class="unit">ft</span></label><input id="pAlt" type="range" min="0" max="20000" step="100" value="0"></div>
+      </div>
+      <div class="out">
+        <div class="stat"><span class="lbl">Local atmosphere (Mott Table E.3)</span><span class="val" id="pAtm"></span></div>
+        <div class="stat hot"><span class="lbl">Absolute</span><span class="val" id="pAbs"></span></div>
+        <div class="stat hot"><span class="lbl">Gauge</span><span class="val" id="pGa"></span></div>
+      </div>
+      <svg id="pSvg" viewBox="0 0 640 230" style="width:100%;display:block" role="img" aria-label="Bar diagram: zero pressure at the bottom, the local atmosphere as a line, and the pressure being measured, with absolute and gauge pressure marked as heights."></svg>
+      <p class="small muted" id="pBag"></p>
+    </div>
+  </div>
+</section>
+
+<section id="viscosity">
+  <div class="sec-head">
+    <p class="eyebrow">CH 2 slides 2–7 · Mott §2.2–2.4</p>
+    <h2>Viscosity</h2>
+    <p class="dek">How strongly a fluid resists being sheared while it flows. Stirring honey takes more effort than stirring water at the same speed, and viscosity puts a number on that difference.</p>
+  </div>
+  <div class="read">
+    <h3>Solid versus fluid</h3>
+    <p>Push sideways on the top of a solid block (slide 4). It leans over by a fixed amount and stops: shear stress is proportional to shear <i>strain</i>, \(\tau = G\gamma_s\), with \(G\) the shear modulus. Do the same to a fluid and it never stops deforming while the force acts. There is no shear modulus. What a fluid resists is the <i>rate</i> of deformation.</p>
+    <h3>Newton's law of viscosity</h3>
+    <p>Put fluid between a stationary plate and a plate moving at speed \(v\) (slide 5). The fluid sticks to both plates (the no-slip condition), so its velocity goes from 0 at the bottom to \(v\) at the top. The velocity gradient \(dv/dy\) is the rate at which the fluid is being sheared. For most common fluids, the shear stress is proportional to it:</p>
+    \[ \tau = \eta\,\frac{dv}{dy} \qquad\Longrightarrow\qquad \eta = \frac{\tau}{dv/dy} \]
+    <p>The constant \(\eta\) (eta) is the <b>dynamic viscosity</b>. Many other books call it \(\mu\) (slide 6). Fluids that obey this law are <b>Newtonian</b>: water, oils, gasoline, air. This course uses only Newtonian fluids (slide 11).</p>
+    <p><b>Units.</b> \(\eta = \tau/(dv/dy)\) has units of (N/m²)/(1/s) = N·s/m² = Pa·s = kg/(m·s). US: lb·s/ft² = slug/(ft·s). The older poise is 0.1 Pa·s, and the centipoise (cP) is 1 mPa·s, about the viscosity of water at 20 °C.</p>
+    <p><b>Kinematic viscosity</b> (Mott §2.3) is viscosity divided by density, \(\nu = \eta/\rho\), in m²/s or ft²/s (1 centistoke = 1 mm²/s). It will matter in the Reynolds number in Chapter 8.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Shear cell (Couette flow)</h3><span class="eyebrow">SI units</span></div>
+    <div class="panel-b">
+      <div class="fields">
+        <div class="field"><label for="vFluid">Fluid (Mott App. A, B, E)</label><select id="vFluid"></select></div>
+        <div class="field"><label for="vEta">Viscosity <var>η</var> <span class="unit">Pa·s</span></label><input id="vEta" type="text" inputmode="decimal"></div>
+        <div class="field"><label for="vV">Plate speed <var>v</var> <span class="unit">m/s</span></label><input id="vV" type="text" inputmode="decimal" value="0.5"></div>
+        <div class="field"><label for="vH">Gap <var>h</var> <span class="unit">mm</span></label><input id="vH" type="text" inputmode="decimal" value="1.0"></div>
+        <div class="field"><label for="vA">Plate area <var>A</var> <span class="unit">m²</span></label><input id="vA" type="text" inputmode="decimal" value="0.1"></div>
+      </div>
+      <svg id="vSvg" viewBox="0 0 640 190" style="width:100%;display:block" role="img" aria-label="Velocity profile between a fixed plate and a moving plate: a straight line from zero at the bottom to the plate speed at the top."></svg>
+      <div class="out">
+        <div class="stat"><span class="lbl">Velocity gradient dv/dy</span><span class="val" id="vRate"></span></div>
+        <div class="stat hot"><span class="lbl">Shear stress τ</span><span class="val" id="vTau"></span></div>
+        <div class="stat hot"><span class="lbl">Force to move plate F = τA</span><span class="val" id="vF"></span></div>
+        <div class="stat"><span class="lbl">Kinematic viscosity ν = η/ρ</span><span class="val" id="vNu"></span></div>
+      </div>
+      <div class="workline" id="vWork"></div>
+    </div>
+  </div>
+  <div class="read">
+    <h3>Slide 7: the block on an oil film</h3>
+    <p>A block of base area \(A\) slides on an oil film of thickness \(h\), pulled by a hanging mass \(m\). At steady speed nothing accelerates, so the hanging weight balances the viscous drag on the block's base:</p>
+    \[ m g = \tau A = \eta\,\frac{v}{h}\,A \qquad\Longrightarrow\qquad v = \frac{m g h}{\eta A} \]
+    <p>The block's own mass \(M\) doesn't appear. It only matters while the system speeds up. Try it in the shear cell: the force \(F\) there is the \(mg\) needed to hold that plate speed.</p>
+  </div>
+  <figure class="panel" style="padding:12px">
+    <svg viewBox="0 0 640 250" style="width:100%;display:block" role="img" aria-label="Shear stress against velocity gradient for five kinds of fluid. A Newtonian fluid is a straight line through the origin. A pseudoplastic curve bends down, a dilatant curve bends up, and a Bingham fluid is a straight line that starts at a yield stress.">
+      <line x1="70" y1="215" x2="600" y2="215" class="st-ink2" stroke-width="1.5"/><line x1="70" y1="215" x2="70" y2="20" class="st-ink2" stroke-width="1.5"/>
+      <text x="335" y="244" font-size="13" class="svg-ink" text-anchor="middle">velocity gradient dv/dy</text>
+      <text x="22" y="118" font-size="13" class="svg-ink" text-anchor="middle" transform="rotate(-90 22 118)">shear stress τ</text>
+      <path d="M70,215 L560,40" class="st-water" stroke-width="3" fill="none"/>
+      <path d="M70,215 C120,110 300,70 560,48" class="st-amber" stroke-width="2.4" fill="none" stroke-dasharray="8 5"/>
+      <path d="M70,215 C330,205 470,150 560,30" class="st-violet" stroke-width="2.4" fill="none" stroke-dasharray="3 4"/>
+      <path d="M70,150 L560,70" class="st-dye" stroke-width="2.4" fill="none" stroke-dasharray="12 5"/>
+      <text x="440" y="28" font-size="12" class="fl-water">Newtonian (this course)</text>
+      <text x="380" y="70" font-size="12" class="fl-amber">pseudoplastic (paint, blood)</text>
+      <text x="470" y="190" font-size="12" class="fl-violet">dilatant (cornstarch slurry)</text>
+      <text x="78" y="142" font-size="12" class="fl-dye">Bingham plastic (toothpaste)</text>
+    </svg>
+    <figcaption>Newtonian and non-Newtonian fluids (the idea of slide 2.9, redrawn). For a Newtonian fluid the slope, η, is a constant. The others have an "apparent viscosity" that changes with shear rate. Slide 2.10 adds fluids whose viscosity changes with time (thixotropic, rheopectic). None of these are on the exam (slide 2.11).</figcaption>
+  </figure>
+</section>
+
+<section id="temperature">
+  <div class="sec-head">
+    <p class="eyebrow">CH 2 slides 8, 11 · Mott §2.5, Appendix A and E</p>
+    <h2>Viscosity and temperature</h2>
+    <p class="dek">Viscosity is the most temperature-sensitive property you will use. Always look it up at the fluid's actual temperature.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-h"><h3>Water and air viscosity, Mott Tables A.1 and E.1</h3>
+      <div class="seg" role="group" aria-label="Which fluid" id="tFluid"><button type="button" data-v="water" aria-pressed="true">Water</button><button type="button" data-v="air" aria-pressed="false">Air</button></div>
+    </div>
+    <div class="panel-b">
+      <div class="field" style="max-width:420px"><label for="tT">Temperature <span class="mono" id="tTv"></span></label><input id="tT" type="range" min="0" max="100" step="1" value="20"></div>
+      <svg id="tSvg" style="width:100%;display:block" role="img" aria-label="Dynamic viscosity against temperature from the textbook tables, with the chosen temperature marked."></svg>
+      <div class="out">
+        <div class="stat hot"><span class="lbl">Dynamic viscosity η</span><span class="val" id="tEta"></span></div>
+        <div class="stat"><span class="lbl">Kinematic viscosity ν</span><span class="val" id="tNu"></span></div>
+        <div class="stat"><span class="lbl">Compared with 20 °C</span><span class="val" id="tRel"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Trap</span><p>Slide 8 says viscosity drops as temperature rises. That is true for <b>liquids</b>. For <b>gases</b> it is the opposite: air gets more viscous when heated. Switch the chart to air to see it. In a liquid, heat loosens the attraction between molecules. In a gas, heat makes molecules move faster and carry more momentum between layers.</p></div>
+    <div class="trap idea"><span class="tag">Viscosity index</span><p>The viscosity index (VI) rates how much an oil's viscosity changes with temperature. A <b>high</b> VI means a <b>small</b> change, which is what you want in an engine or a hydraulic system that runs from cold starts to hot operation (Mott §2.5).</p></div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head">
+    <p class="eyebrow">Every worked problem in the CH 1 and CH 2 slides</p>
+    <h2>Slide examples, solved</h2>
+    <p class="dek">Each answer matches the slide. Where I found a slip on a slide, the note says so.</p>
+  </div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">CH1 s10</span>60 km/h for 1.5 km</span><span class="s">Unit conversion warm-up</span><span class="ans">90 s</span></summary>
+      <div class="dbody"><ol><li>Put both in base units: \(v = 60\ \tfrac{\text{km}}{\text{h}} \times \tfrac{1000\ \text{m}}{1\ \text{km}} \times \tfrac{1\ \text{h}}{3600\ \text{s}} = 16.67\) m/s, and \(d = 1500\) m.</li><li>\(t = d/v = 1500/16.67 = 90\) s.</li></ol><p class="note">Writing each factor as a fraction equal to 1 makes the unwanted units cancel visibly. Use that habit on every problem.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s11</span>Two US tons in metric tons</span><span class="s">1 US ton = 2000 lbm, 1 lbm = 0.4536 kg</span><span class="ans">0.907 t</span></summary>
+      <div class="dbody"><ol><li>\(2\ \text{tons} \times 2000\ \tfrac{\text{lbm}}{\text{ton}} \times 0.4536\ \tfrac{\text{kg}}{\text{lbm}} = 1814\) kg.</li><li>\(1814\ \text{kg} \times \tfrac{1\ \text{t}}{1000\ \text{kg}} = 1.81\) metric tons.</li></ol>
+      <p class="note">Slide note: two US tons work out to 1.81 metric tons. The slide's answer, 0.907, is the value for <b>one</b> US ton.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s15</span>Example 1.5 · Weight of 825 kg of oil</span><span class="s">w = mg</span><span class="ans">8093 N</span></summary>
+      <div class="dbody"><ol><li>\(w = mg = 825\ \text{kg} \times 9.81\ \text{m/s}^2 = 8093\ \text{kg·m/s}^2\).</li><li>A kg·m/s² is a newton, so \(w = 8093\) N = 8.09 kN.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s15</span>Example 1.6 · ρ, γ and sg of that oil</span><span class="s">Volume 0.917 m³</span><span class="ans">900 kg/m³, 8.83 kN/m³, 0.90</span></summary>
+      <div class="dbody"><ol><li>\(\rho = m/V = 825/0.917 = 900\) kg/m³.</li><li>\(\gamma = W/V = 8093/0.917 = 8825\) N/m³ = 8.83 kN/m³. Check: \(\rho g = 900 \times 9.81 = 8829\) N/m³, the same to rounding.</li><li>\(sg = \rho/\rho_w = 900/1000 = 0.90\).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s15</span>Example 1.8 · Mass of a pint of water that weighs 1.041 lb</span><span class="s">Why "1.041 lbm" is the cheap answer</span><span class="ans">0.0323 slug</span></summary>
+      <div class="dbody"><ol><li>\(m = w/g = 1.041\ \text{lb} / 32.2\ \text{ft/s}^2 = 0.0323\ \text{lb·s}^2/\text{ft} = 0.0323\) slug.</li><li>The "cheap answer" 1.041 lbm is the same amount of matter, but in a unit that can't go into \(F = ma\) without a factor of 32.2. Use slugs.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s17</span>2 N on 1 mm²</span><span class="s">Why a needle punctures</span><span class="ans">2 MPa</span></summary>
+      <div class="dbody"><ol><li>\(A = 1\ \text{mm}^2 = 1\times10^{-6}\ \text{m}^2\).</li><li>\(p = F/A = 2/10^{-6} = 2\times10^6\) Pa = 2 MPa, about 20 atmospheres from a force you could apply with one finger.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">CH1 s21</span>500 lb on a 25 in² piston</span><span class="s">Is it absolute or gauge?</span><span class="ans">20 psig</span></summary>
+      <div class="dbody"><ol><li>\(p = F/A = 500/25 = 20\) psi.</li><li>The atmosphere pushes on the top of the piston as well as on everything else. The 500 lb is the load <i>beyond</i> that, so the air under the piston is at 20 psi above atmospheric: 20 psig, or 34.7 psia at sea level.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">CH2 s7</span>Block pulled across an oil film</span><span class="s">Steady speed of the large mass</span><span class="ans">v = mgh/(ηA)</span></summary>
+      <div class="dbody"><ol><li>Steady motion means no acceleration, so forces on each body balance. The string tension equals the hanging weight, \(T = mg\).</li><li>On the block, the tension is balanced by the shear stress on its base: \(T = \tau A\).</li><li>The oil film is thin, so the velocity profile is linear: \(\tau = \eta v/h\).</li><li>\(mg = \eta v A/h\), so \(v = mgh/(\eta A)\).</li></ol>
+      <p class="note">Numbers to try: \(m\) = 0.5 kg, \(h\) = 0.5 mm, SAE 30-like oil \(\eta\) = 0.3 Pa·s, \(A\) = 0.04 m². Then \(v = (0.5)(9.81)(0.0005)/(0.3 \times 0.04) = 0.20\) m/s.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head">
+    <p class="eyebrow">Mott end-of-chapter problems (statements paraphrased)</p>
+    <h2>Textbook problems, solved</h2>
+    <p class="dek">A set that covers each idea above. Where the book lists an answer in the back, the answer here matches it.</p>
+  </div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">1.43</span>Piston force to oil pressure</span><span class="s">2500 lb on a 2.00 in diameter piston</span><span class="ans">796 psi</span></summary>
+      <div class="dbody"><ol><li>\(A = \pi D^2/4 = \pi(2.00)^2/4 = 3.142\) in².</li><li>\(p = F/A = 2500/3.142 = 796\) psi (gauge, as the atmosphere acts on the outside of the piston).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">1.71</span>Mass of a gallon of oil that weighs 7.8 lb</span><span class="s">Weight to mass, US units</span><span class="ans">0.242 slug</span></summary>
+      <div class="dbody"><ol><li>\(m = w/g = 7.8/32.2 = 0.242\) slug.</li><li>Bonus: \(V = 1\) gal = 0.1337 ft³, so \(\gamma = 7.8/0.1337 = 58.3\) lb/ft³ and \(sg = 58.3/62.4 = 0.93\).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">1.77</span>Force to lift a metric ton</span><span class="s">1000 kg</span><span class="ans">9810 N</span></summary>
+      <div class="dbody"><ol><li>Lifting at constant speed needs a force equal to the weight: \(F = mg = 1000 \times 9.81 = 9810\) N.</li><li>In pounds (Problem 1.78): \(9810/4.448 = 2205\) lb.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">1.80</span>Benzene from its specific gravity</span><span class="s">sg = 0.876</span><span class="ans">8.59 kN/m³, 876 kg/m³</span></summary>
+      <div class="dbody"><ol><li>\(\gamma = sg\,\gamma_w = 0.876 \times 9.81 = 8.59\) kN/m³.</li><li>\(\rho = sg\,\rho_w = 0.876 \times 1000 = 876\) kg/m³. These match Mott Table B.1.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">1.83</span>Specific gravity of an oil at two temperatures</span><span class="s">γ = 8.860 kN/m³ at 5 °C and 8.483 kN/m³ at 50 °C</span><span class="ans">0.903, 0.865</span></summary>
+      <div class="dbody"><ol><li>\(sg = \gamma/\gamma_w\) with \(\gamma_w = 9.81\) kN/m³ (water at 4 °C).</li><li>5 °C: \(8.860/9.81 = 0.903\). 50 °C: \(8.483/9.81 = 0.865\).</li></ol><p class="note">The oil expands as it warms, so its density and sg drop. The reference stays water at 4 °C either way.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">2.56</span>4500 cP in SI and US units</span><span class="s">Viscosity unit conversion</span><span class="ans">4.5 Pa·s, 0.094 lb·s/ft²</span></summary>
+      <div class="dbody"><ol><li>1 cP = 0.001 Pa·s, so 4500 cP = 4.5 Pa·s.</li><li>1 lb·s/ft² = 47.88 Pa·s, so \(4.5/47.88 = 0.0940\) lb·s/ft².</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">2.57</span>5.6 cSt in m²/s and ft²/s</span><span class="s">Kinematic viscosity conversion</span><span class="ans">5.60×10⁻⁶ m²/s</span></summary>
+      <div class="dbody"><ol><li>1 cSt = 1 mm²/s = 10⁻⁶ m²/s, so 5.6 cSt = 5.60×10⁻⁶ m²/s.</li><li>1 ft² = 0.0929 m², so \(5.60\times10^{-6}/0.0929 = 6.03\times10^{-5}\) ft²/s.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">2.61</span>Falling-ball viscometer</span><span class="s">1.6 mm steel ball (77 kN/m³) falls 250 mm in 10.4 s in fuel oil, sg 0.94</span><span class="ans">0.402 Pa·s</span></summary>
+      <div class="dbody"><ol><li>At terminal velocity the ball's weight balances buoyancy plus Stokes drag \(3\pi\eta v D\) (Mott Eq. 2-9), which gives \(\eta = (\gamma_s - \gamma_f)D^2/(18v)\).</li><li>\(v = 0.250/10.4 = 0.0240\) m/s. \(\gamma_f = 0.94 \times 9.81 = 9.22\) kN/m³.</li><li>\(\eta = \dfrac{(77\,000 - 9220)(0.0016)^2}{18(0.0240)} = 0.40\) Pa·s. The book lists 0.402.</li></ol><p class="note">This is the same force balance as Lab 3. There the falling object is a coin falling edgewise, so the drag on it is \(\tfrac{32}{3}\eta r v\) instead of \(3\pi\eta vD\).</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head">
+    <p class="eyebrow">Self-test</p>
+    <h2>Check yourself</h2>
+    <p class="dek">Pick an answer. The page tells you whether it's right and why.</p>
+  </div>
+  <div class="quiz">
+    <div class="q" data-answer="b"><p class="qt">1. An object weighs 64.4 lb on Earth. What is its mass?</p><div class="opts">
+      <button class="opt" data-k="a">64.4 slug</button><button class="opt" data-k="b">2.0 slug</button><button class="opt" data-k="c">2074 slug</button><button class="opt" data-k="d">2.0 lbm</button></div>
+      <p class="fb" hidden>\(m = W/g = 64.4/32.2 = 2.0\) slug. It is also 64.4 lbm, but not 2.0 lbm.</p></div>
+    <div class="q" data-answer="c"><p class="qt">2. A liquid has sg = 1.26. Its specific weight in US units is</p><div class="opts">
+      <button class="opt" data-k="a">1.26 lb/ft³</button><button class="opt" data-k="b">2.44 slug/ft³</button><button class="opt" data-k="c">78.6 lb/ft³</button><button class="opt" data-k="d">12.4 lb/ft³</button></div>
+      <p class="fb" hidden>\(\gamma = sg \times 62.4 = 78.6\) lb/ft³. Option b is its density, not its specific weight.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. A tire gauge reads 32 psi in Denver, where the atmosphere is about 12.2 psia. The absolute pressure in the tire is</p><div class="opts">
+      <button class="opt" data-k="a">44.2 psia</button><button class="opt" data-k="b">46.7 psia</button><button class="opt" data-k="c">32 psia</button><button class="opt" data-k="d">19.8 psia</button></div>
+      <p class="fb" hidden>Gauge pressure is measured from the <i>local</i> atmosphere: 32 + 12.2 = 44.2 psia. 46.7 uses the sea-level 14.7.</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. You double the gap between the plates in a shear cell but keep the plate speed. The force to move the plate</p><div class="opts">
+      <button class="opt" data-k="a">doubles</button><button class="opt" data-k="b">stays the same</button><button class="opt" data-k="c">quadruples</button><button class="opt" data-k="d">halves</button></div>
+      <p class="fb" hidden>\(F = \eta (v/h) A\). Doubling \(h\) halves the velocity gradient, so it halves τ and F.</p></div>
+    <div class="q" data-answer="b"><p class="qt">5. Which is true of a fluid at rest?</p><div class="opts">
+      <button class="opt" data-k="a">It carries no stress at all.</button><button class="opt" data-k="b">It can carry pressure but not shear stress.</button><button class="opt" data-k="c">It carries shear stress proportional to its viscosity.</button><button class="opt" data-k="d">It deforms slowly under its own weight.</button></div>
+      <p class="fb" hidden>Any shear stress would make a fluid flow. At rest, only normal stress (pressure) is possible. This is CH 3's opening pop question.</p></div>
+    <div class="q" data-answer="c"><p class="qt">6. Heating air from 20 °C to 80 °C makes its dynamic viscosity</p><div class="opts">
+      <button class="opt" data-k="a">drop by about a third</button><button class="opt" data-k="b">stay the same</button><button class="opt" data-k="c">rise by about 15%</button><button class="opt" data-k="d">double</button></div>
+      <p class="fb" hidden>Mott Table E.1: 1.81×10⁻⁵ to 2.09×10⁻⁵ Pa·s, about +15%. Gases get more viscous when heated.</p></div>
+  </div>
+  <div class="dlist">
+    <details class="qa"><summary><span class="t">Why does a fluid have no shear modulus, and what replaces it?</span><span class="ans">answer</span></summary><div class="dbody"><p>A solid's molecules are locked to their neighbours, so a shear strain stores elastic energy and the stress stops growing once the strain matches it. A fluid's molecules slide past each other freely, so any steady shear stress produces continuing deformation. What a fluid resists is how <i>fast</i> it deforms, so the material constant relates stress to strain rate: \(\tau = \eta\,dv/dy\).</p></div></details>
+    <details class="qa"><summary><span class="t">Show that the units of η are kg/(m·s).</span><span class="ans">answer</span></summary><div class="dbody"><p>\(\eta = \tau/(dv/dy)\). τ is N/m² = kg/(m·s²). \(dv/dy\) is (m/s)/m = 1/s. Dividing: kg/(m·s²) × s = kg/(m·s).</p></div></details>
+    <details class="qa"><summary><span class="t">When is it fair to treat a gas as incompressible?</span><span class="ans">answer</span></summary><div class="dbody"><p>When its density changes by only a few percent in the problem, which is the case when pressure changes are small compared with the absolute pressure, and speeds are well below the speed of sound (roughly under 100 m/s for air). Air in a manometer tube or flowing over a car qualifies. Air in a compressor does not.</p></div></details>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Weight and mass</span>\[ w = mg \]<span class="wh">g = 9.81 m/s² = 32.2 ft/s². 1 slug = 32.2 lbm.</span></div>
+    <div><span class="nm">Density</span>\[ \rho = \frac{m}{V} \]<span class="wh">Water: 1000 kg/m³, 1.94 slug/ft³.</span></div>
+    <div><span class="nm">Specific weight</span>\[ \gamma = \frac{W}{V} = \rho g \]<span class="wh">Water: 9.81 kN/m³, 62.4 lb/ft³.</span></div>
+    <div><span class="nm">Specific gravity</span>\[ sg = \frac{\rho}{\rho_w} = \frac{\gamma}{\gamma_w} \]<span class="wh">Water at 4 °C. No units.</span></div>
+    <div><span class="nm">Pressure</span>\[ p = \frac{F}{A}, \quad p_{abs} = p_{gage} + p_{atm} \]<span class="wh">1 psi = 144 psf = 6.895 kPa. Sea level: 14.7 psia, 101.3 kPa.</span></div>
+    <div><span class="nm">Newton's law of viscosity</span>\[ \tau = \eta\,\frac{dv}{dy} \]<span class="wh">Linear profile in a thin gap: dv/dy = v/h.</span></div>
+    <div><span class="nm">Kinematic viscosity</span>\[ \nu = \frac{\eta}{\rho} \]<span class="wh">1 cP = 10⁻³ Pa·s; 1 cSt = 10⁻⁶ m²/s.</span></div>
+    <div><span class="nm">Falling-ball viscometer</span>\[ \eta = \frac{(\gamma_s - \gamma_f)D^2}{18\,v} \]<span class="wh">Mott Eq. 2-10. Slow, very viscous flow only.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, plot, line, dot, el, text } = FM;
+  const f = C.fmt;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- hero: solid vs fluid shear ---------- */
+  const svg = $('#shearSvg');
+  let mat = 'solid', pushing = false, shift = 0, last = 0, raf = 0;
+  const RATE = { honey: 18, water: 420 };           // px/s of top-plate travel under the force (illustrative)
+  const SOLID_SHIFT = 34;                            // px lean of the solid (elastic)
+  function drawShear() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const x0 = 230, w = 180, top = 40, bot = 170;
+    const s = Math.min(shift, 380);
+    el('rect', { x: 20, y: bot, width: 600, height: 12, class: 'fl-rule' }, svg);
+    for (let i = 0; i < 14; i++) el('line', { x1: x0 - 20 + i * 18, y1: bot + 12, x2: x0 - 30 + i * 18, y2: bot + 22, class: 'st-ink2', 'stroke-width': 1 }, svg);
+    const cls = mat === 'solid' ? 'fl-violet' : 'fl-water';
+    el('path', { d: `M${x0},${bot} L${x0 + w},${bot} L${x0 + w + s},${top} L${x0 + s},${top} Z`, class: cls, 'fill-opacity': 0.75 }, svg);
+    if (mat !== 'solid') for (let k = 1; k < 6; k++) { const y = bot - (bot - top) * k / 6, dx = s * k / 6; el('line', { x1: x0 + dx, y1: y, x2: x0 + w + dx, y2: y, class: 'st-surface', stroke: 'var(--surface)', 'stroke-width': 1, opacity: .5 }, svg); }
+    el('rect', { x: x0 - 10 + s, y: top - 14, width: w + 20, height: 14, class: 'fl-rule', stroke: 'var(--ink-2)' }, svg);
+    if (pushing) {
+      const id = FM.arrowDef(svg, 'fl-dye', 'shA');
+      el('line', { x1: x0 - 90 + s, y1: top - 7, x2: x0 - 14 + s, y2: top - 7, class: 'st-dye', 'stroke-width': 3, 'marker-end': id }, svg);
+      text(svg, x0 - 92 + s, top - 18, 'shear force', { class: 'fl-dye', 'font-size': 13 });
+    }
+    text(svg, x0 + w / 2 + s / 2, (top + bot) / 2 + 5, mat === 'solid' ? 'solid' : 'fluid', { 'text-anchor': 'middle', 'font-size': 14, fill: 'var(--surface)' });
+  }
+  function tick(t) {
+    const dt = last ? Math.min(0.05, (t - last) / 1000) : 0; last = t;
+    if (mat === 'solid') { const target = pushing ? SOLID_SHIFT : 0; shift += (target - shift) * Math.min(1, dt * 12); }
+    else if (pushing) shift += RATE[mat] * dt;
+    drawShear(); readShear();
+    const moving = (mat === 'solid' && Math.abs((pushing ? SOLID_SHIFT : 0) - shift) > 0.3) || (mat !== 'solid' && pushing && shift < 380);
+    raf = moving ? requestAnimationFrame(tick) : 0; if (!moving) last = 0;
+  }
+  function kick() { if (reduce) { if (mat === 'solid') shift = pushing ? SOLID_SHIFT : 0; else if (pushing) shift = 200; drawShear(); readShear(); return; } if (!raf) raf = requestAnimationFrame(tick); }
+  function readShear() {
+    const r = $('#shearRead');
+    if (mat === 'solid') r.textContent = pushing ? 'The solid leans to a fixed angle and stops: shear stress balances shear strain (τ = Gγ). Release the force and it springs back.' : 'Press "Apply shear force". A solid deforms a fixed amount.';
+    else r.textContent = pushing ? `The ${mat} keeps deforming for as long as the force acts${mat === 'water' ? ', and fast, because water is about 10,000 times less viscous than honey' : ''}. Release it and the fluid stays where it is: there is no elastic spring-back.` : (shift > 1 ? 'Force released. The fluid stays deformed; nothing pulls it back.' : `Press "Apply shear force" to shear the ${mat}.`);
+  }
+  segmented($('#shearMat'), (v) => { mat = v; shift = 0; pushing = false; $('#shearPush').setAttribute('aria-pressed', 'false'); $('#shearPush').textContent = 'Apply shear force'; drawShear(); readShear(); });
+  $('#shearPush').addEventListener('click', (e) => { pushing = !pushing; e.currentTarget.setAttribute('aria-pressed', String(pushing)); e.currentTarget.textContent = pushing ? 'Release force' : 'Apply shear force'; kick(); });
+  $('#shearReset').addEventListener('click', () => { pushing = false; shift = 0; $('#shearPush').setAttribute('aria-pressed', 'false'); $('#shearPush').textContent = 'Apply shear force'; drawShear(); readShear(); });
+  drawShear(); readShear();
+
+  /* ---------- unit converter ---------- */
+  const KINDS = {
+    len: ['m', 'cm', 'mm', 'km', 'ft', 'in', 'mi'], area: ['m2', 'cm2', 'mm2', 'ft2', 'in2'], vol: ['m3', 'L', 'mL', 'ft3', 'in3', 'gal', 'bbl'],
+    mass: ['kg', 'g', 'slug', 'lbm', 'ton_us', 'tonne'], force: ['N', 'kN', 'lb', 'kip'], pres: ['Pa', 'kPa', 'MPa', 'bar', 'psi', 'psf', 'atm'],
+    flow: ['m3/s', 'L/s', 'L/min', 'ft3/s', 'gpm', 'gal/h'], vel: ['m/s', 'ft/s', 'km/h', 'mph'], pow: ['W', 'kW', 'hp', 'ft·lb/s'],
+    dvis: ['Pa·s', 'cP', 'P', 'lb·s/ft2'], kvis: ['m2/s', 'cSt', 'ft2/s'],
+  };
+  const LBL = { m2: 'm²', cm2: 'cm²', mm2: 'mm²', ft2: 'ft²', in2: 'in²', m3: 'm³', ft3: 'ft³', in3: 'in³', ton_us: 'US ton', tonne: 'metric ton', 'm3/s': 'm³/s', 'ft3/s': 'ft³/s', 'lb·s/ft2': 'lb·s/ft²', 'm2/s': 'm²/s', 'ft2/s': 'ft²/s', P: 'poise', lb: 'lb (force)', lbm: 'lbm' };
+  const lb = (u) => LBL[u] || u;
+  function fillUnits() {
+    const k = $('#ucKind').value, us = KINDS[k];
+    $('#ucFrom').innerHTML = us.map((u) => `<option value="${u}">${lb(u)}</option>`).join('');
+    $('#ucTo').innerHTML = us.map((u) => `<option value="${u}">${lb(u)}</option>`).join('');
+    const pre = { pres: ['psi', 'kPa'], len: ['ft', 'm'], vol: ['gal', 'm3'], mass: ['slug', 'kg'], force: ['lb', 'N'], flow: ['gpm', 'm3/s'], vel: ['ft/s', 'm/s'], pow: ['hp', 'W'], dvis: ['cP', 'Pa·s'], kvis: ['cSt', 'm2/s'], area: ['in2', 'm2'] }[k];
+    $('#ucFrom').value = pre[0]; $('#ucTo').value = pre[1];
+  }
+  function conv() {
+    const x = num('#ucVal'), a = $('#ucFrom').value, b = $('#ucTo').value;
+    if (!isFinite(x)) { $('#ucOut').textContent = '–'; $('#ucWork').textContent = 'Enter a number (1.2e-3 style is fine).'; return; }
+    const y = C.convert(x, a, b);
+    $('#ucOut').textContent = `${f(y, 4)} ${lb(b)}`;
+    const fa = C.U[a], fb = C.U[b];
+    $('#ucWork').innerHTML = `<div>${f(x, 4)} ${lb(a)} × (${f(fa, 5)} SI per ${lb(a)}) ÷ (${f(fb, 5)} SI per ${lb(b)}) = ${f(y, 4)} ${lb(b)}</div><div>1 ${lb(a)} = ${f(fa / fb, 5)} ${lb(b)}</div>`;
+  }
+  $('#ucKind').addEventListener('change', () => { fillUnits(); conv(); });
+  onInputs('#ucVal', conv); $('#ucFrom').addEventListener('change', conv); $('#ucTo').addEventListener('change', conv);
+  fillUnits(); conv();
+
+  /* ---------- density calculator ---------- */
+  let dsys = 'SI';
+  const DU = { SI: { m: 'kg', W: 'N', V: 'm³', rho: 'kg/m³', g: 'N/m³', gv: 9.81, gu: 'm/s²' }, US: { m: 'slug', W: 'lb', V: 'ft³', rho: 'slug/ft³', g: 'lb/ft³', gv: 32.2, gu: 'ft/s²' } };
+  function dLabels() {
+    const u = DU[dsys], giv = $('#dGiven').value;
+    $('#dAmtL').innerHTML = `${giv === 'm' ? 'Mass' : 'Weight'} <span class="unit">${giv === 'm' ? u.m : u.W}</span>`;
+    $('#dVL').innerHTML = `Volume <span class="unit">${u.V}</span>`;
+  }
+  function dens() {
+    const u = DU[dsys], giv = $('#dGiven').value, a = num('#dAmt'), V = num('#dV');
+    if (!(a > 0 && V > 0)) { ['dm', 'dW', 'dr', 'dg', 'dsg'].forEach((i) => ($('#' + i).textContent = '–')); $('#dWork').textContent = 'Enter positive numbers.'; return; }
+    const r = C.densityProps({ m: giv === 'm' ? a : NaN, W: giv === 'W' ? a : NaN, V, system: dsys });
+    $('#dm').textContent = `${f(r.m, 4)} ${u.m}`; $('#dW').textContent = `${f(r.W, 4)} ${u.W}`;
+    $('#dr').textContent = `${f(r.rho, 4)} ${u.rho}`; $('#dg').textContent = `${f(r.gamma, 4)} ${u.g}`; $('#dsg').textContent = f(r.sg, 3);
+    const first = giv === 'm' ? `W = m·g = ${f(r.m, 4)} × ${u.gv} = ${f(r.W, 4)} ${u.W}` : `m = W/g = ${f(r.W, 4)} ÷ ${u.gv} = ${f(r.m, 4)} ${u.m}`;
+    $('#dWork').innerHTML = `<div>${first}</div><div>ρ = m/V = ${f(r.m, 4)} ÷ ${f(V, 4)} = ${f(r.rho, 4)} ${u.rho}</div><div>γ = W/V = ${f(r.W, 4)} ÷ ${f(V, 4)} = ${f(r.gamma, 4)} ${u.g}   (check: ρg = ${f(r.rho * u.gv, 4)})</div><div>sg = ρ/ρw = ${f(r.rho, 4)} ÷ ${dsys === 'SI' ? 1000 : 1.94} = ${f(r.sg, 3)}</div>`;
+  }
+  const DPRE = { ex16: ['SI', 'm', '825', '0.917'], ex18: ['US', 'W', '1.041', '0.01671'], ex19: ['US', 'm', '3.51', '0.1337'], p171: ['US', 'W', '7.8', '0.1337'] };
+  $$('[data-d]').forEach((b) => b.addEventListener('click', () => {
+    const [s, g, a, v] = DPRE[b.dataset.d]; dsys = s;
+    $$('#dSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === s)));
+    $('#dGiven').value = g; $('#dAmt').value = a; $('#dV').value = v; dLabels(); dens();
+  }));
+  segmented($('#dSys'), (v) => { dsys = v; dLabels(); dens(); });
+  $('#dGiven').addEventListener('change', () => { dLabels(); dens(); });
+  onInputs('#dAmt', dens); onInputs('#dV', dens); dLabels(); dens();
+
+  /* ---------- gauge vs absolute ---------- */
+  let psys = 'US';
+  function pres() {
+    const us = psys === 'US', alt = num('#pAlt');
+    const atm = C.atmosphere(us ? alt : alt * 0.3048, us ? 'US' : 'SI').p;
+    $('#pAltL').innerHTML = `Altitude <span class="unit">${us ? f(alt, 3) + ' ft' : f(alt * 0.3048, 3) + ' m'}</span>`;
+    $('#pValL').innerHTML = `Pressure <span class="unit">${us ? 'psi' : 'kPa'}</span>`;
+    const v = num('#pVal'), unit = us ? 'psi' : 'kPa';
+    let pa = $('#pType').value === 'g' ? v + atm : v;
+    const pg = pa - atm;
+    $('#pAtm').textContent = `${f(atm, 4)} ${unit}a`;
+    if (!isFinite(v)) { $('#pAbs').textContent = $('#pGa').textContent = '–'; return; }
+    $('#pAbs').textContent = pa < 0 ? 'impossible' : `${f(pa, 4)} ${unit}a`;
+    $('#pGa').textContent = `${f(pg, 4)} ${unit}g${pg < 0 ? ' (vacuum)' : ''}`;
+    // diagram
+    const s = $('#pSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const top = Math.max(pa, atm) * 1.15 || 1, Y = (p) => 200 - (p / top) * 175;
+    el('line', { x1: 40, x2: 600, y1: Y(0), y2: Y(0), class: 'st-ink', 'stroke-width': 2 }, s); text(s, 44, Y(0) + 18, 'zero pressure (perfect vacuum)', { 'font-size': 12 });
+    el('line', { x1: 40, x2: 600, y1: Y(atm), y2: Y(atm), class: 'st-water', 'stroke-width': 2, 'stroke-dasharray': '6 4' }, s); text(s, 44, Y(atm) - 6, `local atmosphere ${f(atm, 3)} ${unit}a`, { class: 'fl-water', 'font-size': 12 });
+    if (pa >= 0) {
+      el('line', { x1: 260, x2: 600, y1: Y(pa), y2: Y(pa), class: 'st-dye', 'stroke-width': 2 }, s); text(s, 598, Y(pa) - 6, 'pressure being measured', { class: 'fl-dye', 'text-anchor': 'end', 'font-size': 12 });
+      const ah = FM.arrowDef(s, 'fl-dye', 'pa1'), aw = FM.arrowDef(s, 'fl-water', 'pa2');
+      el('line', { x1: 330, x2: 330, y1: Y(0), y2: Y(pa) + 2, class: 'st-dye', 'stroke-width': 2, 'marker-end': ah }, s); text(s, 336, (Y(0) + Y(pa)) / 2, `absolute ${f(pa, 3)}`, { class: 'fl-dye', 'font-size': 12 });
+      if (Math.abs(pg) > top * 0.02) { el('line', { x1: 470, x2: 470, y1: Y(atm), y2: Y(pa) + (pg > 0 ? 2 : -2), class: 'st-water', 'stroke-width': 2, 'marker-end': aw }, s); text(s, 476, (Y(atm) + Y(pa)) / 2 + 4, `${pg > 0 ? 'gauge' : 'vacuum'} ${f(Math.abs(pg), 3)}`, { class: 'fl-water', 'font-size': 12 }); }
+    }
+    const sea = us ? 14.696 : 101.3;
+    $('#pBag').textContent = alt > 0 ? `Chip bag (CH 1 slide 20): sealed at sea level at ${f(sea, 4)} ${unit}a, it carries ${f(sea - atm, 3)} ${unit} more inside than out at this altitude, so it puffs up. If it could not stretch, that would be a gauge pressure of ${f(sea - atm, 3)} ${unit}g.` : 'Raise the altitude to see why a sealed chip bag puffs up on a mountain (CH 1 slide 20).';
+  }
+  segmented($('#pSys'), (v) => { const old = psys; psys = v; const x = num('#pVal'); if (isFinite(x) && old !== v) $('#pVal').value = f(v === 'SI' ? x * 6.894757 : x / 6.894757, 4).replace(/,/g, ''); pres(); });
+  onInputs('#pVal', pres); onInputs('#pAlt', pres); $('#pType').addEventListener('change', pres); pres();
+
+  /* ---------- shear cell ---------- */
+  const FL = C.FLUIDS_SI;
+  $('#vFluid').innerHTML = FL.map((r, i) => `<option value="${i}">${r[0]}</option>`).join('') + '<option value="c">Custom</option>';
+  $('#vFluid').value = '0'; $('#vEta').value = FL[0][4];
+  $('#vFluid').addEventListener('change', () => { const i = $('#vFluid').value; if (i !== 'c') $('#vEta').value = FL[+i][4]; visc(); });
+  $('#vEta').addEventListener('input', () => { $('#vFluid').value = 'c'; });
+  function visc() {
+    const eta = num('#vEta'), v = num('#vV'), h = num('#vH') / 1000, A = num('#vA');
+    const i = $('#vFluid').value, rho = i === 'c' ? NaN : FL[+i][3];
+    if (!(eta > 0 && v >= 0 && h > 0 && A > 0)) { $('#vWork').textContent = 'Enter positive numbers.'; return; }
+    const r = C.couette({ v, h, eta, A });
+    $('#vRate').textContent = `${f(r.rate, 4)} s⁻¹`; $('#vTau').textContent = `${f(r.tau, 4)} Pa`; $('#vF').textContent = `${f(r.F, 4)} N`;
+    $('#vNu').textContent = isFinite(rho) ? `${f(eta / rho, 3)} m²/s` : 'pick a fluid';
+    $('#vWork').innerHTML = `<div>dv/dy = v/h = ${f(v, 4)} ÷ ${f(h, 4)} = ${f(r.rate, 4)} s⁻¹</div><div>τ = η·dv/dy = ${f(eta, 4)} × ${f(r.rate, 4)} = ${f(r.tau, 4)} Pa</div><div>F = τ·A = ${f(r.tau, 4)} × ${f(A, 4)} = ${f(r.F, 4)} N   (the hanging weight mg in slide 7)</div>`;
+    const s = $('#vSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const x0 = 120, top = 30, bot = 160;
+    el('rect', { x: 60, y: bot, width: 520, height: 10, class: 'fl-rule' }, s); text(s, 64, bot + 26, 'fixed plate, v = 0', { 'font-size': 12 });
+    el('rect', { x: 60, y: top - 10, width: 520, height: 10, class: 'fl-ink2', fill: 'var(--ink-2)' }, s); text(s, 64, top - 16, `moving plate, v = ${f(v, 3)} m/s`, { 'font-size': 12 });
+    el('rect', { x: 60, y: top, width: 520, height: bot - top, class: 'fl-water', 'fill-opacity': .12 }, s);
+    const L = 260; const ar = FM.arrowDef(s, 'fl-water', 'va');
+    for (let k = 0; k <= 6; k++) { const y = bot - (bot - top) * k / 6, len = L * k / 6; if (len > 4) el('line', { x1: x0, x2: x0 + len, y1: y, y2: y, class: 'st-water', 'stroke-width': 2, 'marker-end': ar }, s); }
+    el('line', { x1: x0, y1: bot, x2: x0 + L, y2: top, class: 'st-dye', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }, s);
+    el('line', { x1: x0, y1: top, x2: x0, y2: bot, class: 'st-ink2', 'stroke-width': 1 }, s);
+    text(s, x0 + L + 20, (top + bot) / 2, `slope = dv/dy = ${f(r.rate, 3)} s⁻¹`, { class: 'fl-dye', 'font-size': 12.5 });
+    text(s, x0 + L + 20, (top + bot) / 2 + 20, `gap h = ${f(h * 1000, 3)} mm`, { 'font-size': 12.5 });
+  }
+  ['#vEta', '#vV', '#vH', '#vA'].forEach((id) => onInputs(id, visc)); visc();
+
+  /* ---------- viscosity vs temperature ---------- */
+  let tf = 'water';
+  const AIR = [[-40, 1.514, 1.51e-5, 9.98e-6], [-30, 1.452, 1.56e-5, 1.08e-5], [-20, 1.394, 1.62e-5, 1.16e-5], [-10, 1.341, 1.67e-5, 1.24e-5], [0, 1.292, 1.72e-5, 1.33e-5], [10, 1.247, 1.77e-5, 1.42e-5], [20, 1.204, 1.81e-5, 1.51e-5], [30, 1.164, 1.86e-5, 1.60e-5], [40, 1.127, 1.91e-5, 1.69e-5], [50, 1.092, 1.95e-5, 1.79e-5], [60, 1.060, 1.99e-5, 1.89e-5], [70, 1.029, 2.04e-5, 1.99e-5], [80, 0.9995, 2.09e-5, 2.09e-5], [90, 0.9720, 2.13e-5, 2.19e-5], [100, 0.9459, 2.17e-5, 2.30e-5], [110, 0.9213, 2.22e-5, 2.40e-5], [120, 0.8978, 2.26e-5, 2.51e-5]];
+  function airAt(T) { let i = 0; while (i < AIR.length - 2 && T > AIR[i + 1][0]) i++; const a = AIR[i], b = AIR[i + 1], t = (T - a[0]) / (b[0] - a[0]); return { eta: a[2] + t * (b[2] - a[2]), nu: a[3] + t * (b[3] - a[3]) }; }
+  function temp() {
+    const T = num('#tT'), isW = tf === 'water';
+    $('#tTv').textContent = `${T} °C`;
+    const pts = isW ? C.WATER_SI.map((r) => [r[0], r[3] * 1e3]) : AIR.map((r) => [r[0], r[2] * 1e6]);
+    const cur = isW ? C.water(T, 'SI') : airAt(T), ref = isW ? C.water(20, 'SI') : airAt(20);
+    const yv = isW ? cur.eta * 1e3 : cur.eta * 1e6;
+    const p = plot($('#tSvg'), { W: 640, H: 300, x: { min: isW ? 0 : -40, max: isW ? 100 : 120, label: 'temperature (°C)' }, y: { min: 0, max: isW ? 2 : 2.5, label: isW ? 'η (mPa·s)' : 'η (×10⁻⁵ Pa·s)', fmt: (v) => v.toFixed(1) }, m: { l: 64 } });
+    const sy = isW ? 1 : 0.1;
+    line(p, pts.map((q) => [q[0], q[1] * sy]), { class: isW ? 'st-water' : 'st-amber' });
+    pts.forEach((q) => dot(p, q[0], q[1] * sy, { r: 3, class: isW ? 'fl-water' : 'fl-amber' }));
+    dot(p, T, yv * sy, { r: 6, class: 'fl-dye' });
+    $('#tEta').textContent = `${f(cur.eta, 3)} Pa·s`; $('#tNu').textContent = `${f(cur.nu, 3)} m²/s`;
+    $('#tRel').textContent = `${f(cur.eta / ref.eta, 3)}×`;
+  }
+  segmented($('#tFluid'), (v) => { tf = v; const s = $('#tT'); s.min = v === 'water' ? 0 : -40; s.max = v === 'water' ? 100 : 120; temp(); });
+  onInputs('#tT', temp); temp();
+  document.addEventListener('fm-theme', () => { drawShear(); });
+})();
+</script>

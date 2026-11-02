@@ -1,0 +1,310 @@
+<!--title: Noncircular Sections (Ch 9)-->
+<!--short: Ch 9 Noncircular-->
+<!--eyebrow: Week 7 · Chapter 9-->
+<!--desc: Lecture companion for Mott Chapter 9: pathlines, streaklines, timelines and streamlines, laminar and turbulent velocity profiles, and head loss in ducts and annuli using the hydraulic radius.-->
+<header class="hero">
+  <p class="eyebrow">Week 7 · Mott Chapter 9 (Velocity Profiles and Noncircular Sections) · Slide deck CH 9</p>
+  <h1>Noncircular <em>Sections</em></h1>
+  <p class="lede">Air ducts are rectangular and heat exchangers push fluid through the ring between two tubes. Chapter 8's Darcy equation still works if you replace the diameter with four times the <b>hydraulic radius</b>, \(R = A/WP\). The deck opens with a detour worth taking: four different "lines" people draw to see a flow.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#viz">Flow visualization</a><a href="#profile">Velocity profiles</a><a href="#rh">Hydraulic radius</a><a href="#duct">Duct head loss</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Four lines that show a flow (slide 3)</h3><div class="seg" role="group" aria-label="Flow" id="vMode"><button type="button" data-v="unsteady" aria-pressed="true">Flapping flow (unsteady)</button><button type="button" data-v="steady" aria-pressed="false">Steady flow</button></div></div>
+    <div class="panel-b">
+      <canvas id="vCanvas" style="width:100%;height:clamp(180px,30vw,260px);display:block" aria-label="Animated flow. A dye injector releases a streakline, one tagged particle leaves a pathline, short gray dashes show the instantaneous streamlines, and a line of particles released together forms a timeline."></canvas>
+      <div class="chips" role="group" aria-label="Lines to show">
+        <button type="button" class="chip" data-show="stream" aria-pressed="true">Streamlines</button>
+        <button type="button" class="chip" data-show="path" aria-pressed="true">Pathline</button>
+        <button type="button" class="chip" data-show="streak" aria-pressed="true">Streakline</button>
+        <button type="button" class="chip" data-show="time" aria-pressed="true">Timeline</button>
+        <button type="button" class="chip" id="vPause" aria-pressed="false">Pause</button>
+      </div>
+      <p class="small" id="vRead" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#viz">Flow visualization</a></li><li><a href="#profile">Velocity profiles</a></li><li><a href="#rh">Hydraulic radius</a></li><li><a href="#duct">Duct head loss</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="viz">
+  <div class="sec-head"><p class="eyebrow">Slides 2–3 ("off topic, but important")</p><h2>Pathline, streakline, timeline, streamline</h2></div>
+  <div class="two">
+    <div class="read">
+      <ul>
+        <li><b>Pathline</b> (blue dot and trail): the trajectory of <b>one</b> particle over time. A long-exposure photo of one glowing particle.</li>
+        <li><b>Streakline</b> (pink dye): every particle that has passed through <b>one fixed point</b>, seen at one instant. Smoke from a chimney, dye from a needle.</li>
+        <li><b>Timeline</b> (amber): a line of particles marked <b>at the same moment</b>, then watched as it moves. In a pipe it bends into the shape of the velocity profile (slide 3).</li>
+        <li><b>Streamline</b> (gray dashes): a curve tangent to the velocity <b>everywhere at one instant</b>. You can't photograph it directly; it's a mathematical picture of the velocity field.</li>
+      </ul>
+      <p>In <b>steady</b> flow the velocity at each point never changes, so a particle follows the streamline it starts on: pathlines, streaklines and streamlines are the same curves (slide 3). Switch the demo to "Flapping flow" and they come apart.</p>
+    </div>
+    <div class="read">
+      <h3>What the demo is computing</h3>
+      <p>Flapping flow: a uniform stream \(u = U\) with a sideways velocity that swings in time, \(v = V\sin\omega t\). At any instant every streamline is a straight line at angle \(\tan^{-1}(v/u)\), but a particle's path snakes, and the dye released from the needle traces yet another curve.</p>
+      <p>Steady flow: flow between two plates with the laminar profile \(u = u_{max}[1 - (y/h)^2]\). The timeline, released straight across, stretches into a parabola: the profile you'll see in the next section.</p>
+      <p class="small muted">The slide's video link (minutes 0:00–1:20 and 2:11–5:20) shows real versions of all four.</p>
+    </div>
+  </div>
+</section>
+
+<section id="profile">
+  <div class="sec-head"><p class="eyebrow">Slides 4–6 · Mott §9.2–9.4 · review of Chapter 8</p><h2>Velocity profiles: laminar vs turbulent</h2><p class="dek">The velocity in a pipe is zero at the wall and largest on the centerline. How it gets there is the difference between the two regimes.</p></div>
+  <div class="two">
+    <div class="read">
+      <p><b>Laminar</b> (slide 5): a force balance on a cylinder of fluid of radius r, \(-\Delta p\,\pi r^2 = \eta\,\frac{dv}{dr}\,2\pi r L\), integrates to a parabola:</p>
+      \[ v(r) = \frac{\Delta p}{4\eta L}\left(R^2 - r^2\right) = 2\bar v\left[1 - \left(\frac{r}{R}\right)^2\right] \]
+      <p>The average velocity is half the maximum, and the head loss is the <b>Hagen–Poiseuille</b> equation:</p>
+      \[ h_L = \frac{32\eta L\bar v}{\gamma D^2} = \frac{128\,\eta L Q}{\pi\gamma D^4} \]
+      <div class="trap note"><span class="tag">Slide 5</span><p>The slide writes the last form as \(128\eta LQ/(\gamma D^4)\), dropping the π. Substituting \(\bar v = 4Q/\pi D^2\) shows the π belongs in the denominator.</p></div>
+      <p><b>Turbulent</b> (slide 6): eddies mix fast fluid toward the wall, so the profile is much flatter, with a steep drop right at the wall. Mott's Eq. 9–7 approximates it:</p>
+      \[ U = \bar v\left[1 + 1.43\sqrt f + 2.15\sqrt f\,\log_{10}(y/r_o)\right] \]
+      <p>with y measured from the wall. On the centerline \(U_{max} = \bar v(1 + 1.43\sqrt f)\), only about 20 % above the average.</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="prFields">
+        <div class="field"><label for="prRe">Reynolds number <span class="mono" id="prReV"></span></label><input id="prRe" type="range" min="2" max="7" step="0.01" value="3"></div>
+        <div class="field"><label for="prRr">Relative roughness ε/D</label><select id="prRr"><option value="0">Smooth</option><option value="0.0001">0.0001</option><option value="0.001">0.001</option><option value="0.01">0.01</option></select></div>
+      </div>
+      <svg id="prSvg" style="width:100%;display:block" role="img" aria-label="Velocity profile across the pipe, local velocity divided by average velocity against radial position."></svg>
+      <div class="out"><div class="stat"><span class="lbl">Regime</span><span class="val" id="prReg" style="font-size:15px"></span></div><div class="stat"><span class="lbl">Friction factor f</span><span class="val" id="prF"></span></div><div class="stat hot"><span class="lbl">U<sub>max</sub>/v̄</span><span class="val" id="prU"></span></div></div>
+      <p class="small muted" id="prNote"></p>
+    </div></div>
+  </div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Slide 6</span><p>The sketch of f against N<sub>R</sub> labels both vertical lines "N<sub>R</sub> = 2,000". The second one marks the end of the critical zone, N<sub>R</sub> = 4,000 (the same slip as CH 8 slide 24).</p></div>
+    <div class="trap"><span class="tag">Remember</span><p>The v in Darcy's equation is the <b>average</b> velocity, Q/A (slide 6), not the centerline velocity.</p></div>
+  </div>
+</section>
+
+<section id="rh">
+  <div class="sec-head"><p class="eyebrow">Slides 7–11 · Mott §9.5</p><h2>The hydraulic radius</h2><p class="dek">Friction acts where fluid touches a wall; the fluid's momentum is carried by its cross-section. The ratio of the two is the hydraulic radius.</p></div>
+  <div class="two">
+    <div class="read">
+      \[ R = \frac{A}{WP} = \frac{\text{flow area}}{\text{wetted perimeter}} \]
+      <p><b>Wetted perimeter</b> is every boundary the fluid touches: for the ring between two tubes, both the outside of the inner tube and the inside of the outer one.</p>
+      <p><b>Slide 10 answers.</b></p>
+      <ul>
+        <li>Circle: \(R = \dfrac{\pi D^2/4}{\pi D} = \dfrac{D}{4}\). That's why \(D = 4R\): the substitution gives back the circular pipe exactly.</li>
+        <li>Square of side a: \(R = \dfrac{a^2}{4a} = \dfrac{a}{4}\), so \(D_h = a\).</li>
+        <li>Rectangle a × b: \(R = \dfrac{ab}{2(a+b)}\). For \(a \gg b\), \(R \to b/2\) and \(D_h \to 2b\): a wide, thin slot behaves like a pipe twice the gap.</li>
+      </ul>
+      <p>Then use \(4R\) wherever the diameter appeared (slide 11):</p>
+      \[ N_R = \frac{\rho\,\bar v\,(4R)}{\eta},\qquad h_L = f\,\frac{L}{4R}\,\frac{\bar v^2}{2g},\qquad \frac{\varepsilon}{D}\to\frac{\varepsilon}{4R} \]
+      <p>Mott's caution: it works well in turbulent flow for shapes that aren't too elongated. Laminar flow in noncircular ducts has its own exact solutions (slide 8 skips them because they're rare).</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Shape explorer</h3></div><div class="panel-b">
+      <div class="fields" id="shFields">
+        <div class="field"><label for="shK">Shape</label><select id="shK"><option value="circle">Circle, diameter a</option><option value="square">Square, side a</option><option value="rect" selected>Rectangle a × b</option><option value="annulus">Annulus: outer ID a, inner OD b</option><option value="squareTube">Square duct a with tube OD b inside</option></select></div>
+        <div class="field"><label for="shA">a</label><input id="shA" type="text" inputmode="decimal" value="100"></div>
+        <div class="field"><label for="shB">b <span class="mono" id="shBV"></span></label><input id="shB" type="range" min="1" max="100" step="1" value="50"></div>
+      </div>
+      <svg id="shSvg" viewBox="0 0 300 170" style="width:100%;display:block" role="img" aria-label="The cross-section, with the wetted perimeter drawn in red."></svg>
+      <div class="out"><div class="stat"><span class="lbl">Area A</span><span class="val" id="shAr"></span></div><div class="stat"><span class="lbl">Wetted perimeter</span><span class="val" id="shWP"></span></div><div class="stat hot"><span class="lbl">R = A/WP and D<sub>h</sub> = 4R</span><span class="val" id="shR" style="font-size:16px"></span></div></div>
+      <p class="small muted" id="shNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="duct">
+  <div class="sec-head"><p class="eyebrow">Slides 11–14 · Mott §9.6–9.7, Examples 9.5–9.7</p><h2>Head loss in a noncircular duct</h2></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Duct solver</h3><div class="seg" role="group" aria-label="Unit system" id="dSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="dFields">
+        <div class="field"><label for="dK">Shape</label><select id="dK"><option value="squareTube">Square duct with tube inside</option><option value="annulus">Annulus</option><option value="rect">Rectangle</option><option value="circle">Circle</option></select></div>
+        <div class="field"><label for="dA" id="dAL">a</label><input id="dA" type="text" inputmode="decimal" value="250"></div>
+        <div class="field" id="dBf"><label for="dB" id="dBL">b</label><input id="dB" type="text" inputmode="decimal" value="150"></div>
+        <div class="field"><label for="dQ" id="dQL">Flow rate</label><input id="dQ" type="text" inputmode="decimal" value="0.16"></div>
+        <div class="field"><label for="dNu" id="dNuL">Kinematic viscosity ν</label><input id="dNu" type="text" inputmode="decimal" value="1.4727e-5"></div>
+        <div class="field"><label for="dE" id="dEL">Roughness ε</label><input id="dE" type="text" inputmode="decimal" value="0.03"></div>
+        <div class="field"><label for="dL" id="dLL">Length L</label><input id="dL" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="dG" id="dGL">Specific weight γ</label><input id="dG" type="text" inputmode="decimal" value="10.79"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-d="e97">Ex 9.5–9.7 glycol duct</button><button type="button" class="chip" data-d="hx">Slide 14 heat-exchanger shell</button><button type="button" class="chip" data-d="hxm">Same, Mott's glycol viscosity</button></div>
+      <div class="out">
+        <div class="stat"><span class="lbl">Velocity v̄ = Q/A</span><span class="val" id="dV"></span></div>
+        <div class="stat"><span class="lbl">N<sub>R</sub> with D<sub>h</sub> = 4R</span><span class="val" id="dRe" style="font-size:16px"></span></div>
+        <div class="stat"><span class="lbl">Friction factor</span><span class="val" id="dF"></span></div>
+        <div class="stat hot"><span class="lbl">Head loss h<sub>L</sub></span><span class="val" id="dH"></span></div>
+        <div class="stat"><span class="lbl">Pressure drop Δp = γh<sub>L</sub></span><span class="val" id="dP"></span></div>
+      </div>
+      <div class="workline" id="dWork"></div>
+      <p class="small muted" id="dNote"></p>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">The practice problems on the CH 9 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s10</span>Hydraulic radius of common shapes</span><span class="s">Circle, square, rectangle, and the a ≫ b limit</span><span class="ans">D/4, a/4, ab/2(a + b) → b/2</span></summary><div class="dbody"><p>Worked in the <a href="#rh">hydraulic radius section</a>. Try the shape explorer with a rectangle and drag b down: R approaches b/2.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s12</span>Practice #1 · same velocity in shell and tube (Mott 9.19)</span><span class="s">Outer tube 7/8 in OD, inner tube ½ in OD, both 0.049 in wall</span><span class="ans">Q<sub>shell</sub>/Q<sub>tube</sub> = 2.19</span></summary><div class="dbody"><ol><li>Tube inside diameter: 0.500 − 2(0.049) = 0.402 in. Shell: inside of the outer tube 0.875 − 0.098 = 0.777 in, minus the outside of the inner tube, 0.500 in.</li><li>Same velocity means \(Q \propto A\): \(\dfrac{Q_{shell}}{Q_{tube}} = \dfrac{0.777^2 - 0.500^2}{0.402^2} = \dfrac{0.3537}{0.1616} = 2.19\). Matches the book.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s13</span>Practice #2 · Reynolds numbers in the heat exchanger</span><span class="s">Tube: 4.75 gal/min water at 200 °F. Shell: 30.0 gal/min ethylene glycol at 77 °F</span><span class="ans">tube ≈ 1.2 × 10⁵; shell ≈ 5.0–5.5 × 10³</span></summary><div class="dbody"><ol><li><b>Tube</b> (an ordinary pipe, as in Ch 8): \(A = \pi(0.402/12)^2/4 = 8.81\times10^{-4}\) ft², \(Q = 4.75/449 = 0.01058\) ft³/s, \(\bar v = 12.0\) ft/s. Water at 200 °F: \(\nu = 3.34\times10^{-6}\) ft²/s (Mott Table A.2), so \(N_R = (12.0)(0.0335)/3.34\times10^{-6} = 1.20\times10^5\).</li><li><b>Shell</b>: \(A = \pi(0.777^2 - 0.500^2)/4 = 0.278\) in²; \(WP = \pi(0.777 + 0.500) = 4.01\) in; \(R = 0.06925\) in, as on the slide. In fact \(R = (D_o - d_i)/4\) for any annulus.</li><li>\(\bar v = (30.0/449)/(0.278/144) = 34.6\) ft/s, \(4R = 0.2770\) in = 0.02308 ft.</li><li>With the slide's viscosity (15 cP = 3.13 × 10⁻⁴ lb·s/ft²) and ρ = 1.1(1.94) = 2.13 slug/ft³: \(N_R = (2.13)(34.6)(0.02308)/3.13\times10^{-4} = 5450\). With Mott Table B.2's value for ethylene glycol at 77 °F (3.38 × 10⁻⁴), \(N_R = 5050\). Turbulent either way, barely.</li></ol><p class="note">This is Problem 9.26 in the 8th edition; the slide shows it with an older edition's number, 9.25. The book doesn't list the answer to even-numbered problems, so these are my own numbers.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s14</span>Practice #3 · head loss in the shell</span><span class="s">100 ft of shell, ε = 0.01 in</span><span class="ans">≈ 5400 ft</span></summary><div class="dbody"><ol><li>\(\varepsilon/4R = 0.01/0.277 = 0.036\): very rough relative to such a narrow gap.</li><li>Colebrook at \(N_R \approx 5450\): \(f = 0.067\).</li><li>\(h_L = f\dfrac{L}{4R}\dfrac{\bar v^2}{2g} = 0.067 \times \dfrac{100}{0.02308} \times \dfrac{34.6^2}{64.4} = 5370\) ft, the slide's "~5500 ft". Load it in the duct solver.</li></ol><p class="note">The slide gives 34.2 ft/s; Q/A works out to 34.6 ft/s, a 1 % difference that doesn't change the conclusion. Sanity check: 5400 ft of glycol is a pressure drop of about 2600 psi over 100 ft. Pushing 30 gal/min through a 0.28 in² gap is an extreme design, and a real exchanger would use a much bigger shell. With drawn-tubing roughness (5 × 10⁻⁶ ft) instead of 0.01 in, the loss drops to about 3000 ft.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott's worked examples for this section (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">Ex 9.5</span>Hydraulic radius of a square duct around a tube</span><span class="s">Square 250 mm inside, tube 150 mm OD</span><span class="ans">R = 30.5 mm</span></summary><div class="dbody"><ol><li>\(A = 250^2 - \pi(150)^2/4 = 44{,}829\) mm².</li><li>\(WP = 4(250) + \pi(150) = 1471\) mm (both the duct's inside and the tube's outside are wetted).</li><li>\(R = 44{,}829/1471 = 30.5\) mm.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 9.6</span>Reynolds number in that duct</span><span class="s">Ethylene glycol at 25 °C (ρ = 1100 kg/m³, η = 1.62 × 10⁻² Pa·s), 0.16 m³/s</span><span class="ans">N<sub>R</sub> = 2.96 × 10⁴</span></summary><div class="dbody"><ol><li>\(\bar v = 0.16/0.0448 = 3.57\) m/s.</li><li>\(N_R = \dfrac{\rho\bar v(4R)}{\eta} = \dfrac{(1100)(3.57)(0.122)}{1.62\times10^{-2}} = 2.96\times10^4\). Turbulent.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 9.7</span>Pressure drop over 50 m</span><span class="s">ε = 3 × 10⁻⁵ m, horizontal duct</span><span class="ans">h<sub>L</sub> = 6.52 m; Δp = 70.4 kPa</span></summary><div class="dbody"><ol><li>\(4R/\varepsilon = 0.122/3\times10^{-5} = 4067\); the Moody diagram gives \(f = 0.0245\).</li><li>\(h_L = 0.0245 \times \dfrac{50}{0.122} \times \dfrac{3.57^2}{2(9.81)} = 6.52\) m.</li><li>Horizontal, same velocity: \(\Delta p = \gamma h_L = 10.79 \times 6.52 = 70.4\) kPa. Load it in the duct solver.</li></ol><p class="note">The duct solver uses the Colebrook equation, which gives f = 0.0242, h<sub>L</sub> = 6.45 m and Δp = 69.6 kPa. The 1 % difference is how precisely anyone can read a Moody chart.</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="b"><p class="qt">1. In steady flow, a streakline from a dye needle</p><div class="opts"><button class="opt" data-k="a">is perpendicular to the streamlines</button><button class="opt" data-k="b">lies along a streamline</button><button class="opt" data-k="c">is always straight</button><button class="opt" data-k="d">shows the velocity profile</button></div><p class="fb" hidden>Steady flow: pathlines, streaklines and streamlines coincide. The timeline is the one that shows the velocity profile.</p></div>
+    <div class="q" data-answer="c"><p class="qt">2. The hydraulic radius of a circular pipe of diameter D is</p><div class="opts"><button class="opt" data-k="a">D/2</button><button class="opt" data-k="b">D</button><button class="opt" data-k="c">D/4</button><button class="opt" data-k="d">πD/4</button></div><p class="fb" hidden>πD²/4 ÷ πD = D/4. It's not the geometric radius, which is why 4R (not 2R) replaces D.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. Laminar flow in a pipe: the centerline velocity is</p><div class="opts"><button class="opt" data-k="a">2 × average</button><button class="opt" data-k="b">1.2 × average</button><button class="opt" data-k="c">equal to the average</button><button class="opt" data-k="d">√2 × average</button></div><p class="fb" hidden>Parabolic profile: v_max = 2v̄. In turbulent flow it's closer to 1.2v̄.</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. For the ring between two tubes, the wetted perimeter is</p><div class="opts"><button class="opt" data-k="a">πD<sub>o</sub></button><button class="opt" data-k="b">π(D<sub>o</sub> − d<sub>i</sub>)</button><button class="opt" data-k="c">πd<sub>i</sub></button><button class="opt" data-k="d">π(D<sub>o</sub> + d<sub>i</sub>)</button></div><p class="fb" hidden>The fluid touches both walls. That makes R = (D_o − d_i)/4.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Hydraulic radius</span>\[ R = \frac{A}{WP} \]<span class="wh">Circle: D/4. Annulus: (D<sub>o</sub> − d<sub>i</sub>)/4.</span></div>
+    <div><span class="nm">Reynolds number</span>\[ N_R = \frac{\bar v(4R)}{\nu} \]<span class="wh">v̄ = Q/A with the actual flow area.</span></div>
+    <div><span class="nm">Darcy, noncircular</span>\[ h_L = f\,\frac{L}{4R}\,\frac{\bar v^2}{2g} \]<span class="wh">Relative roughness ε/(4R).</span></div>
+    <div><span class="nm">Laminar profile</span>\[ v = 2\bar v\left[1 - (r/R)^2\right] \]<span class="wh">Maximum = 2 × average.</span></div>
+    <div><span class="nm">Hagen–Poiseuille</span>\[ h_L = \frac{32\eta L\bar v}{\gamma D^2} = \frac{128\eta LQ}{\pi\gamma D^4} \]<span class="wh">Same as f = 64/N<sub>R</sub>.</span></div>
+    <div><span class="nm">Turbulent profile (Mott 9–7)</span>\[ U = \bar v\left[1 + 1.43\sqrt f + 2.15\sqrt f\log_{10}\frac{y}{r_o}\right] \]<span class="wh">y from the wall.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt, tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  /* ---------- hero: flow visualization ---------- */
+  const cv = $('#vCanvas'), ctx = cv.getContext('2d'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0, mode = 'unsteady', t = 0, paused = false, running = false, visible = true, last = 0;
+  const show = { stream: true, path: true, streak: true, time: true };
+  let streak = [], pathPts = [], pathP = null, timeline = [], tlAge = 0;
+  const U = 60, Vamp = 45, om = 1.6, h = () => H * 0.36;      // px/s; channel half-height for steady mode
+  function vel(x, y, tt) {
+    if (mode === 'unsteady') return [U, Vamp * Math.sin(om * tt)];
+    const yy = (y - H / 2) / h(); return [Math.max(0, 1.5 * U * (1 - yy * yy)), 0];
+  }
+  function size() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  function reset() { t = 0; streak = []; pathPts = []; pathP = [40, H / 2]; timeline = []; tlAge = 0; spawnTimeline(); }
+  function spawnTimeline() { timeline = []; const n = 40, y0 = mode === 'steady' ? H / 2 - h() : 12, y1 = mode === 'steady' ? H / 2 + h() : H - 12; for (let i = 0; i <= n; i++) timeline.push([W * 0.18, y0 + (y1 - y0) * i / n]); tlAge = 0; }
+  function step(dt) {
+    t += dt;
+    // streakline: emit from injector
+    const inj = [40, H / 2]; streak.push([inj[0], inj[1]]); if (streak.length > 900) streak.shift();
+    const adv = (p) => { const [u, v] = vel(p[0], p[1], t); p[0] += u * dt; p[1] += v * dt; };
+    streak.forEach(adv); streak = streak.filter((p) => p[0] < W + 10 && p[1] > -50 && p[1] < H + 50);
+    adv(pathP); pathPts.push([pathP[0], pathP[1]]); if (pathP[0] > W + 5) { pathP = [40, H / 2]; pathPts = []; }
+    timeline.forEach(adv); tlAge += dt; if (tlAge > (mode === 'steady' ? 6 : 7) || timeline.every((p) => p[0] > W)) spawnTimeline();
+  }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = tok('--wash'); ctx.fillRect(0, 0, W, H);
+    if (mode === 'steady') { ctx.strokeStyle = tok('--ink'); ctx.lineWidth = 2; [H / 2 - h(), H / 2 + h()].forEach((y) => { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }); }
+    if (show.stream) { // instantaneous streamlines: integrate the frozen field
+      ctx.strokeStyle = tok('--ink-2'); ctx.globalAlpha = 0.45; ctx.lineWidth = 1; ctx.setLineDash([5, 6]);
+      if (mode === 'unsteady') { const [u, v] = vel(0, 0, t), sl = v / u, span = Math.abs(sl) * W; for (let y0 = -span; y0 < H + span; y0 += 42) { ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(W, y0 + sl * W); ctx.stroke(); } }
+      else { [-0.8, -0.5, -0.2, 0.1, 0.4, 0.7].map((k) => H / 2 + k * h()).forEach((y) => { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }); }
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    if (show.streak) { ctx.fillStyle = tok('--dye'); ctx.globalAlpha = 0.55; streak.forEach((p) => { ctx.beginPath(); ctx.arc(p[0], p[1], 2.2, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1; }
+    if (show.time && timeline.length) { ctx.strokeStyle = tok('--amber'); ctx.lineWidth = 3; ctx.beginPath(); timeline.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke(); }
+    if (show.path) { ctx.strokeStyle = tok('--water'); ctx.lineWidth = 2; ctx.beginPath(); pathPts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke(); ctx.fillStyle = tok('--water'); ctx.beginPath(); ctx.arc(pathP[0], pathP[1], 5, 0, 7); ctx.fill(); }
+    ctx.fillStyle = tok('--ink'); ctx.fillRect(28, H / 2 - 3, 12, 6); // injector
+  }
+  function frame(now) { if (!running) return; const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now; if (!paused) step(dt); draw(); requestAnimationFrame(frame); }
+  function start() { if (running || reduce || !visible) return; running = true; last = 0; requestAnimationFrame(frame); }
+  function stop() { running = false; }
+  function staticFrame() { for (let i = 0; i < 360; i++) step(1 / 60); draw(); }
+  function readout() { $('#vRead').innerHTML = mode === 'unsteady' ? 'Unsteady: the flow direction swings up and down. The streamlines (straight, all tilted the same way at this instant), the pathline (a snake) and the streakline (a different snake) are all different curves.' : 'Steady laminar flow between plates: the pathline and streakline lie on the centerline streamline, and the timeline stretches into the parabolic velocity profile.'; }
+  function restart() { size(); reset(); readout(); if (reduce) staticFrame(); else { draw(); } }
+  segmented($('#vMode'), (v) => { mode = v; restart(); });
+  $$('[data-show]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.show; show[k] = !show[k]; b.setAttribute('aria-pressed', String(show[k])); draw(); }));
+  $('#vPause').addEventListener('click', () => { paused = !paused; $('#vPause').setAttribute('aria-pressed', String(paused)); $('#vPause').textContent = paused ? 'Play' : 'Pause'; });
+  new IntersectionObserver((es) => { visible = es[0].isIntersecting; visible ? start() : stop(); }).observe(cv);
+  addEventListener('resize', () => { const w = W; size(); if (Math.abs(w - W) > 2) reset(); draw(); });
+  document.addEventListener('fm-theme', () => { size(); draw(); });
+  restart(); start();
+
+  /* ---------- velocity profile ---------- */
+  function profile() {
+    const Re = Math.pow(10, num('#prRe')), rr = num('#prRr'); $('#prReV').textContent = f(Re, 3);
+    const reg = C.regime(Re), fr = C.frictionFactor(Re, rr);
+    $('#prReg').innerHTML = `<span class="pill ${reg}">${reg === 'lam' ? 'Laminar' : reg === 'crit' ? 'Critical zone' : 'Turbulent'}</span>`;
+    $('#prF').textContent = f(fr, 3);
+    const p = FM.plot($('#prSvg'), { W: 380, H: 260, m: { l: 50, r: 12, t: 12, b: 42 }, x: { min: 0, max: 2.1, label: 'U / v̄', ticks: [0, 0.5, 1, 1.5, 2] }, y: { min: -1, max: 1, label: 'r / R', ticks: [-1, -0.5, 0, 0.5, 1] } });
+    const lam = [], tur = [];
+    for (let i = -100; i <= 100; i++) { const r = i / 100; lam.push([2 * (1 - r * r), r]); const y = 1 - Math.abs(r); tur.push([y <= 1e-4 ? 0 : Math.max(0, 1 + 1.43 * Math.sqrt(fr) + 2.15 * Math.sqrt(fr) * Math.log10(y)), r]); }
+    el('line', { x1: p.sx(1), x2: p.sx(1), y1: p.sy(-1), y2: p.sy(1), class: 'st-ink2', 'stroke-dasharray': '4 4' }, p.g);
+    text(p.g, p.sx(1) + 4, p.sy(-0.92), 'average', { 'font-size': 11 });
+    if (reg === 'lam') { FM.line(p, lam, { class: 'st-water', 'stroke-width': 2.5 }); $('#prU').textContent = '2.00'; $('#prNote').textContent = 'Laminar: parabolic profile, U_max = 2 v̄ regardless of N_R.'; }
+    else { FM.line(p, lam, { class: 'st-water', 'stroke-width': 1.2, 'stroke-dasharray': '3 4' }); FM.line(p, tur, { class: 'st-dye', 'stroke-width': 2.5 }); $('#prU').textContent = f(1 + 1.43 * Math.sqrt(fr), 3); $('#prNote').textContent = (reg === 'crit' ? 'Critical zone: the flow may be either; the turbulent curve is drawn for comparison. ' : '') + 'Turbulent (Mott Eq. 9–7) in red; the dashed blue parabola is the laminar shape for comparison. Higher N_R or a smoother wall flattens the profile.'; }
+  }
+  onInputs('#prFields', profile); profile();
+
+  /* ---------- shape explorer ---------- */
+  function shapes() {
+    const k = $('#shK').value, a = num('#shA'), bf = num('#shB') / 100; const b = a * bf;
+    $('#shB').disabled = k === 'circle' || k === 'square'; $('#shBV').textContent = (k === 'circle' || k === 'square') ? '' : f(b, 3);
+    if (!(a > 0)) return;
+    const d = k === 'circle' ? { D: a } : k === 'square' ? { a } : k === 'rect' ? { a, b } : k === 'annulus' ? { Do: a, di: Math.min(b, a * 0.98) } : { a, di: Math.min(b, a * 0.98) };
+    const r = C.section(k, d);
+    $('#shAr').textContent = f(r.A, 4); $('#shWP').textContent = f(r.WP, 4); $('#shR').textContent = `${f(r.R, 4)}; ${f(r.Dh, 4)}`;
+    $('#shNote').textContent = k === 'rect' ? `b/a = ${f(bf, 2)}. As b/a → 0, R → b/2 = ${f(b / 2, 3)}.` : k === 'annulus' ? `(a − b)/4 = ${f((a - d.di) / 4, 4)}: for an annulus R depends only on the gap.` : k === 'circle' ? 'R = D/4, so D_h = D.' : k === 'square' ? 'R = a/4, so D_h = a.' : 'Wetted perimeter includes the outside of the tube.';
+    const s = $('#shSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const sc = 140 / a, cx = 150, cy = 85;
+    const wet = { fill: 'none', class: 'st-dye', 'stroke-width': 3 };
+    if (k === 'circle') { el('circle', { cx, cy, r: a * sc / 2, class: 'fl-water', 'fill-opacity': 0.3 }, s); el('circle', Object.assign({ cx, cy, r: a * sc / 2 }, wet), s); }
+    else if (k === 'square') { el('rect', { x: cx - a * sc / 2, y: cy - a * sc / 2, width: a * sc, height: a * sc, class: 'fl-water', 'fill-opacity': 0.3 }, s); el('rect', Object.assign({ x: cx - a * sc / 2, y: cy - a * sc / 2, width: a * sc, height: a * sc }, wet), s); }
+    else if (k === 'rect') { const w = Math.min(280, a * sc * 1.6), hh = w * bf; el('rect', { x: cx - w / 2, y: cy - hh / 2, width: w, height: Math.max(1, hh), class: 'fl-water', 'fill-opacity': 0.3 }, s); el('rect', Object.assign({ x: cx - w / 2, y: cy - hh / 2, width: w, height: Math.max(1, hh) }, wet), s); }
+    else if (k === 'annulus') { el('circle', { cx, cy, r: a * sc / 2, class: 'fl-water', 'fill-opacity': 0.3 }, s); el('circle', { cx, cy, r: d.di * sc / 2, class: 'fl-surface', stroke: 'var(--ink-2)' }, s); el('circle', Object.assign({ cx, cy, r: a * sc / 2 }, wet), s); el('circle', Object.assign({ cx, cy, r: d.di * sc / 2 }, wet), s); }
+    else { el('rect', { x: cx - a * sc / 2, y: cy - a * sc / 2, width: a * sc, height: a * sc, class: 'fl-water', 'fill-opacity': 0.3 }, s); el('circle', { cx, cy, r: d.di * sc / 2, class: 'fl-surface', stroke: 'var(--ink-2)' }, s); el('rect', Object.assign({ x: cx - a * sc / 2, y: cy - a * sc / 2, width: a * sc, height: a * sc }, wet), s); el('circle', Object.assign({ cx, cy, r: d.di * sc / 2 }, wet), s); }
+  }
+  onInputs('#shFields', shapes); shapes();
+
+  /* ---------- duct solver ---------- */
+  let dsys = 'SI';
+  const DPRE = {
+    e97: ['SI', 'squareTube', 250, 150, 0.16, 1.62e-2 / 1100, 0.03, 50, 10.79, 'Mott Ex 9.5–9.7: ethylene glycol at 25 °C (η = 1.62 × 10⁻² Pa·s, ρ = 1100 kg/m³), ε = 3 × 10⁻⁵ m.'],
+    hx: ['US', 'annulus', 0.777, 0.5, 30, 3.13e-4 / (1.1 * 1.94), 0.01, 100, 68.6, 'Slide 14: shell of the heat exchanger, glycol at 15 cP (3.13 × 10⁻⁴ lb·s/ft²) and sg 1.1, ε = 0.01 in.'],
+    hxm: ['US', 'annulus', 0.777, 0.5, 30, 3.38e-4 / (1.1 * 1.94), 0.01, 100, 68.47, 'Same shell with Mott Table B.2 for ethylene glycol at 77 °F: η = 3.38 × 10⁻⁴ lb·s/ft², γ = 68.47 lb/ft³.'],
+  };
+  function dLabels() {
+    const us = dsys === 'US', k = $('#dK').value, L = us ? 'in' : 'mm';
+    const nm = { squareTube: ['Duct inside side a', 'Tube OD b'], annulus: ['Outer tube ID a', 'Inner tube OD b'], rect: ['Side a', 'Side b'], circle: ['Diameter a', ''] }[k];
+    $('#dAL').innerHTML = `${nm[0]} <span class="unit">${L}</span>`; $('#dBL').innerHTML = `${nm[1]} <span class="unit">${L}</span>`; $('#dBf').hidden = k === 'circle';
+    $('#dQL').innerHTML = `Flow rate <span class="unit">${us ? 'gal/min' : 'm³/s'}</span>`; $('#dNuL').innerHTML = `Kinematic viscosity ν <span class="unit">${us ? 'ft²/s' : 'm²/s'}</span>`;
+    $('#dEL').innerHTML = `Roughness ε <span class="unit">${us ? 'in' : 'mm'}</span>`; $('#dLL').innerHTML = `Length L <span class="unit">${us ? 'ft' : 'm'}</span>`; $('#dGL').innerHTML = `Specific weight γ <span class="unit">${us ? 'lb/ft³' : 'kN/m³'}</span>`;
+  }
+  function duct() {
+    const us = dsys === 'US', k = $('#dK').value, a = num('#dA'), b = num('#dB'), Q0 = num('#dQ'), nu = num('#dNu'), e = num('#dE'), L = num('#dL'), g = num('#dG');
+    const toLen = us ? 1 / 12 : 1e-3, Q = us ? Q0 / 449 : Q0, grav = us ? 32.2 : 9.81;
+    if (!(a > 0 && Q > 0 && nu > 0 && L > 0 && e >= 0 && (k === 'circle' || (b > 0 && (k === 'rect' || b < a))))) { $('#dWork').textContent = 'Check the dimensions: the inner tube must be smaller than the outer boundary.'; return; }
+    const d = k === 'circle' ? { D: a * toLen } : k === 'rect' ? { a: a * toLen, b: b * toLen } : k === 'annulus' ? { Do: a * toLen, di: b * toLen } : { a: a * toLen, di: b * toLen };
+    const sec = C.section(k, d), r = C.darcy({ Q, A: sec.A, Dh: sec.Dh, L, nu, eps: e * toLen, g: grav });
+    const LU = us ? 'ft' : 'm';
+    $('#dV').textContent = `${f(r.v, 4)} ${us ? 'ft/s' : 'm/s'}`; $('#dRe').innerHTML = `${f(r.Re, 4)} <span class="pill ${r.regime}" style="font-size:10px">${r.regime === 'lam' ? 'lam' : r.regime === 'crit' ? 'crit' : 'turb'}</span>`;
+    $('#dF').textContent = f(r.f, 3); $('#dH').textContent = `${f(r.hL, 4)} ${LU}`;
+    $('#dP').textContent = us ? `${f(g * r.hL / 144, 4)} psi` : `${f(g * r.hL, 4)} kPa`;
+    $('#dWork').innerHTML = `<div>A = ${f(sec.A, 4)} ${LU}², WP = ${f(sec.WP, 4)} ${LU}, R = A/WP = ${f(sec.R, 4)} ${LU}, 4R = ${f(sec.Dh, 4)} ${LU}</div><div>v̄ = Q/A = ${f(Q, 4)}/${f(sec.A, 4)} = ${f(r.v, 4)}; N_R = v̄(4R)/ν = ${f(r.Re, 4)}; ε/4R = ${f(r.rr, 3)}</div><div>${r.regime === 'lam' ? 'f = 64/N_R (but the 4R method is only approximate for laminar flow in noncircular ducts)' : 'f from Colebrook'} = ${f(r.f, 4)}; h_L = f(L/4R)(v̄²/2g) = ${f(r.f, 4)} × ${f(L / sec.Dh, 4)} × ${f(r.hv, 4)} = ${f(r.hL, 4)} ${LU}</div>`;
+  }
+  $$('[data-d]').forEach((bt) => bt.addEventListener('click', () => { const v = DPRE[bt.dataset.d]; dsys = v[0]; $$('#dSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === dsys))); $('#dK').value = v[1]; $('#dA').value = v[2]; $('#dB').value = v[3]; $('#dQ').value = v[4]; $('#dNu').value = +v[5].toPrecision(5); $('#dE').value = v[6]; $('#dL').value = v[7]; $('#dG').value = v[8]; $('#dNote').textContent = v[9]; dLabels(); duct(); }));
+  segmented($('#dSys'), (v) => { dsys = v; $('#dNote').textContent = ''; dLabels(); duct(); });
+  $('#dK').addEventListener('change', () => { dLabels(); duct(); });
+  onInputs('#dFields', duct); dLabels(); duct();
+})();
+</script>

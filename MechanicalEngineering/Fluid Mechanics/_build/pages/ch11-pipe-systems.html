@@ -1,0 +1,207 @@
+<!--title: Series and Parallel Pipes (Ch 11–12)-->
+<!--short: Ch 11–12 Pipe systems-->
+<!--eyebrow: Week 9 · Chapters 11–12-->
+<!--desc: Lecture companion for Mott Chapters 11 and 12: series pipelines (Class I, II and III problems) and parallel branches that share one head loss, with live solvers that do the iteration the slides skip.-->
+<header class="hero">
+  <p class="eyebrow">Week 9 · Mott Chapters 11–12 (Series and Parallel Pipeline Systems) · Slide deck CH 11</p>
+  <h1>Series <em>and</em> Parallel Pipes</h1>
+  <p class="lede">Two rules, borrowed from electric circuits. In <b>series</b>, every pipe carries the same flow and the head losses add. In <b>parallel</b>, every branch has the same head loss and the flows add. The arithmetic is Chapters 8–10; the new part is that some problems have to be solved by iteration.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#series">Series</a><a href="#classes">Problem classes</a><a href="#parallel">Parallel</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Reservoir to reservoir through pipes in series (slides 2–4)</h3><div class="seg" role="group" aria-label="Solve for" id="sMode"><button type="button" data-v="H" aria-pressed="true">Given Q, find H</button><button type="button" data-v="Q" aria-pressed="false">Given H, find Q</button></div></div>
+    <div class="panel-b">
+      <svg id="sSvg" viewBox="0 0 640 260" style="width:100%;display:block" role="img" aria-label="Upper reservoir, three pipes in series descending to a lower reservoir, and the energy grade line falling by each pipe's head loss."></svg>
+      <div class="scroll-x"><table class="tbl" id="sIn"><thead><tr><th>Pipe</th><th>Length (m)</th><th>ID (mm)</th><th>ε (mm)</th><th>ΣK fittings</th></tr></thead><tbody>
+        <tr><td>1</td><td><input id="L1" type="text" inputmode="decimal" value="1000" aria-label="Pipe 1 length"></td><td><input id="D1" type="text" inputmode="decimal" value="160" aria-label="Pipe 1 diameter"></td><td><input id="E1" type="text" inputmode="decimal" value="2" aria-label="Pipe 1 roughness"></td><td><input id="K1" type="text" inputmode="decimal" value="0" aria-label="Pipe 1 fittings"></td></tr>
+        <tr><td>2</td><td><input id="L2" type="text" inputmode="decimal" value="1600" aria-label="Pipe 2 length"></td><td><input id="D2" type="text" inputmode="decimal" value="200" aria-label="Pipe 2 diameter"></td><td><input id="E2" type="text" inputmode="decimal" value="2" aria-label="Pipe 2 roughness"></td><td><input id="K2" type="text" inputmode="decimal" value="0" aria-label="Pipe 2 fittings"></td></tr>
+        <tr><td>3</td><td><input id="L3" type="text" inputmode="decimal" value="850" aria-label="Pipe 3 length"></td><td><input id="D3" type="text" inputmode="decimal" value="180" aria-label="Pipe 3 diameter"></td><td><input id="E3" type="text" inputmode="decimal" value="2" aria-label="Pipe 3 roughness"></td><td><input id="K3" type="text" inputmode="decimal" value="0" aria-label="Pipe 3 fittings"></td></tr>
+      </tbody></table></div>
+      <div class="fields" id="sFields">
+        <div class="field" id="sQf"><label for="sQ">Flow rate Q <span class="unit">L/s</span></label><input id="sQ" type="text" inputmode="decimal" value="20"></div>
+        <div class="field" id="sHf" hidden><label for="sH">Elevation difference H <span class="unit">m</span></label><input id="sH" type="text" inputmode="decimal" value="25"></div>
+        <div class="field"><label for="sNu">Kinematic viscosity ν <span class="unit">m²/s</span></label><input id="sNu" type="text" inputmode="decimal" value="1e-6"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-p="mid">2019 Midterm #2</button><button type="button" class="chip" data-p="midK">+ entrance, size changes, exit</button><button type="button" class="chip" data-p="one">One pipe: Class III try</button></div>
+      <div class="out"><div class="stat hot"><span class="lbl" id="sOutL">H = Σh<sub>L</sub></span><span class="val" id="sOut"></span></div><div class="stat"><span class="lbl">Per pipe h<sub>L</sub> (m)</span><span class="val" id="sPer" style="font-size:16px"></span></div></div>
+      <div class="workline" id="sWork"></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#series">Pipes in series</a></li><li><a href="#classes">Class I, II, III</a></li><li><a href="#parallel">Pipes in parallel</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="series">
+  <div class="sec-head"><p class="eyebrow">Slide 2 · Mott §11.1–11.2</p><h2>Pipes in series</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>Nothing leaves between the ends, so continuity gives the same Q in every pipe (each with its own velocity \(v_i = Q/A_i\)). The energy equation from the upper surface to the lower one has \(p = 0\) and \(v = 0\) at both ends:</p>
+      \[ H = z_1 - z_2 = \sum_i f_i\frac{L_i}{D_i}\frac{v_i^2}{2g} + \sum_j K_j\frac{v_j^2}{2g} \]
+      <p>So the elevation difference is spent entirely on losses. With one diameter the sum collapses to \(\left(f\frac{L}{D} + \sum K\right)\frac{v^2}{2g}\).</p>
+      <p>The energy grade line in the diagram falls along each pipe with a slope \(h_L/L\): steepest in the smallest pipe, where the velocity is highest. Loss grows roughly with \(1/D^5\) at a fixed flow rate, so narrowing one stretch of a line is expensive.</p>
+    </div>
+    <div class="read">
+      <h3>The circuit analogy</h3>
+      <div class="scroll-x"><table class="tbl"><thead><tr><th></th><th>Series</th><th>Parallel</th></tr></thead><tbody>
+        <tr><td>Flow rate</td><td>same in each: \(Q = Q_1 = Q_2\)</td><td>adds: \(Q = Q_1 + Q_2\)</td></tr>
+        <tr><td>Head loss</td><td>adds: \(h = h_1 + h_2\)</td><td>same in each: \(h = h_1 = h_2\)</td></tr>
+        <tr><td>Electric version</td><td>current same, voltage adds</td><td>voltage same, current adds</td></tr>
+      </tbody></table></div>
+      <p class="small muted">The analogy isn't exact: head loss goes as Q² (turbulent), not Q, which is why parallel problems need iteration.</p>
+    </div>
+  </div>
+</section>
+
+<section id="classes">
+  <div class="sec-head"><p class="eyebrow">Mott §11.1–11.5</p><h2>Class I, II and III problems</h2><p class="dek">Mott sorts series problems by what's unknown. The slides solve a Class I problem; the tool at the top also does Class II.</p></div>
+  <div class="three">
+    <div class="card"><h4>Class I: find the loss</h4><p>Q, pipes and fittings known. Compute each velocity, N<sub>R</sub>, f and loss directly, then solve the energy equation for a pressure, elevation or pump head. No iteration. The 2019 midterm is Class I.</p></div>
+    <div class="card"><h4>Class II: find the flow</h4><p>Pipes and the available head (or pressure drop) known; Q unknown. f depends on v, which depends on Q: guess f, solve for v, update f from N<sub>R</sub>, repeat. Two or three rounds usually settle it. Switch the tool to "Given H, find Q".</p></div>
+    <div class="card"><h4>Class III: find the size</h4><p>Q and the allowable loss known; D unknown. Guess D, compute the loss, adjust, then pick the next standard size up. Try the "One pipe" preset and change the ID until H is just met.</p></div>
+  </div>
+</section>
+
+<section id="parallel">
+  <div class="sec-head"><p class="eyebrow">Slide 5 · Mott Chapter 12</p><h2>Pipes in parallel</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>Branches that split at node 1 and rejoin at node 2 all start with the same energy and all end with the same energy. So they must lose the same head, and the flow splits itself to make that true (slide 5):</p>
+      \[ h_{L,a} = h_{L,b} = \dots,\qquad Q = Q_a + Q_b + \dots \]
+      <p>N branches give N unknown flows and N equations. The slides skip solving them by hand because it's time-consuming; Mott's §12.3 does two branches by writing each loss as \(h = (f L/D + \sum K)v^2/2g\), equating, and iterating on f. The solver here does the same search automatically: it finds the one head loss at which the branch flows add up to Q.</p>
+      <p>Intuition: the branch with less resistance takes more flow, but not all of it, because more flow means more loss. Close a valve in one branch and the others pick up its flow while the shared head loss rises.</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Parallel solver</h3><div class="seg" role="group" aria-label="Units" id="pSys"><button type="button" data-v="US" aria-pressed="true">US</button><button type="button" data-v="SI" aria-pressed="false">SI</button></div></div><div class="panel-b">
+      <div class="scroll-x"><table class="tbl" id="pIn"><thead><tr><th>Branch</th><th id="pLh">L (ft)</th><th id="pDh">ID (in)</th><th id="pEh">ε (ft)</th><th>ΣK</th></tr></thead><tbody>
+        <tr><td>a</td><td><input id="pLa" type="text" inputmode="decimal" value="0" aria-label="Branch a length"></td><td><input id="pDa" type="text" inputmode="decimal" value="2.067" aria-label="Branch a diameter"></td><td><input id="pEa" type="text" inputmode="decimal" value="1.5e-4" aria-label="Branch a roughness"></td><td><input id="pKa" type="text" inputmode="decimal" value="7.804" aria-label="Branch a fittings"></td></tr>
+        <tr><td>b</td><td><input id="pLb" type="text" inputmode="decimal" value="20" aria-label="Branch b length"></td><td><input id="pDb" type="text" inputmode="decimal" value="1.380" aria-label="Branch b diameter"></td><td><input id="pEb" type="text" inputmode="decimal" value="1.5e-4" aria-label="Branch b roughness"></td><td><input id="pKb" type="text" inputmode="decimal" value="8.40" aria-label="Branch b fittings"></td></tr>
+        <tr><td>c</td><td><input id="pLc" type="text" inputmode="decimal" value="" placeholder="off" aria-label="Branch c length"></td><td><input id="pDc" type="text" inputmode="decimal" value="" placeholder="off" aria-label="Branch c diameter"></td><td><input id="pEc" type="text" inputmode="decimal" value="" placeholder="off" aria-label="Branch c roughness"></td><td><input id="pKc" type="text" inputmode="decimal" value="" placeholder="off" aria-label="Branch c fittings"></td></tr>
+      </tbody></table></div>
+      <div class="fields" id="pFields">
+        <div class="field"><label for="pQ" id="pQL">Total flow Q</label><input id="pQ" type="text" inputmode="decimal" value="100"></div>
+        <div class="field"><label for="pNu" id="pNuL">Kinematic viscosity ν</label><input id="pNu" type="text" inputmode="decimal" value="1.21e-5"></div>
+        <div class="field"><label for="pG" id="pGL">Specific weight γ</label><input id="pG" type="text" inputmode="decimal" value="62.4"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-q="e121">Mott Ex 12.1</button><button type="button" class="chip" data-q="close">Ex 12.1, bypass globe valve ½ shut</button><button type="button" class="chip" data-q="three">Three equal pipes (SI)</button></div>
+      <svg id="pSvg" style="width:100%;display:block" role="img" aria-label="Bar chart of the flow in each branch."></svg>
+      <div class="out"><div class="stat hot"><span class="lbl">Shared head loss</span><span class="val" id="pH"></span></div><div class="stat"><span class="lbl">Pressure drop</span><span class="val" id="pDp"></span></div></div>
+      <div class="workline" id="pWork"></div>
+      <p class="small muted" id="pNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problem from the CH 11 slides</p><h2>Slide example, solved</h2></div>
+  <div class="dlist">
+    <details open><summary><span class="t"><span class="src sl">s3–4</span>2019 Midterm #2 · three concrete pipes in series</span><span class="s">20 L/s of water; 1000 m of 160 mm, 1600 m of 200 mm, 850 m of 180 mm; ε = 2 mm; minor losses neglected</span><span class="ans">H ≈ 25 m</span></summary><div class="dbody"><ol><li>Velocities: \(v = Q/(\pi D^2/4)\): 0.995, 0.637 and 0.786 m/s (the slide prints the unit as m/s², a typo for m/s).</li><li>Reynolds numbers \(vD/\nu\) with \(\nu = 10^{-6}\) m²/s: 1.59 × 10⁵, 1.27 × 10⁵, 1.41 × 10⁵. Relative roughness ε/D: 0.0125, 0.010, 0.0111.</li><li>Moody chart: f ≈ 0.041, 0.038, 0.038 (slide). Colebrook gives 0.0413, 0.0384, 0.0397.</li><li>Losses: \(0.041\cdot\dfrac{1000}{0.16}\cdot\dfrac{0.995^2}{19.62} = 12.9\) m, then 6.3 m and 5.7 m (slide), so \(H = \sum h_L = 24.9\) m. With Colebrook's f: 13.0 + 6.3 + 5.9 = 25.2 m.</li></ol><p class="note">The slide labels all three losses h<sub>L,1</sub>; they are pipes 1, 2 and 3. The third f is closer to 0.040 than 0.038 at ε/D = 0.011; the difference is chart-reading precision. "Neglect minor losses" includes the exit: the jet's velocity head (0.03 m here) is too small to matter anyway. Try the preset that adds them: pipe 1 carries the entrance (0.5) and the 160→200 mm enlargement (0.13), pipe 3 the small contraction (≈ 0.04) and the exit (1.0). H rises by only about 0.06 m.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott's parallel example (statement paraphrased)</p><h2>Textbook problem, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">Ex 12.1</span>Heat exchanger with a bypass</span><span class="s">100 gal/min of 60 °F water in 2 in Sch 40. Branch a: heat exchanger (K = 7.5) and two open gate valves, negligible pipe. Branch b: 20 ft of 1¼ in Sch 40, two standard elbows and an open globe valve</span><span class="ans">Q<sub>a</sub> ≈ 74 gal/min, Q<sub>b</sub> ≈ 26 gal/min; Δp ≈ 2.6 psi</span></summary><div class="dbody"><ol><li>Branch a: \(K = 2(0.019)(8) + 7.5 = 7.80\), so \(h_a = 7.80\,v_a^2/2g\).</li><li>Branch b: elbows \(2(0.021)(30) = 1.26\), globe valve \(0.021(340) = 7.14\), pipe \(f_b(20/0.1150) = 173.9f_b\): \(h_b = (8.40 + 173.9f_b)\,v_b^2/2g\).</li><li>Equal losses and \(Q = A_av_a + A_bv_b\) with \(A_a = 0.02333\), \(A_b = 0.01039\) ft². Guess \(f_b = 0.023\), solve, check N<sub>R</sub> = 5.3 × 10⁴, update \(f_b = 0.0248\), solve again.</li><li>Result: \(v_a = 7.09\) ft/s and \(v_b = 5.55\) ft/s, so \(Q_a = 0.165\) ft³/s (74 gal/min) and \(Q_b = 0.058\) ft³/s (26 gal/min).</li><li>\(\Delta p = \gamma h_a = 62.4 \times 7.80 \times 7.09^2/64.4 = 380\) lb/ft² = 2.64 psi.</li></ol><p class="note">Mott's intermediate text swaps the labels v<sub>a</sub> and v<sub>b</sub> once; the final values here match its result and the parallel solver.</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="b"><p class="qt">1. Three pipes in series carry water between two reservoirs. Which is the same in all three?</p><div class="opts"><button class="opt" data-k="a">Velocity</button><button class="opt" data-k="b">Flow rate</button><button class="opt" data-k="c">Head loss</button><button class="opt" data-k="d">Friction factor</button></div><p class="fb" hidden>Continuity: Q is the same; velocity changes with diameter.</p></div>
+    <div class="q" data-answer="c"><p class="qt">2. Two parallel branches rejoin. Branch a is short and wide, branch b long and narrow. Then</p><div class="opts"><button class="opt" data-k="a">h<sub>a</sub> &lt; h<sub>b</sub></button><button class="opt" data-k="b">Q<sub>a</sub> = Q<sub>b</sub></button><button class="opt" data-k="c">h<sub>a</sub> = h<sub>b</sub> and Q<sub>a</sub> &gt; Q<sub>b</sub></button><button class="opt" data-k="d">all the flow goes through a</button></div><p class="fb" hidden>Same head loss across both; the easier path carries more flow, but b still carries some.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. "Find the flow rate a 15 m drop pushes through this pipe" is</p><div class="opts"><button class="opt" data-k="a">Class II, iterate on f</button><button class="opt" data-k="b">Class I, direct</button><button class="opt" data-k="c">Class III, iterate on D</button></div><p class="fb" hidden>Unknown flow: f depends on N_R, which depends on the unknown velocity.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Series</span>\[ Q_1 = Q_2 = Q_3,\quad h_L = \sum h_{L,i} \]<span class="wh">Each pipe has its own v, N<sub>R</sub>, f.</span></div>
+    <div><span class="nm">Reservoir to reservoir</span>\[ z_1 - z_2 = \sum f_i\frac{L_i}{D_i}\frac{v_i^2}{2g} + \sum K_j\frac{v_j^2}{2g} \]<span class="wh">Add h<sub>A</sub> on the left for a pump.</span></div>
+    <div><span class="nm">Parallel</span>\[ Q = \sum Q_i,\quad h_{L,a} = h_{L,b} = \dots \]<span class="wh">Iterate: guess f, solve, update.</span></div>
+    <div><span class="nm">Branch loss</span>\[ h = \left(f\frac{L}{D} + \sum K\right)\frac{v^2}{2g} \]<span class="wh">K for fittings = f<sub>T</sub>(L<sub>e</sub>/D).</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* ---------- series ---------- */
+  let smode = 'H';
+  const SPRE = {
+    mid: { L1: 1000, D1: 160, E1: 2, K1: 0, L2: 1600, D2: 200, E2: 2, K2: 0, L3: 850, D3: 180, E3: 2, K3: 0, sQ: 20, sNu: 1e-6 },
+    midK: { L1: 1000, D1: 160, E1: 2, K1: 0.63, L2: 1600, D2: 200, E2: 2, K2: 0, L3: 850, D3: 180, E3: 2, K3: 1.04, sQ: 20, sNu: 1e-6 },
+    one: { L1: 500, D1: 150, E1: 0.046, K1: 1.5, L2: '', D2: '', E2: '', K2: '', L3: '', D3: '', E3: '', K3: '', sQ: 30, sNu: 1e-6, sH: 10 },
+  };
+  function segsFrom(prefix) { const out = []; for (const i of [1, 2, 3]) { const L = num('#L' + i), D = num('#D' + i), E = num('#E' + i), K = num('#K' + i); if (L >= 0 && D > 0) out.push({ i, L, D: D / 1000, eps: (E >= 0 ? E : 0) / 1000, K: K >= 0 ? K : 0 }); } return out; }
+  function series() {
+    $('#sQf').hidden = smode !== 'H'; $('#sHf').hidden = smode !== 'Q';
+    const segs = segsFrom(), nu = num('#sNu');
+    if (!segs.length || !(nu > 0)) { $('#sWork').textContent = 'Enter at least one pipe with a length and diameter.'; return; }
+    let r, Q;
+    if (smode === 'H') { Q = num('#sQ') / 1000; if (!(Q > 0)) return; r = C.seriesLoss(segs, Q, nu, 9.81); $('#sOutL').innerHTML = 'H = Σh<sub>L</sub>'; $('#sOut').textContent = `${f(r.h, 4)} m`; }
+    else { const H = num('#sH'); if (!(H > 0)) return; r = C.seriesFlow(segs, H, nu, 9.81); Q = r.Q; $('#sOutL').innerHTML = 'Flow rate Q'; $('#sOut').textContent = `${f(Q * 1000, 4)} L/s`; }
+    $('#sPer').textContent = r.parts.map((p) => f(p.h, 3)).join(' + ');
+    $('#sWork').innerHTML = r.parts.map((p, k) => `<div>Pipe ${segs[k].i}: v = ${f(p.v, 3)} m/s, N_R = ${f(p.Re, 3)}, ε/D = ${f(segs[k].eps / segs[k].D, 3)}, f = ${f(p.f, 3)} → h = (${f(p.f, 3)}·${f(segs[k].L / segs[k].D, 4)} + ${segs[k].K})·${f(p.hv, 3)} = ${f(p.h, 4)} m</div>`).join('') + (smode === 'Q' ? `<div>Class II: the solver adjusts Q until Σh_L equals H (it re-evaluates every f each time).</div>` : '');
+    // drawing
+    const s = $('#sSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const Htot = r.h, top = 50, bot = 200, x0 = 110, x1 = 530, Ltot = segs.reduce((a, b) => a + b.L, 0) || 1;
+    el('rect', { x: 10, y: top, width: x0 - 10, height: 70, class: 'fl-water', 'fill-opacity': 0.35 }, s);
+    el('rect', { x: x1, y: bot, width: 620 - x1, height: 50, class: 'fl-water', 'fill-opacity': 0.35 }, s);
+    el('line', { x1: 10, x2: x0, y1: top, y2: top, class: 'st-water', 'stroke-width': 2 }, s); el('line', { x1: x1, x2: 620, y1: bot, y2: bot, class: 'st-water', 'stroke-width': 2 }, s);
+    let xc = x0, egl = `M10,${top} L${x0},${top}`, Hc = 0;
+    const yP = (x) => top + 60 + (x - x0) / (x1 - x0) * (bot + 20 - top - 60);
+    segs.forEach((sg, k) => {
+      const w = (x1 - x0) * sg.L / Ltot, t = Math.max(4, Math.min(14, sg.D * 60));
+      el('line', { x1: xc, x2: xc + w, y1: yP(xc), y2: yP(xc + w), class: 'st-ink2', 'stroke-width': t, opacity: 0.4 }, s);
+      text(s, xc + w / 2, yP(xc + w / 2) + 22, `${sg.L} m · ${sg.D * 1000} mm`, { 'font-size': 11.5, 'text-anchor': 'middle' });
+      Hc += r.parts[k].h; const yE = top + (bot - top) * Hc / Htot; egl += ` L${xc + w},${yE}`;
+      text(s, xc + w / 2 + 18, top + (bot - top) * (Hc - r.parts[k].h / 2) / Htot - 10, `−${f(r.parts[k].h, 3)} m`, { 'font-size': 12, 'text-anchor': 'middle', class: 'fl-dye' });
+      xc += w;
+    });
+    egl += ` L620,${bot}`;
+    el('path', { d: egl, fill: 'none', class: 'st-dye', 'stroke-width': 2 }, s);
+    el('line', { x1: 600, x2: 600, y1: top, y2: bot, class: 'st-ink', 'stroke-width': 1.2, 'marker-end': FM.arrowDef(s, 'fl-ink', 'sHa'), 'marker-start': FM.arrowDef(s, 'fl-ink', 'sHb') }, s);
+    el('line', { x1: x0, x2: 620, y1: top, y2: top, class: 'st-rule', 'stroke-dasharray': '4 4' }, s);
+    text(s, 594, (top + bot) / 2, `H = ${f(Htot, 3)} m`, { 'font-size': 13, 'text-anchor': 'end', class: 'svg-ink' });
+    text(s, 14, 30, 'energy grade line (red) falls by each pipe’s loss', { 'font-size': 12, class: 'fl-dye' });
+  }
+  segmented($('#sMode'), (v) => { smode = v; if (v === 'Q') { const segs = segsFrom(); const Q = num('#sQ') / 1000; if (segs.length && Q > 0) $('#sH').value = +C.seriesLoss(segs, Q, num('#sNu'), 9.81).h.toFixed(2); } series(); });
+  $$('[data-p]').forEach((b) => b.addEventListener('click', () => { FM.setVals(SPRE[b.dataset.p]); series(); }));
+  onInputs('#sIn', series); onInputs('#sFields', series); series();
+
+  /* ---------- parallel ---------- */
+  let psys = 'US';
+  const QPRE = {
+    e121: { sys: 'US', a: [0, 2.067, 1.5e-4, 7.804], b: [20, 1.380, 1.5e-4, 8.40], c: ['', '', '', ''], Q: 100, nu: 1.21e-5, g: 62.4, note: 'Mott Ex 12.1: branch a K = 2(0.019)(8) + 7.5; branch b K = 2(0.021)(30) + 0.021(340) for the fittings, plus its 20 ft of pipe.' },
+    close: { sys: 'US', a: [0, 2.067, 1.5e-4, 7.804], b: [20, 1.380, 1.5e-4, 1.26 + 0.021 * 340 * 4], c: ['', '', '', ''], Q: 100, nu: 1.21e-5, g: 62.4, note: 'Throttling the bypass: globe-valve K raised four-fold (a rough stand-in for partly closed). Branch a picks up flow and the shared loss rises.' },
+    three: { sys: 'SI', a: [100, 100, 0.046, 0], b: [100, 100, 0.046, 0], c: [100, 100, 0.046, 0], Q: 60, nu: 1e-6, g: 9.81, note: 'Three identical branches split the flow evenly: each carries a third.' },
+  };
+  function pLabels() { const us = psys === 'US'; $('#pLh').textContent = `L (${us ? 'ft' : 'm'})`; $('#pDh').textContent = `ID (${us ? 'in' : 'mm'})`; $('#pEh').textContent = `ε (${us ? 'ft' : 'mm'})`; $('#pQL').innerHTML = `Total flow Q <span class="unit">${us ? 'gal/min' : 'L/s'}</span>`; $('#pNuL').innerHTML = `Kinematic viscosity ν <span class="unit">${us ? 'ft²/s' : 'm²/s'}</span>`; $('#pGL').innerHTML = `Specific weight γ <span class="unit">${us ? 'lb/ft³' : 'kN/m³'}</span>`; }
+  function par() {
+    const us = psys === 'US', br = [];
+    for (const k of ['a', 'b', 'c']) { const L = num('#pL' + k), D = num('#pD' + k), E = num('#pE' + k), K = num('#pK' + k); if (L >= 0 && D > 0) br.push({ name: k, L, D: us ? D / 12 : D / 1000, eps: E >= 0 ? (us ? E : E / 1000) : 0, K: K >= 0 ? K : 0 }); }
+    const Q = us ? num('#pQ') / 449 : num('#pQ') / 1000, nu = num('#pNu'), g = num('#pG'), grav = us ? 32.2 : 9.81;
+    if (br.length < 1 || !(Q > 0 && nu > 0)) return;
+    const r = C.parallel(br, Q, nu, grav), LU = us ? 'ft' : 'm', qU = (q) => us ? `${f(q * 449, 4)} gal/min` : `${f(q * 1000, 4)} L/s`;
+    $('#pH').textContent = `${f(r.h, 4)} ${LU}`; $('#pDp').textContent = us ? `${f(g * r.h / 144, 4)} psi` : `${f(g * r.h, 4)} kPa`;
+    $('#pWork').innerHTML = r.flows.map((x, i) => `<div>Branch ${br[i].name}: Q = ${qU(x.Q)} (${f(100 * x.Q / Q, 3)} %), v = ${f(x.v, 3)} ${LU}/s, N_R = ${f(x.Re, 3)}, f = ${f(x.f, 3)}, h = (${f(x.f, 3)}·${f(br[i].L / br[i].D, 4)} + ${f(br[i].K, 4)})·${f(x.hv, 4)} = ${f(x.h, 4)} ${LU}</div>`).join('');
+    const p = FM.plot($('#pSvg'), { W: 380, H: 200, m: { l: 48, r: 12, t: 12, b: 36 }, x: { min: 0, max: br.length, ticks: [], label: 'branch' }, y: { min: 0, max: 100, label: '% of Q', ticks: [0, 25, 50, 75, 100] } });
+    r.flows.forEach((x, i) => { const pc = 100 * x.Q / Q; el('rect', { x: p.sx(i + 0.2), y: p.sy(pc), width: p.sx(0.6) - p.sx(0), height: p.sy(0) - p.sy(pc), class: 'fl-water', 'fill-opacity': 0.75 }, p.g); text(p.axes, p.sx(i + 0.5), 186, br[i].name, { 'text-anchor': 'middle', 'font-size': 12 }); text(p.g, p.sx(i + 0.5), p.sy(pc) - 5, `${f(pc, 3)} %`, { 'text-anchor': 'middle', 'font-size': 11.5, class: 'svg-ink' }); });
+  }
+  $$('[data-q]').forEach((b) => b.addEventListener('click', () => { const v = QPRE[b.dataset.q]; psys = v.sys; $$('#pSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === psys))); ['a', 'b', 'c'].forEach((k) => ['L', 'D', 'E', 'K'].forEach((q, j) => ($('#p' + q + k).value = typeof v[k][j] === 'number' ? +v[k][j].toPrecision(6) : v[k][j]))); $('#pQ').value = v.Q; $('#pNu').value = v.nu; $('#pG').value = v.g; $('#pNote').textContent = v.note; pLabels(); par(); }));
+  segmented($('#pSys'), (v) => { psys = v; $('#pNote').textContent = 'Units changed: re-enter the values in the new units, or pick a preset.'; pLabels(); par(); });
+  onInputs('#pIn', par); onInputs('#pFields', par); pLabels(); par();
+})();
+</script>

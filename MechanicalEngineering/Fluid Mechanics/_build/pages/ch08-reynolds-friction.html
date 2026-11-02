@@ -1,0 +1,1054 @@
+<!--title: Reynolds Number and Head Loss (Ch 8)-->
+<!--short: Ch 8 Reynolds & friction-->
+<!--eyebrow: Weeks 6–7 · Chapter 8-->
+<!--desc: Lecture companion for Mott Chapter 8: laminar and turbulent flow, the Reynolds number, deriving the Darcy equation, the laminar 64/N_R result, the Moody diagram and Colebrook equation, and pump problems with friction.-->
+  <header class="hero">
+    <p class="eyebrow">Weeks 6–7 · Mott Chapter 8 (Reynolds Number, Energy Losses Due to Friction) · Slide deck CH 8</p>
+    <h1>Reynolds Number <span class="amp">&amp;</span> Head Loss</h1>
+    <p class="lede">Chapter 8 comes down to two ideas. The Reynolds number tells you whether flow in a pipe is smooth or chaotic. The Darcy equation, \(h_L = f\,\frac{L}{D}\,\frac{v^2}{2g}\), tells you how much energy friction takes, and the Reynolds number decides which \(f\) goes into it.</p>
+    <nav class="toc-inline" aria-label="Sections">
+      <a href="#path">Solution path</a><a href="#reynolds">Reynolds number</a><a href="#derive">Deriving h<sub>L</sub></a><a href="#laminar">Laminar case</a><a href="#moody">Friction factor</a><a href="#pump">Pump problems</a><a href="#examples">Slide examples</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+    </nav>
+    <div class="glass">
+      <div class="glass-top">
+        <span class="eyebrow">Reynolds' dye experiment (schematic)</span>
+        <span class="eyebrow" id="pipeHint">Drag the slider</span>
+      </div>
+      <canvas id="pipeCanvas" aria-label="Animated dye streak in a pipe. It stays a thin line in laminar flow and breaks up and mixes in turbulent flow."></canvas>
+      <div class="glass-ctl">
+        <div class="re-slider">
+          <label for="heroRe"><span><i>N</i><sub>R</sub> in the pipe</span><span class="re-big" id="heroReVal">1,000</span></label>
+          <input type="range" id="heroRe" min="0" max="1000" step="1" value="465">
+          <div class="scale" aria-hidden="true"><span>10</span><span>100</span><span>1,000</span><span>10,000</span><span>100,000</span></div>
+          <div class="chips" role="group" aria-label="Presets">
+            <button type="button" class="chip" data-re="708">Ex 8.1 glycerin · 708</button>
+            <button type="button" class="chip" data-re="3000">Critical zone · 3,000</button>
+            <button type="button" class="chip" data-re="44000">Fertilizer hose · 44,000</button>
+            <button type="button" class="chip" data-re="170000">Fox exercise · 1.7×10⁵</button>
+          </div>
+        </div>
+        <div class="hero-read" id="heroRead" aria-live="polite"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Sections">
+      <p class="eyebrow">Contents</p>
+      <ol>
+        <li><a href="#path">Solution path</a></li>
+        <li><a href="#reynolds">Reynolds number</a></li>
+        <li><a href="#derive">Deriving h<sub>L</sub></a></li>
+        <li><a href="#laminar">Laminar case</a></li>
+        <li><a href="#moody">Friction factor</a></li>
+        <li><a href="#pump">Pump problems</a></li>
+        <li><a href="#examples">Slide examples</a></li>
+        <li><a href="#check">Check yourself</a></li>
+        <li><a href="#sheet">Formula sheet</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <!-- PATH -->
+      <section id="path">
+        <div class="sec-head">
+          <p class="eyebrow">Every problem in the chapter</p>
+          <h2>The solution path</h2>
+          <p class="dek">Almost every Chapter 8 problem runs these six steps in order. Steps 2 to 4 are the new material. Steps 5 and 6 are the Chapter 7 energy equation you already know.</p>
+        </div>
+        <ol class="path">
+          <li><span class="n">1</span><b>Velocity</b><span class="eqs">\(v = Q/A\)<br>\(A = \pi D^2/4\)</span><span class="ref">units first</span></li>
+          <li class="key"><span class="n">2</span><b>Reynolds number</b><span class="eqs">\(N_R = \dfrac{vD\rho}{\eta}\)</span><span class="ref">slides 5–12</span></li>
+          <li class="key"><span class="n">3</span><b>Friction factor</b><span class="eqs">laminar: \(64/N_R\)<br>turbulent: Moody</span><span class="ref">slides 20, 24–27, 39</span></li>
+          <li class="key"><span class="n">4</span><b>Head loss</b><span class="eqs">\(h_L = f\frac{L}{D}\frac{v^2}{2g}\)</span><span class="ref">slides 19–20, 24</span></li>
+          <li><span class="n">5</span><b>Energy equation</b><span class="eqs">solve for \(h_A\), \(p\) or \(z\)</span><span class="ref">slides 28–31</span></li>
+          <li><span class="n">6</span><b>Power</b><span class="eqs">\(P_A = h_A\,\gamma\,Q\)</span><span class="ref">slides 49–55</span></li>
+        </ol>
+      </section>
+
+      <!-- REYNOLDS -->
+      <section id="reynolds">
+        <div class="sec-head">
+          <p class="eyebrow">Slides 3–14</p>
+          <h2>The Reynolds number</h2>
+          <p class="dek">One dimensionless number that compares the fluid's momentum with its viscosity. It predicts whether the flow is laminar or turbulent.</p>
+        </div>
+        <div class="read">
+          <h3>Where the formula comes from</h3>
+          <p>A moving fluid carries momentum, and that momentum tries to keep each parcel going its own way. Viscosity drags neighbouring layers together and damps out disturbances. Turbulence starts when momentum overwhelms viscosity (slide 4). You can size each effect as a stress:</p>
+          \[ \underbrace{\rho v^2}_{\text{inertial stress}} \qquad \text{vs.} \qquad \underbrace{\eta\,\frac{v}{D}}_{\text{viscous stress } \tau = \eta\,dv/dy} \]
+          <p>Divide one by the other and the Reynolds number falls out:</p>
+          \[ N_R = \frac{\rho v^2}{\eta v / D} = \frac{v D \rho}{\eta} = \frac{v D}{\nu}, \qquad \nu = \frac{\eta}{\rho} \]
+          <p>Here \(\eta\) is the dynamic viscosity (Pa·s) and \(\nu\) is the kinematic viscosity (m²/s). All the units cancel: \(\frac{\text{m}}{\text{s}}\cdot\text{m}\cdot\frac{\text{kg}}{\text{m}^3}\cdot\frac{\text{m·s}}{\text{kg}} = 1\). That is why two pipes with the same \(N_R\) behave alike even if the fluids, sizes and speeds differ (slide 7).</p>
+          <h3>The thresholds for pipe flow</h3>
+          <p>Your course uses these limits (slide 10):</p>
+        </div>
+        <div class="traps">
+          <div class="trap" style="background:transparent;border:1.5px solid var(--water)"><span class="pill lam">Laminar</span><p>\(N_R &lt; 2000\). Smooth layers, parabolic velocity profile, and \(f = 64/N_R\) exactly.</p></div>
+          <div class="trap" style="background:transparent;border:1.5px solid var(--amber)"><span class="pill crit">Critical zone</span><p>\(2000 \le N_R \le 4000\). The flow can flip either way, so \(f\) can't be predicted. The course skips this zone (slide 24).</p></div>
+          <div class="trap" style="background:transparent;border:1.5px solid var(--dye)"><span class="pill turb">Turbulent</span><p>\(N_R &gt; 4000\). Eddies mix the flow. \(f\) depends on \(N_R\) and the pipe roughness \(\varepsilon/D\).</p></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h3>Reynolds number calculator</h3><span class="eyebrow">SI units</span></div>
+          <div class="panel-b">
+            <div class="fields">
+              <div class="field"><label for="reFluid">Fluid</label>
+                <select id="reFluid">
+                  <option value="water">Water, 20 °C</option>
+                  <option value="glycerin" selected>Glycerin, 25 °C (Ex 8.1)</option>
+                  <option value="crude">Crude oil, 140 °F (Alaska)</option>
+                  <option value="fert">Fertilizer, SG 1.1 (Prob 8.36)</option>
+                  <option value="honey">Honey (approx.)</option>
+                  <option value="air">Air, 20 °C</option>
+                </select>
+              </div>
+              <div class="field"><label for="reV">Velocity <var>v</var> <span class="unit">m/s</span></label><input id="reV" type="number" inputmode="decimal" step="any" value="3.6"></div>
+              <div class="field"><label for="reD">Diameter <var>D</var> <span class="unit">mm</span></label><input id="reD" type="number" inputmode="decimal" step="any" value="150"></div>
+              <div class="field"><label for="reRho">Density <var>ρ</var> <span class="unit">kg/m³</span></label><input id="reRho" type="number" inputmode="decimal" step="any" value="1258"></div>
+              <div class="field"><label for="reEta">Viscosity <var>η</var> <span class="unit">Pa·s</span></label><input id="reEta" type="number" inputmode="decimal" step="any" value="0.96"></div>
+            </div>
+            <div class="out">
+              <div class="stat hot"><span class="lbl">Reynolds number N<sub>R</sub></span><span class="val" id="reOut">708</span></div>
+              <div class="stat"><span class="lbl">Flow regime</span><span class="val" id="reReg" style="font-size:16px;padding-top:6px"></span></div>
+              <div class="stat"><span class="lbl">Kinematic viscosity ν = η/ρ</span><span class="val" id="reNu" style="font-size:17px"></span></div>
+            </div>
+            <div class="workline" id="reWork"></div>
+            <p class="err" id="reErr" hidden></p>
+            <figure>
+              <div class="scroll-x"><svg id="strip" viewBox="0 0 780 200" style="width:100%;min-width:600px;display:block" role="img" aria-label="Log scale of Reynolds number showing the chapter's examples and your value"></svg></div>
+              <figcaption>Where the chapter's problems sit on the Reynolds scale. The pink marker is your calculator value. Honey in a straw is a rough estimate for scale.</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="traps">
+          <div class="trap"><span class="tag">Trap</span><p>Use the inside <b>diameter</b>, not the radius, and convert mm to m before you multiply.</p></div>
+          <div class="trap"><span class="tag">Trap</span><p>Mott writes velocity as \(\upsilon\) (upsilon). It looks almost like \(\nu\) (nu), the kinematic viscosity. \(N_R = \upsilon D/\nu\) uses both.</p></div>
+          <div class="trap"><span class="tag">Trap</span><p>\(\eta\) goes with \(\rho\), and \(\nu\) goes alone. Using \(\nu\) with \(\rho\) gives an answer off by a factor of about 1000 for water.</p></div>
+          <div class="trap"><span class="tag">Trap</span><p>In US units, \(\rho\) is in slugs/ft³ (water ≈ 1.94) and \(\eta\) in lb·s/ft². Using lbm/ft³ is off by a factor of 32.2.</p></div>
+          <div class="trap"><span class="tag">Trap</span><p>Compare \(N_R\) values only between flows with the same shape (slide 7). Flow past a sphere goes turbulent at a very different \(N_R\) than flow in a pipe.</p></div>
+          <div class="trap"><span class="tag">Slide note</span><p>On slide 24 both vertical lines read "N<sub>R</sub> = 2,000". The right-hand line should be 4,000, the start of turbulent flow.</p></div>
+        </div>
+      </section>
+
+      <!-- DERIVATION -->
+      <section id="derive">
+        <div class="sec-head">
+          <p class="eyebrow">The main event · slides 19–20, 24</p>
+          <h2>Deriving h<sub>L</sub> = f (L/D)(v²/2g)</h2>
+          <p class="dek">The Darcy equation holds for laminar and turbulent flow alike. It comes from a force balance, the energy equation and one definition. The Reynolds number enters through that definition.</p>
+        </div>
+
+        <figure class="panel" style="padding:12px 12px 8px">
+          <div class="scroll-x">
+          <svg viewBox="0 0 660 236" style="width:100%;min-width:520px;display:block" role="img" aria-label="A slug of fluid of length L and diameter D in a horizontal pipe. Pressure p1 times A pushes on the left face, p2 times A on the right face, and wall shear stress tau w drags along the side.">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="svg-ink"/></marker>
+              <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fl-dye"/></marker>
+              <marker id="ahw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fl-water"/></marker>
+            </defs>
+            <rect x="20" y="56" width="560" height="120" class="fl-wash"/>
+            <rect x="170" y="56" width="300" height="120" class="fl-water" fill-opacity=".14"/>
+            <line x1="20" y1="56" x2="580" y2="56" class="st-ink" stroke-width="2.5"/>
+            <line x1="20" y1="176" x2="580" y2="176" class="st-ink" stroke-width="2.5"/>
+            <line x1="170" y1="56" x2="170" y2="176" class="st-ink2" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <line x1="470" y1="56" x2="470" y2="176" class="st-ink2" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <line x1="40" y1="32" x2="110" y2="32" class="st-ink2" stroke-width="1.5" marker-end="url(#ah)"/>
+            <text x="118" y="36" font-size="13" class="svg-ink2">flow</text>
+            <line x1="100" y1="116" x2="166" y2="116" class="st-water" stroke-width="3" marker-end="url(#ahw)"/>
+            <text x="98" y="104" font-size="15" class="fl-water" text-anchor="end">p₁A</text>
+            <line x1="540" y1="116" x2="474" y2="116" class="st-water" stroke-width="3" marker-end="url(#ahw)"/>
+            <text x="544" y="104" font-size="15" class="fl-water">p₂A</text>
+            <g class="st-dye" stroke-width="2.2">
+              <line x1="250" y1="64" x2="210" y2="64" marker-end="url(#ahd)"/>
+              <line x1="350" y1="64" x2="310" y2="64" marker-end="url(#ahd)"/>
+              <line x1="450" y1="64" x2="410" y2="64" marker-end="url(#ahd)"/>
+              <line x1="250" y1="168" x2="210" y2="168" marker-end="url(#ahd)"/>
+              <line x1="350" y1="168" x2="310" y2="168" marker-end="url(#ahd)"/>
+              <line x1="450" y1="168" x2="410" y2="168" marker-end="url(#ahd)"/>
+            </g>
+            <text x="320" y="46" font-size="14" class="fl-dye" text-anchor="middle">τ<tspan dy="4" font-size="11">w</tspan><tspan dy="-4"> acts on wall area πDL</tspan></text>
+            <text x="320" y="121" font-size="14" class="svg-ink" text-anchor="middle">fluid slug, end area A = πD²/4</text>
+            <line x1="170" y1="200" x2="470" y2="200" class="st-ink" stroke-width="1.2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+            <text x="320" y="222" font-size="15" class="svg-ink" text-anchor="middle">L</text>
+            <line x1="610" y1="58" x2="610" y2="174" class="st-ink" stroke-width="1.2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+            <text x="622" y="121" font-size="15" class="svg-ink">D</text>
+          </svg>
+          </div>
+          <figcaption style="padding:0 4px">The control volume for the whole derivation. Pressure pushes on the two end faces. The wall drags on the side. The flow is steady and fully developed, so these forces balance.</figcaption>
+        </figure>
+
+        <ol class="steps">
+          <li><span class="sn">1</span><div class="sb">
+            <h4>Balance the forces on the slug</h4>
+            <p>The slug isn't accelerating, so the forces along the pipe sum to zero. Pressure acts on the end area \(\pi D^2/4\). Wall shear stress \(\tau_w\) acts on the side area \(\pi D L\) and points against the flow.</p>
+            \[ p_1\,\frac{\pi D^2}{4} \;-\; p_2\,\frac{\pi D^2}{4} \;-\; \class{k-tw}{\tau_w}\,(\pi D L) = 0 \]
+          </div></li>
+          <li><span class="sn">2</span><div class="sb">
+            <h4>Solve for the pressure drop</h4>
+            \[ \Delta p = p_1 - p_2 = \frac{4\,\class{k-tw}{\tau_w}\,L}{D} \]
+            <p class="why">This already shows the shape of the answer. A longer pipe has more wall to drag on, so Δp grows with L. A wider pipe has more cross-section to push on per unit of wall, so Δp falls with D.</p>
+          </div></li>
+          <li><span class="sn">3</span><div class="sb">
+            <h4>Turn pressure into head with the energy equation</h4>
+            \[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} + h_L \]
+            <p>The pipe is horizontal, so \(z_1 = z_2\). The diameter is constant, so continuity gives \(v_1 = v_2\). Everything cancels except the pressure:</p>
+            \[ h_L = \frac{p_1 - p_2}{\gamma} = \frac{4\,\class{k-tw}{\tau_w}\,L}{\gamma D} \]
+            <p class="why">The energy friction takes shows up as a pressure drop. This is why the slides use \(h_L = \Delta p/\gamma\) on slide 19.</p>
+          </div></li>
+          <li><span class="sn">4</span><div class="sb">
+            <h4>Ask what τ<sub>w</sub> depends on</h4>
+            <p>The wall shear can depend on the fluid (\(\rho\), \(\eta\)), the flow (\(v\)) and the pipe (\(D\), roughness \(\varepsilon\)). Dimensional analysis groups those six quantities into three dimensionless ones:</p>
+            \[ \frac{\class{k-tw}{\tau_w}}{\rho v^2} = \phi\!\left(\frac{vD\rho}{\eta},\ \frac{\varepsilon}{D}\right) = \phi\!\left(N_R,\ \frac{\varepsilon}{D}\right) \]
+            <p class="why">This is the step where the Reynolds number enters head loss. Wall friction, in dimensionless form, is a function of \(N_R\) and relative roughness only. That's what the Moody diagram plots.</p>
+          </div></li>
+          <li><span class="sn">5</span><div class="sb">
+            <h4>Define the friction factor</h4>
+            \[ \class{k-f}{f} \equiv \frac{8\,\class{k-tw}{\tau_w}}{\rho v^2} \qquad\Longrightarrow\qquad \class{k-tw}{\tau_w} = \frac{\class{k-f}{f}}{8}\,\rho v^2 \]
+            <p class="why">\(f\) is the wall shear stress in dimensionless form, so \(f = \phi(N_R,\ \varepsilon/D)\) as well. The 8 is a convention. It is chosen so the final formula comes out with \(v^2/2g\) in it.</p>
+          </div></li>
+          <li class="final"><span class="sn">6</span><div class="sb">
+            <h4>Substitute, using γ = ρg</h4>
+            \[ h_L = \frac{4L}{\rho g D}\cdot\frac{\class{k-f}{f}}{8}\,\rho v^2 \]
+            <div class="boxed">\[ h_L = \class{k-f}{f}\;\class{k-ld}{\frac{L}{D}}\;\class{k-vh}{\frac{v^2}{2g}} \]</div>
+            <p class="why">This is the Darcy equation. The density cancels, the 4 and the 8 leave a ½, and \(v^2/(2g)\) appears.</p>
+          </div></li>
+        </ol>
+
+        <div class="read"><h3>Reading the result</h3></div>
+        <div class="anatomy">
+          <div class="k-f"><h4>f · friction factor</h4><p>How hard the wall drags, with no units. It depends only on \(N_R\) and \(\varepsilon/D\). In laminar flow \(f = 64/N_R\). In turbulent flow it comes from the Moody diagram or the Colebrook equation.</p></div>
+          <div class="k-ld"><h4>L/D · length in diameters</h4><p>How many diameters long the pipe is. The Fox exercise pipe, 100 m long and 75 mm across, is 1,333 diameters long.</p></div>
+          <div class="k-vh"><h4>v²/2g · velocity head</h4><p>The fluid's kinetic energy per unit weight, in metres or feet. Head loss counts how many velocity heads friction takes.</p></div>
+        </div>
+        <div class="read">
+          <p>Put the three together for the Fox exercise: \(f\,L/D = 0.0162 \times 1333 = 21.6\). Friction takes 21.6 velocity heads, and each velocity head is \(2.26^2/(2 \times 9.81) = 0.261\) m. So \(h_L = 21.6 \times 0.261 = 5.6\) m.</p>
+          <p>The same "count of velocity heads" idea returns in Chapter 10. Valves and fittings get a loss \(K\,v^2/2g\), and a straight pipe is the special case \(K = f L/D\).</p>
+        </div>
+      </section>
+
+      <!-- LAMINAR -->
+      <section id="laminar">
+        <div class="sec-head">
+          <p class="eyebrow">Slides 18–21</p>
+          <h2>The laminar case: where 64/N<sub>R</sub> comes from</h2>
+          <p class="dek">In laminar flow you can solve for τ<sub>w</sub> exactly, so f needs no chart. This is the derivation on slide 19, written out in full.</p>
+        </div>
+
+        <div class="two">
+          <figure class="panel" style="padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="seg" role="group" aria-label="Velocity profile">
+                <button type="button" id="profLam" aria-pressed="true">Laminar</button>
+                <button type="button" id="profTurb" aria-pressed="false">Turbulent</button>
+              </div>
+              <span class="mono small" id="profRead"></span>
+            </div>
+            <svg id="profile" viewBox="0 0 560 250" style="width:100%;display:block" role="img" aria-label="Velocity profile across the pipe"></svg>
+            <div class="re-slider" style="padding-top:0">
+              <label for="rSlider"><span>Radial position <i>r/R</i></span><span class="mono" id="rVal">0.50</span></label>
+              <input type="range" id="rSlider" min="0" max="100" step="1" value="50">
+            </div>
+            <figcaption id="profCap"></figcaption>
+          </figure>
+
+          <ol class="steps">
+            <li><span class="sn">1</span><div class="sb">
+              <h4>Balance forces on an inner cylinder</h4>
+              <p>Use the slide's force balance, but on a fluid cylinder of radius \(r\) instead of the whole pipe. Write \(\Delta p = p_1 - p_2\) for the pressure drop.</p>
+              \[ \Delta p\,\pi r^2 = -\,\eta\,\frac{dv}{dr}\,2\pi r L \]
+              <p class="why">\(dv/dr\) is negative (velocity falls toward the wall), so the minus sign keeps both sides positive. The slide writes \(-\Delta p\) with \(\Delta p = p_2 - p_1\). It is the same equation.</p>
+            </div></li>
+            <li><span class="sn">2</span><div class="sb">
+              <h4>Integrate and apply v = 0 at the wall</h4>
+              \[ \frac{dv}{dr} = -\frac{\Delta p\,r}{2\eta L} \;\Rightarrow\; v = -\frac{\Delta p\,r^2}{4\eta L} + C \]
+              \[ v(R) = 0 \;\Rightarrow\; v(r) = \frac{\Delta p}{4\eta L}\left(R^2 - r^2\right) \]
+              <p class="why">A parabola, fastest on the centreline: \(v_{max} = \Delta p R^2/(4\eta L)\).</p>
+            </div></li>
+            <li><span class="sn">3</span><div class="sb">
+              <h4>Average over the cross-section</h4>
+              \[ V = \frac{1}{\pi R^2}\int_0^R v\,(2\pi r\,dr) = \frac{\Delta p\,R^2}{8\eta L} = \frac{v_{max}}{2} \]
+            </div></li>
+            <li><span class="sn">4</span><div class="sb">
+              <h4>Solve for Δp, then head loss</h4>
+              \[ \Delta p = \frac{8\eta L V}{R^2} = \frac{32\,\eta L V}{D^2} \;\Rightarrow\; h_L = \frac{\Delta p}{\gamma} = \frac{32\,\eta L V}{\gamma D^2} \]
+              <p class="why">This is the Hagen–Poiseuille equation. With \(V = 4Q/(\pi D^2)\) it becomes \(h_L = 128\,\eta L Q/(\pi\gamma D^4)\).</p>
+            </div></li>
+            <li class="final"><span class="sn">5</span><div class="sb">
+              <h4>Rewrite it in Darcy form</h4>
+              \[ \frac{32\,\eta L V}{\rho g D^2} = \underbrace{\frac{64\,\eta}{\rho V D}}_{\class{k-f}{64/N_R}}\cdot\class{k-ld}{\frac{L}{D}}\cdot\class{k-vh}{\frac{V^2}{2g}} \]
+              <div class="boxed">\[ \class{k-f}{f_{\text{laminar}} = \frac{64}{N_R}} \]</div>
+              <p class="why">Check it by multiplying out: \(\frac{64\eta}{\rho V D}\cdot\frac{L}{D}\cdot\frac{V^2}{2g} = \frac{32\eta L V}{\rho g D^2}\). Same result.</p>
+            </div></li>
+          </ol>
+        </div>
+
+        <div class="read">
+          <h3>Why turbulent flow has no formula like this</h3>
+          <p>In turbulent flow, eddies carry momentum across the pipe. This adds the Reynolds stress on top of viscous stress (slide 24), and nobody can solve for it by hand. The profile also gets flatter in the core and much steeper at the wall, which raises \(\tau_w\). So \(f\) for turbulent flow comes from experiments: the Moody diagram, or the Colebrook equation fitted to it.</p>
+          <h3>How h<sub>L</sub> scales</h3>
+          <p>The two regimes respond very differently to the same change. This table is the fastest way to answer "what happens if…" questions, like the honey straw on slide 21.</p>
+        </div>
+        <div class="scroll-x" style="max-width:820px">
+          <table class="tbl">
+            <thead><tr><th>Change</th><th class="num">Laminar · f = 64/N<sub>R</sub></th><th class="num">Turbulent, fully rough · f constant</th></tr></thead>
+            <tbody>
+              <tr><td>Double <i>v</i></td><td class="num">h<sub>L</sub> × 2</td><td class="num">h<sub>L</sub> × 4</td></tr>
+              <tr><td>Double <i>L</i></td><td class="num">× 2</td><td class="num">× 2</td></tr>
+              <tr><td>Double <i>D</i>, same <i>v</i></td><td class="num">× ¼</td><td class="num">× ½</td></tr>
+              <tr><td>Double <i>D</i>, same <i>Q</i></td><td class="num">× 1/16</td><td class="num">× 1/32</td></tr>
+              <tr><td>Double viscosity <i>η</i></td><td class="num">× 2</td><td class="num">no change</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="trap"><span class="tag">Puzzle</span><p>In laminar flow, \(f = 64/N_R\) <i>falls</i> as velocity rises, yet \(h_L\) <i>rises</i>. No contradiction: \(f \propto 1/v\) while \(v^2/2g \propto v^2\), so \(h_L \propto v\).</p></div>
+      </section>
+
+      <!-- MOODY -->
+      <section id="moody">
+        <div class="sec-head">
+          <p class="eyebrow">Slides 24–27, 39–43</p>
+          <h2>The friction factor in turbulent flow</h2>
+          <p class="dek">The Moody diagram plots step 4 of the derivation: f as a function of N<sub>R</sub> and relative roughness. Enter a case and the page finds f the way you would by hand, then checks it with the Colebrook equation.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h3>Moody diagram</h3>
+            <div class="seg" role="group" aria-label="Roughness axis">
+              <button type="button" id="axEps" aria-pressed="true">ε/D (slide 25)</button>
+              <button type="button" id="axDe" aria-pressed="false">D/ε (Mott, slide 27)</button>
+            </div>
+          </div>
+          <div class="panel-b">
+            <div class="fields">
+              <div class="field"><label for="mRe">Reynolds number <var>N</var><sub>R</sub></label><input id="mRe" type="text" inputmode="decimal" value="1.7e5"></div>
+              <div class="field"><label for="mMat">Pipe material</label>
+                <select id="mMat">
+                  <option value="0">Smooth pipe · ε = 0</option>
+                  <option value="0.3">Plastic, PVC · 0.3 µm</option>
+                  <option value="1.5">Drawn tubing, copper · 1.5 µm</option>
+                  <option value="46">Commercial steel · 46 µm</option>
+                  <option value="75">Concrete (slide 33) · 75 µm</option>
+                  <option value="150">Galvanized iron · 150 µm</option>
+                  <option value="1800">Riveted steel · 1800 µm</option>
+                  <option value="custom">Custom ε</option>
+                </select>
+              </div>
+              <div class="field"><label for="mEps">Roughness <var>ε</var> <span class="unit">µm</span></label><input id="mEps" type="number" inputmode="decimal" step="any" value="0"></div>
+              <div class="field"><label for="mD">Diameter <var>D</var> <span class="unit">mm</span></label><input id="mD" type="number" inputmode="decimal" step="any" value="75"></div>
+            </div>
+            <div class="chips" role="group" aria-label="Presets">
+              <button type="button" class="chip" data-m="fox">Fox exercise, smooth</button>
+              <button type="button" class="chip" data-m="concrete">Variation 1, concrete</button>
+              <button type="button" class="chip" data-m="s26">Slide 26: N<sub>R</sub> = 10⁶, D = 50ε</button>
+              <button type="button" class="chip" data-m="alaska">Alaska pipeline</button>
+              <button type="button" class="chip" data-m="glyc">Ex 8.1 (laminar)</button>
+            </div>
+            <p class="err" id="mErr" hidden></p>
+            <div class="out">
+              <div class="stat hot"><span class="lbl">Friction factor f</span><span class="val" id="mF"></span></div>
+              <div class="stat"><span class="lbl">Relative roughness</span><span class="val" id="mRR" style="font-size:16px"></span></div>
+              <div class="stat"><span class="lbl">Regime</span><span class="val" id="mReg" style="font-size:16px;padding-top:6px"></span></div>
+              <div class="stat"><span class="lbl">Explicit check (Swamee–Jain)</span><span class="val" id="mSJ" style="font-size:16px"></span></div>
+            </div>
+            <figure>
+              <div class="scroll-x"><svg id="moodySvg" viewBox="0 0 780 470" style="width:100%;min-width:620px;display:block" role="img" aria-label="Moody diagram with your point marked"></svg></div>
+              <figcaption id="mCap"></figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="read">
+          <h3>Reading the chart by hand</h3>
+          <ol style="margin:0;padding-left:22px;display:grid;gap:6px">
+            <li>Find \(N_R\) on the bottom axis.</li>
+            <li>Find the relative roughness curve on the right axis. Interpolate between curves if needed.</li>
+            <li>Follow that curve left to your \(N_R\), then read \(f\) on the left axis. Both axes are logarithmic, so the gridlines are not evenly spaced.</li>
+          </ol>
+          <p>Right of the dashed line, in complete turbulence, every curve is flat. There \(f\) depends only on roughness, which is why slide 24 says \(f\) "remains rather constant when \(N_R\) is very high".</p>
+        </div>
+        <div class="traps">
+          <div class="trap"><span class="tag">Trap</span><p>The two charts in your slides label roughness the opposite way. Slide 25 uses \(\varepsilon/D\) (small numbers like 0.001). Mott's chart on slide 27 uses \(D/\varepsilon\) (large numbers like 1000). Slide 26 says "D = 50e", which means \(D/\varepsilon = 50\), or \(\varepsilon/D = 0.02\).</p></div>
+          <div class="trap"><span class="tag">Trap</span><p>Roughness only matters in turbulent flow. For \(N_R &lt; 2000\), use \(f = 64/N_R\) whatever the pipe is made of.</p></div>
+        </div>
+
+        <div class="read">
+          <h3>Equations that replace the chart</h3>
+          <p><b>Colebrook</b> (slide 39) is the equation the Moody curves are drawn from. It is implicit, because \(f\) appears on both sides, so you iterate: guess \(f\), compute the right side, repeat until it stops changing.</p>
+          \[ \frac{1}{\sqrt{f}} = -2.0\,\log_{10}\!\left(\frac{\varepsilon/D}{3.7} + \frac{2.51}{N_R\sqrt{f}}\right) \]
+          <p><b>Swamee–Jain</b> is an explicit fit to Colebrook, good to about 1% for \(5000 \le N_R \le 10^8\). It gives \(f\) in one step, which makes it handy on a calculator:</p>
+          \[ f = \frac{0.25}{\left[\log_{10}\!\left(\dfrac{1}{3.7\,(D/\varepsilon)} + \dfrac{5.74}{N_R^{0.9}}\right)\right]^2} \]
+          <p><b>Hazen–Williams</b> (slides 41–43) skips \(f\) entirely: \(v = 0.85\,C_h R^{0.63} s^{0.54}\) in SI, or \(v = 1.32\,C_h R^{0.63} s^{0.54}\) in US units. Here \(R = D/4\) is the hydraulic radius for a full pipe and \(s = h_L/L\). It is empirical, works only for water, and its constants change with the unit system. Typical \(C_h\): PVC 150, copper 130–140, new cast iron 130, concrete 100–140, steel 90–110.</p>
+        </div>
+      </section>
+
+      <!-- PUMP -->
+      <section id="pump">
+        <div class="sec-head">
+          <p class="eyebrow">Slides 28–38</p>
+          <h2>Putting it to work: pump problems</h2>
+          <p class="dek">The slides' main exercise, with its variations, as a live solver. Change any input and every step updates.</p>
+        </div>
+        <div class="read">
+          <p>Slide 30 asks what changes once friction is in the picture. Without friction, the pump only lifts the water: \(h_A = \Delta z\). With friction it must also pay for the head loss: \(h_A = \Delta z + h_L\). The slides solve for the pump's gauge pressure as \(p = \gamma\,(\Delta z + h_L)\). The velocity head at the pump is spent when the water slows down entering the reservoir, so it drops out.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h3>Pipe and pump solver</h3>
+            <div class="seg" role="group" aria-label="What to solve for">
+              <button type="button" id="modeP" aria-pressed="true">Given Q, find pressure</button>
+              <button type="button" id="modeQ" aria-pressed="false">Given pressure, find Q</button>
+            </div>
+          </div>
+          <div class="panel-b">
+            <div class="fields">
+              <div class="field"><label for="pL">Pipe length <var>L</var> <span class="unit">m</span></label><input id="pL" type="number" inputmode="decimal" step="any" value="100"></div>
+              <div class="field"><label for="pZ">Rise <var>Δz</var> <span class="unit">m</span></label><input id="pZ" type="number" inputmode="decimal" step="any" value="10"></div>
+              <div class="field"><label for="pD">Inside diameter <var>D</var> <span class="unit">mm</span></label><input id="pD" type="number" inputmode="decimal" step="any" value="75"></div>
+              <div class="field"><label for="pEps">Roughness <var>ε</var> <span class="unit">µm (0 = smooth)</span></label><input id="pEps" type="number" inputmode="decimal" step="any" value="0"></div>
+              <div class="field" id="fQ"><label for="pQ">Flow rate <var>Q</var> <span class="unit">L/s</span></label><input id="pQ" type="number" inputmode="decimal" step="any" value="10"></div>
+              <div class="field" id="fP" hidden><label for="pP">Pump pressure <var>p</var> <span class="unit">kPa gauge</span></label><input id="pP" type="number" inputmode="decimal" step="any" value="153"></div>
+              <div class="field"><label for="pNu">Kinematic viscosity ν <span class="unit">m²/s</span></label><input id="pNu" type="number" inputmode="decimal" step="any" value="0.000001"></div>
+            </div>
+            <div class="chips" role="group" aria-label="Presets">
+              <button type="button" class="chip" data-p="base">Original (smooth)</button>
+              <button type="button" class="chip" data-p="v1">Variation 1: concrete</button>
+              <button type="button" class="chip" data-p="v3">Variation 3: find Q</button>
+            </div>
+            <p class="err" id="pErr" hidden></p>
+            <div class="scroll-x"><table class="tbl calc" id="pTable"></table></div>
+            <div id="pIter"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXAMPLES -->
+      <section id="examples">
+        <div class="sec-head">
+          <p class="eyebrow">Every worked problem in the slides</p>
+          <h2>Slide examples, solved</h2>
+          <p class="dek">Each one follows the solution path. I re-ran the numbers, and where a slide has a slip, the note says so.</p>
+        </div>
+        <div class="dlist">
+          <details>
+            <summary><span class="t">Example 8.1 · Glycerin in a 150 mm passage</span><span class="s">Slide 12 · Is the flow laminar or turbulent?</span><span class="ans">N<sub>R</sub> = 708, laminar</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>Glycerin at 25 °C (Appendix B): \(\rho = 1258\) kg/m³, \(\eta = 0.960\) Pa·s. \(v = 3.6\) m/s, \(D = 0.15\) m.</li>
+                <li>\(N_R = \dfrac{vD\rho}{\eta} = \dfrac{(3.6)(0.15)(1258)}{0.960} = 708\)</li>
+                <li>708 &lt; 2000, so the flow is laminar. Glycerin's viscosity is about 1000 times water's, which keeps \(N_R\) low even at 3.6 m/s.</li>
+              </ol>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Honey through a straw</span><span class="s">Slide 21 · Four straws, or one straw twice as wide?</span><span class="ans">Wider straw, 4× better</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>Honey is so viscous that the flow is laminar, so use Hagen–Poiseuille: \(h_L = \dfrac{128\,\eta L Q}{\pi\gamma D^4}\).</li>
+                <li>Your suction sets the available head, so \(h_L\) is fixed. Solve for flow: \(Q \propto D^4\).</li>
+                <li>Four original straws: \(4\,Q_0\). One straw with \(2D\): \(2^4\,Q_0 = 16\,Q_0\).</li>
+                <li>The wide straw moves 4 times as much honey as four thin ones.</li>
+              </ol>
+              <p class="note">The \(D^4\) comes from two places: the velocity for a given Δp grows with \(D^2\), and the area grows with \(D^2\) too.</p>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Reading the Moody diagram</span><span class="s">Slide 26 · Find f when N<sub>R</sub> = 10⁶ and D = 50ε</span><span class="ans">f ≈ 0.049</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>\(D/\varepsilon = 50\) means \(\varepsilon/D = 0.02\). Arrow 3 on the slide points at that curve.</li>
+                <li>At \(N_R = 10^6\) you are well right of the dashed line, in complete turbulence, so the curve is flat.</li>
+                <li>Read \(f \approx 0.049\). Colebrook gives 0.0487.</li>
+              </ol>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Fox exercise · Pump into a reservoir 10 m up</span><span class="s">Slides 28–31, 40 · 100 m of smooth 75 mm pipe, Q = 0.01 m³/s</span><span class="ans">p = 153 kPa</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>\(A = \pi(0.075)^2/4 = 4.42\times10^{-3}\) m², so \(v = Q/A = 2.26\) m/s.</li>
+                <li>\(N_R = vD/\nu = (2.26)(0.075)/(1.0\times10^{-6}) = 1.7\times10^5\). Turbulent.</li>
+                <li>Smooth pipe: the Moody diagram gives \(f \approx 0.0162\). Colebrook gives 0.01615.</li>
+                <li>\(h_L = 0.0162 \times \dfrac{100}{0.075} \times \dfrac{2.26^2}{2(9.81)} = 5.62\) m.</li>
+                <li>\(p = \gamma(\Delta z + h_L) = 9810\,(10 + 5.62) = 153\) kPa gauge.</li>
+              </ol>
+              <p class="note">Load it in the <a href="#pump">solver</a> to change any input.</p>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Variation 1 · Same system in concrete pipe</span><span class="s">Slide 33 · ε ≈ 75 µm. Which values change?</span><span class="ans">f, h<sub>L</sub> and p change</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>\(v\) and \(N_R\) don't change. They depend only on \(Q\), \(D\) and the fluid.</li>
+                <li>\(\varepsilon/D = 75\times10^{-6}/0.075 = 0.001\). At \(N_R = 1.7\times10^5\), Colebrook gives \(f = 0.0213\), up from 0.0162.</li>
+                <li>\(h_L = 0.0213 \times 1333 \times 0.261 = 7.40\) m.</li>
+                <li>\(p = 9810\,(10 + 7.40) = 171\) kPa gauge, up from 153.</li>
+              </ol>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Variation 2 · Alaska pipeline pump spacing</span><span class="s">Slide 34 · US units, crude oil SG 0.93, 48 in galvanized pipe</span><span class="ans">L ≈ 632,000 ft (120 mi)</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>\(Q = 1.6\times10^6\ \tfrac{\text{bbl}}{\text{day}} \times 42\ \tfrac{\text{gal}}{\text{bbl}} \div 7.48\ \tfrac{\text{gal}}{\text{ft}^3} \div 86{,}400\ \tfrac{\text{s}}{\text{day}} = 104\) ft³/s.</li>
+                <li>\(A = \pi(4)^2/4 = 12.57\) ft², so \(v = 8.27\) ft/s.</li>
+                <li>\(\rho = 0.93 \times 1.94 = 1.80\) slug/ft³. \(N_R = \dfrac{(1.80)(8.27)(4)}{3.5\times10^{-4}} = 1.7\times10^5\).</li>
+                <li>Galvanized iron, \(\varepsilon = 0.0005\) ft: \(\varepsilon/D = 1.25\times10^{-4}\), so \(f = 0.017\).</li>
+                <li>Allowed drop: \(1200 - 50 = 1150\) psi \(= 165{,}600\) lb/ft². With \(\gamma = 0.93 \times 62.4 = 58.0\) lb/ft³, \(h_L = 2{,}854\) ft.</li>
+                <li>Solve Darcy for length: \(L = \dfrac{h_L\,D\,(2g)}{f\,v^2} = \dfrac{(2854)(4)(64.4)}{(0.017)(8.27)^2} = 632{,}000\) ft, about 120 miles.</li>
+                <li>Power per station (not shown on the slide): \(P = \dfrac{Q\,\Delta p}{e} = \dfrac{(104)(165{,}600)}{0.85} = 2.03\times10^7\) ft·lb/s, about 36,800 hp.</li>
+              </ol>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Variation 3 · Given the pressure, find the flow</span><span class="s">Slides 35–38 · Why the Moody diagram needs iteration</span><span class="ans">Q ≈ 0.010 m³/s</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>Now \(p = 153\) kPa is known, so \(h_L = p/\gamma - \Delta z = 15.6 - 10 = 5.6\) m.</li>
+                <li>You can't compute \(N_R\) without \(v\), and you can't get \(f\) without \(N_R\). So guess.</li>
+                <li>Guess \(v = 2\) m/s: \(N_R = 1.5\times10^5\), \(f = 0.0166\). Solve Darcy for \(v = \sqrt{2g\,h_L D/(fL)} = 2.23\) m/s.</li>
+                <li>Repeat with 2.23 m/s: \(f = 0.0162\), \(v = 2.25\) m/s. One more pass changes nothing.</li>
+                <li>\(Q = vA = 2.26 \times 4.42\times10^{-3} = 0.0100\) m³/s, the original flow rate, as it should be.</li>
+              </ol>
+              <p class="note">The <a href="#pump">solver's</a> "Given pressure, find Q" mode shows this iteration table live.</p>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Problem 8.34 · Well pump to a pressurized tank</span><span class="s">Slides 48–51 · Water 60 °F, 745 gal/h, 1 in Schedule 40, 140 ft of pipe</span><span class="ans">P<sub>A</sub> ≈ 0.7 hp</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>Head the pump must supply besides friction: lift plus tank pressure, \(120 + \dfrac{40 \times 144}{62.4} = 212\) ft.</li>
+                <li>\(D = 1.049\) in \(= 0.0874\) ft. \(Q = 745/7.48/3600 = 0.0277\) ft³/s, so \(v = 4.61\) ft/s.</li>
+                <li>\(N_R = \dfrac{(1.94)(4.61)(0.0874)}{2.3\times10^{-5}} = 3.4\times10^4\). Turbulent.</li>
+                <li>The slides use \(D/\varepsilon \approx 250\) and read \(f \approx 0.03\).</li>
+                <li>\(h_L = 0.03 \times \dfrac{140}{0.0874} \times \dfrac{4.61^2}{64.4} = 16\) ft, so \(h_A = 212 + 16 = 228\) ft.</li>
+                <li>\(P_A = h_A\gamma Q = (228)(62.4)(0.0277) = 394\) ft·lb/s \(= 0.72\) hp.</li>
+              </ol>
+              <p class="note">Commercial steel (\(\varepsilon = 1.5\times10^{-4}\) ft) gives \(D/\varepsilon \approx 580\) and \(f \approx 0.027\), so \(h_L \approx 14\) ft. Use whichever roughness your instructor specifies.</p>
+            </div>
+          </details>
+          <details>
+            <summary><span class="t">Problem 8.36 · Fertilizer truck</span><span class="s">Slides 52–55 · SG 1.1, η = 0.002 Pa·s, 85 m of 25 mm hose, 95 L/min</span><span class="ans">P<sub>A</sub> ≈ 1.04 kW</span></summary>
+            <div class="dbody">
+              <ol>
+                <li>Energy equation from the tank surface (vented, \(v \approx 0\), \(z = 1.5 + 1.2 = 2.7\) m) to the nozzle (\(z = 10\) m, 140 kPa):<br>\(h_A = h_L + (10 - 2.7) + \dfrac{140{,}000}{\gamma} + \dfrac{v^2}{2g}\).</li>
+                <li>\(\gamma = 1.1 \times 9810 = 10{,}791\) N/m³. \(Q = 0.00158\) m³/s, so \(v = 3.22\) m/s and \(v^2/2g = 0.53\) m.</li>
+                <li>\(h_A = h_L + 7.3 + 12.97 + 0.53 = h_L + 20.8\) m.</li>
+                <li>\(N_R = \dfrac{(1100)(3.22)(0.025)}{0.002} = 44{,}000\). Hose roughness isn't given, so treat it as smooth: \(f \approx 0.022\).</li>
+                <li>\(h_L = 0.022 \times \dfrac{85}{0.025} \times 0.53 = 40\) m. Friction costs twice the lift and pressure combined.</li>
+                <li>\(h_A = 60.8\) m, so \(P_A = \gamma Q h_A = (10{,}791)(0.00158)(60.8) = 1.04\) kW, about 1.4 hp.</li>
+              </ol>
+              <p class="note">Slide note: the slide writes \(140{,}000/9810\), but its 20.8 m total uses \(\gamma = 1.1 \times 9810\), which is correct for SG 1.1. With 9810 the total would be 22.1 m. The slide also asks for the pump outlet pressure. For that, write the energy equation from the pump outlet to the nozzle.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- CHECK -->
+      <section id="check">
+        <div class="sec-head">
+          <p class="eyebrow">Self-test</p>
+          <h2>Check yourself</h2>
+          <p class="dek">Answer each one out loud before you open it. If you can explain all eight, you understand the chapter's two big ideas.</p>
+        </div>
+        <div class="dlist">
+          <details class="qa"><summary><span class="t">Why does the Reynolds number compare ρv² with ηv/D, and what does each stand for?</span><span class="ans">answer</span></summary><div class="dbody"><p>\(\rho v^2\) is the inertial stress, the momentum flux the fluid carries. \(\eta v/D\) is the viscous stress, viscosity times a typical velocity gradient. Their ratio is \(vD\rho/\eta\). A large ratio means momentum wins and disturbances grow into turbulence. A small ratio means viscosity wins and damps them out.</p></div></details>
+          <details class="qa"><summary><span class="t">At which step does N<sub>R</sub> enter the derivation of the Darcy equation?</span><span class="ans">answer</span></summary><div class="dbody"><p>Step 4. The force balance and energy equation give \(h_L = 4\tau_w L/(\gamma D)\) with no Reynolds number in sight. The Reynolds number appears when you ask what \(\tau_w\) depends on: \(\tau_w/(\rho v^2) = \phi(N_R,\ \varepsilon/D)\). The friction factor is that same group times 8.</p></div></details>
+          <details class="qa"><summary><span class="t">Where does the "2g" in v²/2g come from, and why the 8 in f = 8τ<sub>w</sub>/ρv²?</span><span class="ans">answer</span></summary><div class="dbody"><p>The 8 is a choice. Substituting \(\tau_w = (f/8)\rho v^2\) into \(4\tau_w L/(\rho g D)\) gives \((4/8)\,f\,(L/D)\,v^2/g = f\,(L/D)\,v^2/(2g)\). The 8 makes the result come out in velocity heads, \(v^2/2g\), which match the energy equation's kinetic-energy term.</p></div></details>
+          <details class="qa"><summary><span class="t">In laminar flow, the velocity doubles. What happens to f and to h<sub>L</sub>?</span><span class="ans">answer</span></summary><div class="dbody"><p>\(N_R\) doubles, so \(f = 64/N_R\) halves. But \(v^2/2g\) goes up 4 times. Net: \(h_L\) doubles. In fully rough turbulent flow, \(f\) stays put and \(h_L\) goes up 4 times.</p></div></details>
+          <details class="qa"><summary><span class="t">The laminar pressure drop Δp = 32ηLV/D² has no density in it. Why?</span><span class="ans">answer</span></summary><div class="dbody"><p>In fully developed laminar flow nothing accelerates. Each layer slides at a constant speed, so inertia never comes into play, and density only matters through inertia. Viscosity alone sets the resistance. Head loss \(h_L = \Delta p/\gamma\) does depend on density, but only because converting pressure to head divides by \(\gamma = \rho g\).</p></div></details>
+          <details class="qa"><summary><span class="t">Why is the average velocity exactly half of v<sub>max</sub> in laminar flow?</span><span class="ans">answer</span></summary><div class="dbody"><p>The profile is a paraboloid, \(v = v_{max}(1 - r^2/R^2)\). Averaging over the circular area weights each ring by \(2\pi r\,dr\), and \(\int_0^R (1 - r^2/R^2)\,2r\,dr / R^2 = 1/2\). The slow fluid near the wall covers a lot of area, which pulls the average down. Turbulent profiles are flatter, so their average is about 0.8 of the maximum.</p></div></details>
+          <details class="qa"><summary><span class="t">You get N<sub>R</sub> = 3,000. What do you do?</span><span class="ans">answer</span></summary><div class="dbody"><p>You are in the critical zone, where the flow may be laminar or turbulent and \(f\) can't be predicted. Say so, and if it is a design problem, change the diameter or flow rate to get out of the zone. If you must estimate, compute both \(64/N_R\) and the turbulent value and treat the result as a range.</p></div></details>
+          <details class="qa"><summary><span class="t">Variation 1 swaps smooth pipe for concrete. Which of v, N<sub>R</sub>, f and p change?</span><span class="ans">answer</span></summary><div class="dbody"><p>Only \(f\), and with it \(h_L\) and \(p\). Velocity comes from \(Q/A\), and \(N_R\) from velocity, diameter and the fluid. Roughness doesn't affect either one. It only moves you to a different curve on the Moody diagram.</p></div></details>
+        </div>
+      </section>
+
+      <!-- SHEET -->
+      <section id="sheet">
+        <div class="sec-head">
+          <p class="eyebrow">For the exam</p>
+          <h2>Formula sheet</h2>
+        </div>
+        <div class="sheet">
+          <div><span class="nm">Reynolds number</span>\[ N_R = \frac{vD\rho}{\eta} = \frac{vD}{\nu} \]<span class="wh">Laminar below 2000. Turbulent above 4000.</span></div>
+          <div><span class="nm">Darcy equation</span>\[ h_L = f\,\frac{L}{D}\,\frac{v^2}{2g} \]<span class="wh">Laminar and turbulent flow alike.</span></div>
+          <div><span class="nm">Laminar friction factor</span>\[ f = \frac{64}{N_R} \]<span class="wh">Exact, for any pipe material.</span></div>
+          <div><span class="nm">Hagen–Poiseuille</span>\[ h_L = \frac{32\,\eta L v}{\gamma D^2} = \frac{128\,\eta L Q}{\pi\gamma D^4} \]<span class="wh">Laminar only. Same as Darcy with 64/N<sub>R</sub>.</span></div>
+          <div><span class="nm">Wall shear and f</span>\[ \Delta p = \frac{4\tau_w L}{D},\quad f = \frac{8\tau_w}{\rho v^2} \]<span class="wh">The two facts the derivation rests on.</span></div>
+          <div><span class="nm">Colebrook</span>\[ \frac{1}{\sqrt f} = -2\log\!\left(\frac{\varepsilon/D}{3.7} + \frac{2.51}{N_R\sqrt f}\right) \]<span class="wh">Turbulent. Iterate.</span></div>
+          <div><span class="nm">Swamee–Jain</span>\[ f = \frac{0.25}{\left[\log\!\left(\frac{1}{3.7(D/\varepsilon)} + \frac{5.74}{N_R^{0.9}}\right)\right]^2} \]<span class="wh">Turbulent, explicit, about 1% from Colebrook.</span></div>
+          <div><span class="nm">Energy equation</span>\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} + h_A - h_L = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]<span class="wh">Chapter 7, now with h<sub>L</sub> from Darcy.</span></div>
+          <div><span class="nm">Pump power</span>\[ P_A = h_A\,\gamma\,Q, \qquad P_I = \frac{P_A}{e_M} \]<span class="wh">Power added to the fluid, then power input.</span></div>
+        </div>
+      </section>
+
+      <footer>Study notes for Mott &amp; Untener, <i>Applied Fluid Mechanics</i>, 8th edition, Chapter 8, keyed to your instructor's slide numbers. Calculators use Colebrook for turbulent f and 64/N<sub>R</sub> for laminar f. Roughness values are typical. Use your textbook's table on graded work.</footer>
+    </main>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NS = 'http://www.w3.org/2000/svg';
+  const log10 = Math.log10;
+
+  /* ---------- physics ---------- */
+  function colebrook(Re, rr) {
+    let f = 0.25 / Math.pow(log10(rr / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+    for (let i = 0; i < 60; i++) {
+      const nf = Math.pow(-2 * log10(rr / 3.7 + 2.51 / (Re * Math.sqrt(f))), -2);
+      if (Math.abs(nf - f) < 1e-12) { f = nf; break; }
+      f = nf;
+    }
+    return f;
+  }
+  const swameeJain = (Re, rr) => 0.25 / Math.pow(log10(rr / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+  const regime = Re => Re < 2000 ? 'lam' : Re <= 4000 ? 'crit' : 'turb';
+  const REG = { lam: 'Laminar', crit: 'Critical zone', turb: 'Turbulent' };
+  const frictionFactor = (Re, rr) => Re < 2000 ? 64 / Re : colebrook(Re, rr);
+  const pill = r => `<span class="pill ${r}">${REG[r]}</span>`;
+
+  /* ---------- formatting ---------- */
+  const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+  const sup = n => String(n).split('').map(c => SUP[c] || c).join('');
+  function fmtNum(x, sig = 3) {
+    if (!isFinite(x)) return '–';
+    const a = Math.abs(x);
+    if (a === 0) return '0';
+    if (a >= 1e5 || a < 1e-3) {
+      const e = Math.floor(log10(a)); const m = x / Math.pow(10, e);
+      return `${m.toFixed(Math.max(0, sig - 1))}×10${sup(e)}`;
+    }
+    if (a >= 1000) return Math.round(x).toLocaleString('en-US');
+    const d = Math.max(0, sig - 1 - Math.floor(log10(a)));
+    return x.toFixed(Math.min(d, 6));
+  }
+  const fmtRe = Re => Re >= 1e5 ? fmtNum(Re, 2) : Re >= 100 ? Math.round(Re).toLocaleString('en-US') : fmtNum(Re, 3);
+  function parseNum(s) {
+    if (typeof s !== 'string') return NaN;
+    s = s.trim().replace(/[,\s]/g, '').replace(/[×x\*]10\^?/i, 'e');
+    return s === '' ? NaN : Number(s);
+  }
+
+  /* ---------- hero: dye streak ---------- */
+  const cv = $('#pipeCanvas'), ctx = cv.getContext('2d');
+  let W = 0, H = 0, dpr = 1, heroRe = 1000, parts = [], simT = 0, running = false, visible = true;
+  const heroSlider = $('#heroRe');
+  const sliderToRe = v => Math.pow(10, 1 + 4.3 * v / 1000);
+  const reToSlider = Re => Math.round((log10(Re) - 1) / 4.3 * 1000);
+  function turbIntensity(Re) { const x = (log10(Re) - 3.3) / (3.72 - 3.3); const c = Math.max(0, Math.min(1, x)); return c * c * (3 - 2 * c); }
+  function sizeCanvas() {
+    const r = cv.getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio || 1);
+    W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  }
+  const geom = () => { const pad = Math.max(16, H * 0.13); return { top: pad, bot: H - pad, yc: H / 2, R: (H - 2 * pad) / 2, x0: 46 }; };
+  function stepSim(dt) {
+    const g = geom(), T = turbIntensity(heroRe), Uc = Math.max(70, W / 6.5);
+    for (let k = 0; k < 7; k++) parts.push({ x: g.x0 + Math.random() * 2, e: (Math.random() - .5) * 0.03, age: 0, ph: Math.random() * 6.28 });
+    const t = simT;
+    for (const p of parts) {
+      const a = Math.abs(p.e);
+      const uLam = 1 - p.e * p.e, uTurb = Math.pow(Math.max(0, 1 - a), 1 / 7) * 0.88;
+      p.x += Uc * ((1 - T) * uLam + T * uTurb) * dt;
+      const grow = Math.min(1, (p.x - g.x0) / (W * 0.32));
+      if (T > 0) {
+        const wave = Math.sin(0.018 * p.x - 3.1 * t + p.e * 2) * 0.9 + Math.sin(0.041 * p.x + 2.3 * t + 1.7) * 0.5 * T + Math.sin(0.007 * p.x - 1.2 * t + p.e * 5) * 0.6;
+        p.e += wave * 1.1 * T * grow * dt;
+        p.e += (Math.random() - .5) * 2.6 * T * T * grow * Math.sqrt(dt) * 1.4;
+      }
+      if (p.e > 0.96) p.e = 1.92 - p.e; if (p.e < -0.96) p.e = -1.92 - p.e;
+      p.age += dt;
+    }
+    parts = parts.filter(p => p.x < W + 4);
+    simT += dt;
+  }
+  function drawPipe() {
+    const g = geom();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = tok('--water'); ctx.globalAlpha = 0.09; ctx.fillRect(0, g.top, W, g.bot - g.top);
+    ctx.globalAlpha = 1; ctx.strokeStyle = tok('--ink'); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, g.top); ctx.lineTo(W, g.top); ctx.moveTo(0, g.bot); ctx.lineTo(W, g.bot); ctx.stroke();
+    ctx.strokeStyle = tok('--ink-2'); ctx.lineWidth = 1; ctx.globalAlpha = .5;
+    ctx.beginPath(); ctx.moveTo(0, g.top + 4); ctx.lineTo(W, g.top + 4); ctx.stroke(); ctx.globalAlpha = 1;
+    // dye nozzle
+    ctx.strokeStyle = tok('--ink-2'); ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(g.x0 - 10, 0); ctx.lineTo(g.x0 - 10, g.yc - 6); ctx.quadraticCurveTo(g.x0 - 10, g.yc, g.x0 - 3, g.yc); ctx.stroke();
+    // dye
+    const T = turbIntensity(heroRe), dye = tok('--dye');
+    ctx.fillStyle = dye;
+    for (const p of parts) {
+      const fade = 1 - 0.75 * T * Math.min(1, (p.x - g.x0) / (W * 0.85));
+      ctx.globalAlpha = Math.max(0.05, 0.55 * fade);
+      const s = 1.6 + 1.6 * T;
+      ctx.fillRect(p.x - s / 2, g.yc - p.e * g.R - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+    // flow arrow
+    ctx.fillStyle = tok('--ink-2'); ctx.font = `500 11px ${tok('--f-mono')}`;
+    ctx.fillText('flow →', W - 58, g.bot + Math.min(14, (H - g.bot) * 0.75));
+  }
+  function warm(n) { parts = []; simT = 0; for (let i = 0; i < n; i++) stepSim(1 / 60); }
+  let last = 0;
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+    stepSim(dt); drawPipe();
+    requestAnimationFrame(frame);
+  }
+  function startAnim() { if (running || reduceMotion || !visible) return; running = true; last = 0; requestAnimationFrame(frame); }
+  function stopAnim() { running = false; }
+  function staticFrame() { warm(Math.ceil(W / Math.max(70, W / 6.5) * 60) + 30); drawPipe(); }
+  new ResizeObserver(() => { sizeCanvas(); if (reduceMotion) staticFrame(); else { if (!parts.length) warm(240); drawPipe(); } }).observe(cv);
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; visible ? startAnim() : stopAnim(); }).observe(cv);
+  if (reduceMotion) $('#pipeHint').textContent = 'Animation paused (reduced motion)';
+
+  function setHeroRe(Re, fromSlider) {
+    heroRe = Re;
+    if (!fromSlider) heroSlider.value = reToSlider(Re);
+    $('#heroReVal').textContent = fmtRe(Re);
+    const r = regime(Re);
+    let txt;
+    if (r === 'lam') txt = `The dye stays a thin, straight line. Layers slide past each other without mixing. Friction factor: <span class="mono">f = 64/N<sub>R</sub> = ${(64 / Re).toFixed(Re < 100 ? 2 : 4)}</span>.`;
+    else if (r === 'crit') txt = 'The streak wavers and breaks up in bursts. The flow could go either way, so no reliable friction factor exists here.';
+    else txt = 'Eddies tear the streak apart and mix dye across the whole pipe. The friction factor now depends on N<sub>R</sub> and the pipe roughness ε/D.';
+    $('#heroRead').innerHTML = `${pill(r)}<p>${txt}</p>`;
+    document.querySelectorAll('.glass .chip').forEach(c => c.setAttribute('aria-pressed', String(Math.abs(Number(c.dataset.re) - Re) / Re < 0.01)));
+    if (reduceMotion && W) staticFrame();
+  }
+  heroSlider.addEventListener('input', () => setHeroRe(sliderToRe(Number(heroSlider.value)), true));
+  document.querySelectorAll('.glass .chip').forEach(c => c.addEventListener('click', () => setHeroRe(Number(c.dataset.re))));
+
+  /* ---------- Reynolds calculator + strip ---------- */
+  const FLUIDS = {
+    water: { rho: 998, eta: 1.002e-3, v: 1, D: 100 },
+    glycerin: { rho: 1258, eta: 0.96, v: 3.6, D: 150 },
+    crude: { rho: 930, eta: 0.01676, v: 2.52, D: 1219 },
+    fert: { rho: 1100, eta: 0.002, v: 3.22, D: 25 },
+    honey: { rho: 1420, eta: 10, v: 0.01, D: 6 },
+    air: { rho: 1.204, eta: 1.81e-5, v: 10, D: 100 },
+  };
+  // row: A1/A2 above the bar, B1/B2 below; anchor keeps labels from colliding
+  const EXAMPLES = [
+    { Re: 0.0085, name: 'Honey in a straw', ref: 'slide 21 (rough estimate)', row: 'A1', anchor: 'start' },
+    { Re: 708, name: 'Glycerin, Ex 8.1', ref: 'slide 12', row: 'B1', anchor: 'middle' },
+    { Re: 3.4e4, name: 'Well pump, 8.34', ref: 'slide 49', row: 'A2', anchor: 'end' },
+    { Re: 4.4e4, name: 'Fertilizer hose, 8.36', ref: 'slide 53', row: 'B2', anchor: 'end' },
+    { Re: 1e5, name: 'Water, 1 m/s in 10 cm', ref: 'slide 14', row: 'A1', anchor: 'start' },
+    { Re: 1.7e5, name: 'Fox exercise & Alaska', ref: 'slides 31, 34', row: 'B1', anchor: 'start' },
+  ];
+  const ROWY = { A1: 16, A2: 48, B1: 156, B2: 186 };
+  const strip = $('#strip');
+  const SX0 = 30, SX1 = 750, LMIN = -2, LMAX = 7;
+  const sx = Re => SX0 + (Math.max(LMIN, Math.min(LMAX, log10(Re))) - LMIN) / (LMAX - LMIN) * (SX1 - SX0);
+  function el(tag, attrs, parent, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+  // text with subscripts: parts = [['N'], ['R', 1]]
+  function stext(parts, attrs, parent) {
+    const t = el('text', attrs, parent), fs = Number(attrs['font-size'] || 12);
+    let down = false;
+    parts.forEach(([s, isSub]) => {
+      const ts = el('tspan', {}, t, s);
+      if (isSub && !down) { ts.setAttribute('dy', fs * 0.3); ts.setAttribute('font-size', fs * 0.78); down = true; }
+      else if (!isSub && down) { ts.setAttribute('dy', -fs * 0.3); down = false; }
+      else if (isSub) ts.setAttribute('font-size', fs * 0.78);
+    });
+    return t;
+  }
+  function drawStrip(userRe) {
+    strip.innerHTML = '';
+    const ay = 100;
+    el('rect', { x: SX0, y: ay - 10, width: sx(2000) - SX0, height: 20, class: 'fl-water', 'fill-opacity': .16 }, strip);
+    el('rect', { x: sx(2000), y: ay - 10, width: sx(4000) - sx(2000), height: 20, class: 'fl-amber', 'fill-opacity': .35 }, strip);
+    el('rect', { x: sx(4000), y: ay - 10, width: SX1 - sx(4000), height: 20, class: 'fl-dye', 'fill-opacity': .14 }, strip);
+    el('text', { x: sx(20), y: ay + 4.5, 'font-size': 12, class: 'fl-water', 'text-anchor': 'middle' }, strip, 'LAMINAR');
+    el('text', { x: sx(3e6), y: ay + 4.5, 'font-size': 12, class: 'fl-dye', 'text-anchor': 'middle' }, strip, 'TURBULENT');
+    for (let e = LMIN; e <= LMAX; e++) {
+      const x = sx(Math.pow(10, e));
+      el('line', { x1: x, x2: x, y1: ay + 10, y2: ay + 16, class: 'st-ink2', 'stroke-width': 1 }, strip);
+      el('text', { x, y: ay + 36, 'font-size': 11.5, class: 'svg-ink2', 'text-anchor': 'middle' }, strip, `10${sup(e)}`);
+    }
+    el('text', { x: sx(2000) - 2, y: ay + 22, 'font-size': 10.5, class: 'fl-amber', 'text-anchor': 'end' }, strip, '2000');
+    el('text', { x: sx(4000) + 2, y: ay + 22, 'font-size': 10.5, class: 'fl-amber' }, strip, '4000');
+    EXAMPLES.forEach(ex => {
+      const x = sx(ex.Re), ty = ROWY[ex.row], up = ex.row[0] === 'A';
+      el('line', { x1: x, x2: x, y1: up ? ty + 18 : ay + 12, y2: up ? ay - 12 : ty - 12, class: 'st-ink2', 'stroke-width': 1, 'stroke-dasharray': '2 2' }, strip);
+      el('circle', { cx: x, cy: ay, r: 4, class: 'svg-ink' }, strip);
+      el('text', { x, y: ty, 'font-size': 11.5, class: 'svg-ink', 'text-anchor': ex.anchor }, strip, ex.name);
+      el('text', { x, y: ty + 12, 'font-size': 10, class: 'svg-ink2', 'text-anchor': ex.anchor }, strip, ex.ref);
+    });
+    if (isFinite(userRe) && userRe > 0) {
+      const x = sx(userRe);
+      el('path', { d: `M${x - 7},${ay - 26} L${x + 7},${ay - 26} L${x},${ay - 13} Z`, class: 'fl-dye' }, strip);
+      el('text', { x: Math.min(SX1, Math.max(SX0, x + 10)), y: ay - 18, 'font-size': 12, class: 'fl-dye', 'text-anchor': x > 660 ? 'end' : 'start', 'font-weight': 600 }, strip, `you: ${fmtRe(userRe)}`);
+    }
+  }
+  const reIn = { fluid: $('#reFluid'), v: $('#reV'), D: $('#reD'), rho: $('#reRho'), eta: $('#reEta') };
+  reIn.fluid.addEventListener('change', () => { const f = FLUIDS[reIn.fluid.value]; reIn.rho.value = +f.rho.toPrecision(4); reIn.eta.value = f.eta; reIn.v.value = f.v; reIn.D.value = f.D; calcRe(); });
+  ['v', 'D', 'rho', 'eta'].forEach(k => reIn[k].addEventListener('input', calcRe));
+  function calcRe() {
+    const v = parseFloat(reIn.v.value), D = parseFloat(reIn.D.value) / 1000, rho = parseFloat(reIn.rho.value), eta = parseFloat(reIn.eta.value);
+    const err = $('#reErr');
+    if (!(v > 0 && D > 0 && rho > 0 && eta > 0)) { err.textContent = 'Enter positive numbers for velocity, diameter, density and viscosity.'; err.hidden = false; return; }
+    err.hidden = true;
+    const Re = v * D * rho / eta, r = regime(Re);
+    $('#reOut').textContent = fmtRe(Re);
+    $('#reReg').innerHTML = pill(r);
+    $('#reNu').textContent = `${fmtNum(eta / rho, 3)} m²/s`;
+    $('#reWork').innerHTML = `N<sub>R</sub> = vDρ/η = (${fmtNum(v, 3)} m/s)(${fmtNum(D, 3)} m)(${fmtNum(rho, 4)} kg/m³) / (${fmtNum(eta, 3)} Pa·s) = ${fmtRe(Re)}`;
+    drawStrip(Re);
+  }
+
+  /* ---------- velocity profile ---------- */
+  const prof = $('#profile');
+  let profMode = 'lam';
+  const PX0 = 70, PLEN = 360, PYC = 125, PR = 95;
+  const uLam = e => 1 - e * e, uTurb = e => Math.pow(Math.max(0, 1 - Math.abs(e)), 1 / 7);
+  function drawProfile() {
+    const u = profMode === 'lam' ? uLam : uTurb, avg = profMode === 'lam' ? 0.5 : 0.817;
+    const col = profMode === 'lam' ? 'water' : 'dye';
+    prof.innerHTML = '';
+    el('rect', { x: 20, y: PYC - PR, width: 520, height: 2 * PR, class: 'fl-wash' }, prof);
+    el('line', { x1: 20, x2: 540, y1: PYC - PR, y2: PYC - PR, class: 'st-ink', 'stroke-width': 2.5 }, prof);
+    el('line', { x1: 20, x2: 540, y1: PYC + PR, y2: PYC + PR, class: 'st-ink', 'stroke-width': 2.5 }, prof);
+    el('line', { x1: 20, x2: 540, y1: PYC, y2: PYC, class: 'st-ink2', 'stroke-width': 1, 'stroke-dasharray': '8 5' }, prof);
+    el('text', { x: 536, y: PYC - 6, 'font-size': 11, class: 'svg-ink2', 'text-anchor': 'end' }, prof, 'centreline');
+    el('line', { x1: PX0, x2: PX0, y1: PYC - PR, y2: PYC + PR, class: 'st-ink', 'stroke-width': 1.5 }, prof);
+    const defs = el('defs', {}, prof);
+    const mk = el('marker', { id: 'pa', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    el('path', { d: 'M0,0 L10,5 L0,10 z', class: `fl-${col}` }, mk);
+    for (let e = -0.9; e <= 0.91; e += 0.15) {
+      const x = PX0 + u(e) * PLEN, y = PYC - e * PR;
+      if (u(e) * PLEN > 10) el('line', { x1: PX0, x2: x - 1, y1: y, y2: y, class: `st-${col}`, 'stroke-width': 1.6, 'stroke-opacity': .75, 'marker-end': 'url(#pa)' }, prof);
+    }
+    let d = '';
+    for (let i = 0; i <= 120; i++) { const e = -1 + 2 * i / 120; d += `${i ? 'L' : 'M'}${(PX0 + u(e) * PLEN).toFixed(1)},${(PYC - e * PR).toFixed(1)}`; }
+    el('path', { d, fill: 'none', class: `st-${col}`, 'stroke-width': 2.5 }, prof);
+    const xa = PX0 + avg * PLEN;
+    el('line', { x1: xa, x2: xa, y1: PYC - PR + 4, y2: PYC + PR - 4, class: 'st-amber', 'stroke-width': 2, 'stroke-dasharray': '6 4' }, prof);
+    stext([[`V = ${avg === 0.5 ? '0.5' : '≈0.82'} v`], ['max', 1]], { x: xa + 6, y: PYC + PR - 12, 'font-size': 12.5, class: 'fl-amber' }, prof);
+    stext([['v'], ['max', 1]], { x: PX0 + PLEN + 6, y: PYC + 16, 'font-size': 12.5, class: 'svg-ink' }, prof);
+    const r = Number($('#rSlider').value) / 100, ur = u(r);
+    const xp = PX0 + ur * PLEN, yp = PYC - r * PR;
+    el('line', { x1: PX0, x2: xp, y1: yp, y2: yp, class: 'st-ink', 'stroke-width': 1.2 }, prof);
+    el('circle', { cx: xp, cy: yp, r: 6, class: 'fl-surface st-ink', 'stroke-width': 2 }, prof);
+    $('#rVal').textContent = r.toFixed(2);
+    $('#profRead').innerHTML = `v/v<sub>max</sub> = ${ur.toFixed(3)}`;
+    $('#profCap').innerHTML = profMode === 'lam'
+      ? 'Laminar: a parabola,  v = v<sub>max</sub>(1 − r²/R²). The average is exactly half the maximum. The slope at the wall sets τ<sub>w</sub> = η|dv/dr|.'
+      : 'Turbulent (1/7-power approximation): a flat core and a very steep drop at the wall. The steeper wall slope means larger wall shear, so more head loss for the same average velocity.';
+  }
+  $('#rSlider').addEventListener('input', drawProfile);
+  [['#profLam', 'lam'], ['#profTurb', 'turb']].forEach(([id, m]) => $(id).addEventListener('click', () => {
+    profMode = m; $('#profLam').setAttribute('aria-pressed', String(m === 'lam')); $('#profTurb').setAttribute('aria-pressed', String(m === 'turb')); drawProfile();
+  }));
+
+  /* ---------- Moody diagram ---------- */
+  const msvg = $('#moodySvg');
+  const MX0 = 74, MX1 = 668, MY0 = 22, MY1 = 412;
+  const RE_MIN = 600, RE_MAX = 1e8, F_MIN = 0.008, F_MAX = 0.1;
+  const mx = Re => MX0 + (log10(Re) - log10(RE_MIN)) / (log10(RE_MAX) - log10(RE_MIN)) * (MX1 - MX0);
+  const my = f => MY1 - (log10(f) - log10(F_MIN)) / (log10(F_MAX) - log10(F_MIN)) * (MY1 - MY0);
+  const RR = [0.05, 0.03, 0.02, 0.01, 0.005, 0.002, 0.001, 5e-4, 2e-4, 1e-4, 5e-5, 2e-5, 1e-5];
+  let axisMode = 'eps';
+  const mState = { Re: 1.7e5, eps: 0, D: 75 };
+  function rrLabel(rr) {
+    if (axisMode === 'eps') return rr >= 0.001 ? String(rr) : `${(rr / Math.pow(10, Math.floor(log10(rr)))).toFixed(0)}×10${sup(Math.floor(log10(rr)))}`;
+    const de = 1 / rr; return de.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  function curvePath(rr, a = 4000, b = RE_MAX) {
+    let d = '';
+    for (let i = 0; i <= 140; i++) { const Re = Math.pow(10, log10(a) + (log10(b) - log10(a)) * i / 140); d += `${i ? 'L' : 'M'}${mx(Re).toFixed(1)},${my(rr === 0 ? colebrook(Re, 0) : colebrook(Re, rr)).toFixed(1)}`; }
+    return d;
+  }
+  function drawMoody() {
+    msvg.innerHTML = '';
+    const defs = el('defs', {}, msvg);
+    const cp = el('clipPath', { id: 'mclip' }, defs); el('rect', { x: MX0, y: MY0, width: MX1 - MX0, height: MY1 - MY0 }, cp);
+    el('rect', { x: MX0, y: MY0, width: MX1 - MX0, height: MY1 - MY0, class: 'fl-surface' }, msvg);
+    // grid
+    for (let e = 2; e <= 8; e++) for (let m = 1; m <= 9; m++) {
+      const Re = m * Math.pow(10, e); if (Re < RE_MIN || Re > RE_MAX) continue;
+      el('line', { x1: mx(Re), x2: mx(Re), y1: MY0, y2: MY1, class: m === 1 ? 'st-ink2' : 'st-rule', 'stroke-width': m === 1 ? .8 : .7, 'stroke-opacity': m === 1 ? .55 : 1 }, msvg);
+      if (m === 1) el('text', { x: mx(Re), y: MY1 + 18, 'font-size': 12, class: 'svg-ink2', 'text-anchor': 'middle' }, msvg, `10${sup(e)}`);
+      else if ((m === 2 || m === 5) && e >= 3) el('text', { x: mx(Re), y: MY1 + 14, 'font-size': 9.5, class: 'svg-ink2', 'text-anchor': 'middle', 'fill-opacity': .8 }, msvg, String(m));
+    }
+    const FT = [0.008, 0.009, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1];
+    const FL = new Set([0.008, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.1]);
+    FT.forEach(f => {
+      el('line', { x1: MX0, x2: MX1, y1: my(f), y2: my(f), class: 'st-rule', 'stroke-width': .7 }, msvg);
+      if (FL.has(f)) el('text', { x: MX0 - 6, y: my(f) + 4, 'font-size': 11, class: 'svg-ink2', 'text-anchor': 'end' }, msvg, String(f));
+    });
+    el('rect', { x: MX0, y: MY0, width: MX1 - MX0, height: MY1 - MY0, fill: 'none', class: 'st-ink', 'stroke-width': 1.2 }, msvg);
+    // critical zone
+    el('rect', { x: mx(2000), y: MY0, width: mx(4000) - mx(2000), height: MY1 - MY0, class: 'fl-amber', 'fill-opacity': .14 }, msvg);
+    el('text', { x: (mx(2000) + mx(4000)) / 2, y: MY1 - 8, 'font-size': 10, class: 'fl-amber', 'text-anchor': 'middle' }, msvg, 'critical');
+    const g = el('g', { 'clip-path': 'url(#mclip)' }, msvg);
+    // laminar
+    let d = ''; for (let i = 0; i <= 30; i++) { const Re = 600 * Math.pow(2000 / 600, i / 30); d += `${i ? 'L' : 'M'}${mx(Re).toFixed(1)},${my(64 / Re).toFixed(1)}`; }
+    el('path', { d, fill: 'none', class: 'st-water', 'stroke-width': 2.2 }, g);
+    el('path', { d: `M${mx(2000)},${my(0.032)} L${mx(4000)},${my(0.016)}`, fill: 'none', class: 'st-water', 'stroke-width': 1.4, 'stroke-dasharray': '4 4' }, g);
+    // turbulent family
+    RR.forEach(rr => el('path', { d: curvePath(rr), fill: 'none', class: 'st-ink', 'stroke-width': 1, 'stroke-opacity': .62 }, g));
+    el('path', { d: curvePath(0), fill: 'none', class: 'st-ink', 'stroke-width': 1.8 }, g);
+    // complete turbulence boundary: Re·sqrt(f)·(ε/D) = 200
+    let db = '', first = true;
+    for (let i = 0; i <= 80; i++) {
+      const rr = Math.pow(10, log10(0.05) + (log10(2e-5) - log10(0.05)) * i / 80);
+      const fr = Math.pow(-2 * log10(rr / 3.7), -2), Re = 200 / (Math.sqrt(fr) * rr);
+      if (Re > RE_MAX * 1.2) break;
+      db += `${first ? 'M' : 'L'}${mx(Re).toFixed(1)},${my(colebrook(Re, rr)).toFixed(1)}`; first = false;
+    }
+    el('path', { d: db, fill: 'none', class: 'st-ink2', 'stroke-width': 1.3, 'stroke-dasharray': '7 5' }, g);
+    // labels inside
+    const la = Math.atan2(my(0.032) - my(0.1), mx(2000) - mx(640)) * 180 / Math.PI, lx = (mx(640) + mx(2000)) / 2 - 11, ly = (my(0.1) + my(0.032)) / 2;
+    stext([['laminar f = 64/N'], ['R', 1]], { x: lx, y: ly, 'font-size': 11, class: 'fl-water', 'text-anchor': 'middle', transform: `rotate(${la.toFixed(1)} ${lx} ${ly})` }, msvg);
+    el('text', { x: mx(1.2e6), y: my(colebrook(1.2e6, 0)) + 17, 'font-size': 11.5, class: 'svg-ink', 'text-anchor': 'middle' }, msvg, 'smooth pipes');
+    el('text', { x: mx(2.2e4), y: MY0 + 16, 'font-size': 11.5, class: 'svg-ink2' }, msvg, 'complete turbulence →');
+    // right labels
+    let lastY = -99;
+    RR.forEach(rr => {
+      let y = my(colebrook(RE_MAX, rr)) + 4; if (y - lastY < 12) y = lastY + 12; lastY = y;
+      el('text', { x: MX1 + 6, y, 'font-size': 10.5, class: 'svg-ink2' }, msvg, rrLabel(rr));
+    });
+    el('text', { x: MX1 + 6, y: MY0 - 6, 'font-size': 12, class: 'svg-ink', 'font-weight': 600 }, msvg, axisMode === 'eps' ? 'ε/D' : 'D/ε');
+    stext([['Reynolds number N'], ['R', 1]], { x: (MX0 + MX1) / 2, y: MY1 + 44, 'font-size': 13, class: 'svg-ink', 'text-anchor': 'middle' }, msvg);
+    el('text', { x: 18, y: (MY0 + MY1) / 2, 'font-size': 13, class: 'svg-ink', 'text-anchor': 'middle', transform: `rotate(-90 18 ${(MY0 + MY1) / 2})` }, msvg, 'Friction factor f');
+    // user point
+    const { Re } = mState, rr = mState.eps / 1000 / mState.D;
+    if (!(Re > 0 && isFinite(rr))) return;
+    const f = frictionFactor(Re, rr);
+    if (Re >= 4000 && rr > 0) el('path', { d: curvePath(rr), fill: 'none', class: 'st-dye', 'stroke-width': 2.4 }, g);
+    if (Re >= RE_MIN && Re <= RE_MAX && f >= F_MIN && f <= F_MAX) {
+      const X = mx(Re), Y = my(f);
+      el('line', { x1: X, x2: X, y1: Y, y2: MY1, class: 'st-dye', 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }, msvg);
+      el('line', { x1: MX0, x2: X, y1: Y, y2: Y, class: 'st-dye', 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }, msvg);
+      el('circle', { cx: X, cy: Y, r: 6, class: 'fl-dye' }, msvg);
+      el('circle', { cx: X, cy: Y, r: 2.4, class: 'fl-surface' }, msvg);
+      const right = X < MX1 - 120;
+      const bg = el('rect', { x: right ? X + 10 : X - 118, y: Y - 30, width: 108, height: 20, rx: 3, class: 'fl-surface st-dye', 'stroke-width': 1 }, msvg);
+      el('text', { x: right ? X + 64 : X - 64, y: Y - 16, 'font-size': 12.5, class: 'fl-dye', 'text-anchor': 'middle', 'font-weight': 600 }, msvg, `f = ${f.toPrecision(4)}`);
+    }
+  }
+  const mIn = { Re: $('#mRe'), mat: $('#mMat'), eps: $('#mEps'), D: $('#mD') };
+  function calcMoody() {
+    const Re = parseNum(mIn.Re.value), eps = parseFloat(mIn.eps.value), D = parseFloat(mIn.D.value), err = $('#mErr');
+    if (!(Re > 0) || !(eps >= 0) || !(D > 0)) { err.textContent = 'Enter a positive Reynolds number (like 1.7e5), a roughness of 0 or more, and a positive diameter.'; err.hidden = false; return; }
+    err.hidden = true;
+    Object.assign(mState, { Re, eps, D });
+    const rr = eps / 1000 / D, r = regime(Re), f = frictionFactor(Re, rr);
+    $('#mF').textContent = f.toPrecision(4);
+    $('#mRR').innerHTML = rr === 0 ? 'smooth (ε = 0)' : `ε/D = ${fmtNum(rr, 3)}<br>D/ε = ${fmtNum(1 / rr, 3)}`;
+    $('#mReg').innerHTML = pill(r);
+    $('#mSJ').textContent = r === 'lam' ? 'n/a (laminar)' : `f = ${swameeJain(Re, rr).toPrecision(4)}`;
+    let cap;
+    if (r === 'lam') cap = `Laminar, so f = 64/N<sub>R</sub> = 64/${fmtRe(Re)} = ${f.toFixed(4)}. Roughness doesn't matter here.`;
+    else if (r === 'crit') cap = `N<sub>R</sub> = ${fmtRe(Re)} is in the critical zone. The value shown is the turbulent estimate, but the real f could be anywhere between ${(64 / Re).toFixed(3)} (laminar) and that.`;
+    else {
+      const fr = rr > 0 ? Math.pow(-2 * log10(rr / 3.7), -2) : 0;
+      const complete = rr > 0 && Re * Math.sqrt(fr) * rr > 200;
+      cap = complete ? `Complete turbulence: the curve is flat here, so f depends only on ε/D. The fully rough value is ${fr.toFixed(4)}.`
+        : rr === 0 ? 'Smooth pipe: f keeps falling as N<sub>R</sub> rises, following the lowest curve.'
+        : 'Between the smooth curve and complete turbulence, f depends on both N<sub>R</sub> and ε/D.';
+      cap += ' The pink curve is your exact ε/D, computed from Colebrook.';
+    }
+    $('#mCap').innerHTML = cap;
+    drawMoody();
+  }
+  mIn.mat.addEventListener('change', () => { if (mIn.mat.value !== 'custom') mIn.eps.value = mIn.mat.value; calcMoody(); });
+  mIn.eps.addEventListener('input', () => { const opt = [...mIn.mat.options].find(o => o.value === mIn.eps.value); mIn.mat.value = opt ? opt.value : 'custom'; calcMoody(); });
+  [mIn.Re, mIn.D].forEach(i => i.addEventListener('input', calcMoody));
+  const MPRE = { fox: ['1.7e5', '0', 75], concrete: ['1.7e5', '75', 75], s26: ['1e6', '1000', 50], alaska: ['1.7e5', '150', 1219], glyc: ['708', '0', 150] };
+  document.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => {
+    const [Re, eps, D] = MPRE[b.dataset.m]; mIn.Re.value = Re; mIn.eps.value = eps; mIn.D.value = D;
+    const opt = [...mIn.mat.options].find(o => o.value === eps); mIn.mat.value = opt ? opt.value : 'custom';
+    document.querySelectorAll('[data-m]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    calcMoody();
+  }));
+  [['#axEps', 'eps'], ['#axDe', 'de']].forEach(([id, m]) => $(id).addEventListener('click', () => {
+    axisMode = m; $('#axEps').setAttribute('aria-pressed', String(m === 'eps')); $('#axDe').setAttribute('aria-pressed', String(m === 'de')); drawMoody();
+  }));
+
+  /* ---------- pump solver ---------- */
+  let pMode = 'P';
+  const pIn = { L: $('#pL'), z: $('#pZ'), D: $('#pD'), eps: $('#pEps'), Q: $('#pQ'), P: $('#pP'), nu: $('#pNu') };
+  const G = 9.81, GAMMA = 9810;
+  function row(label, how, val, cls = '') { return `<tr class="${cls}"><td>${label}</td><td>${how}</td><td>${val}</td></tr>`; }
+  function solvePump() {
+    const L = parseFloat(pIn.L.value), dz = parseFloat(pIn.z.value), D = parseFloat(pIn.D.value) / 1000, eps = parseFloat(pIn.eps.value) * 1e-6, nu = parseFloat(pIn.nu.value);
+    const err = $('#pErr');
+    if (!(L > 0 && D > 0 && eps >= 0 && nu > 0 && isFinite(dz))) { err.textContent = 'Check the inputs: length, diameter and viscosity must be positive, and roughness 0 or more.'; err.hidden = false; return; }
+    const A = Math.PI * D * D / 4, rr = eps / D;
+    let html = '<thead><tr><th>Step</th><th>How</th><th class="num">Value</th></tr></thead><tbody>', iter = '';
+    if (pMode === 'P') {
+      const Q = parseFloat(pIn.Q.value) / 1000;
+      if (!(Q > 0)) { err.textContent = 'Enter a flow rate above 0.'; err.hidden = false; return; }
+      err.hidden = true;
+      const v = Q / A, Re = v * D / nu, r = regime(Re), f = frictionFactor(Re, rr), vh = v * v / (2 * G), hL = f * (L / D) * vh, hA = dz + hL, p = GAMMA * hA;
+      html += row('Area', 'A = πD²/4', `${fmtNum(A, 3)} m²`);
+      html += row('1 · Velocity', 'v = Q/A', `${v.toFixed(3)} m/s`);
+      html += row('2 · Reynolds number', 'N<sub>R</sub> = vD/ν', `${pill(r)}&nbsp; ${fmtRe(Re)}`);
+      html += row('3 · Friction factor', r === 'lam' ? 'f = 64/N<sub>R</sub>' : `Colebrook, ε/D = ${rr === 0 ? '0 (smooth)' : fmtNum(rr, 3)}`, f.toPrecision(4));
+      html += row('Velocity head', 'v²/2g', `${vh.toFixed(3)} m`);
+      html += row('4 · Head loss', `h<sub>L</sub> = f(L/D)(v²/2g) = ${f.toPrecision(4)} × ${fmtNum(L / D, 4)} × ${vh.toFixed(3)}`, `${hL.toFixed(2)} m`);
+      html += row('5 · Pump head', 'h<sub>A</sub> = Δz + h<sub>L</sub>', `${hA.toFixed(2)} m`);
+      html += row('Pump pressure', 'p = γh<sub>A</sub> = 9810 × h<sub>A</sub>', `${(p / 1000).toFixed(1)} kPa`, 'res');
+      html += row('6 · Power to water', 'P<sub>A</sub> = h<sub>A</sub>γQ', `${(hA * GAMMA * Q / 1000).toFixed(2)} kW`);
+      if (r === 'crit') iter = '<p class="err">N<sub>R</sub> is in the critical zone (2000–4000). The turbulent f shown is only an estimate.</p>';
+    } else {
+      const p = parseFloat(pIn.P.value) * 1000;
+      const hL = p / GAMMA - dz;
+      if (!(p > 0)) { err.textContent = 'Enter a pump pressure above 0.'; err.hidden = false; return; }
+      if (!(hL > 0)) { err.textContent = `That pressure only lifts water ${(p / GAMMA).toFixed(2)} m, which isn't enough to reach Δz = ${dz} m. Raise the pressure or lower Δz.`; err.hidden = false; return; }
+      err.hidden = true;
+      let v = 1, rows = [], f = 0.02, Re = 0;
+      for (let i = 0; i < 40; i++) {
+        Re = v * D / nu; f = frictionFactor(Re, rr);
+        const vn = Math.sqrt(2 * G * hL * D / (f * L));
+        rows.push([v, Re, f, vn]);
+        if (Math.abs(vn - v) < 1e-6) { v = vn; break; }
+        v = vn;
+      }
+      const Q = v * A;
+      html += row('Head available for friction', 'h<sub>L</sub> = p/γ − Δz', `${hL.toFixed(2)} m`);
+      html += row('Unknown velocity', 'v = √(2g h<sub>L</sub> D / (f L)), but f needs v', 'iterate ↓');
+      html += row('Converged velocity', `after ${rows.length} passes`, `${v.toFixed(3)} m/s`);
+      html += row('Reynolds number', 'N<sub>R</sub> = vD/ν', `${pill(regime(Re))}&nbsp; ${fmtRe(Re)}`);
+      html += row('Friction factor', 'final pass', f.toPrecision(4));
+      html += row('Flow rate', 'Q = vA', `${(Q * 1000).toFixed(2)} L/s = ${Q.toFixed(4)} m³/s`, 'res');
+      iter = `<div class="scroll-x"><table class="tbl"><thead><tr><th>Pass</th><th class="num">Guess v (m/s)</th><th class="num">N<sub>R</sub></th><th class="num">f</th><th class="num">New v (m/s)</th></tr></thead><tbody>${rows.slice(0, 8).map((r, i) => `<tr><td>${i + 1}</td><td class="num">${r[0].toFixed(4)}</td><td class="num">${fmtRe(r[1])}</td><td class="num">${r[2].toPrecision(4)}</td><td class="num">${r[3].toFixed(4)}</td></tr>`).join('')}</tbody></table></div><p class="small muted">Start from a guess of 1 m/s. Each pass uses the last velocity to find N<sub>R</sub> and f, then solves Darcy for a new velocity. It settles in a few passes because f changes slowly with N<sub>R</sub>.</p>`;
+    }
+    $('#pTable').innerHTML = html + '</tbody>';
+    $('#pIter').innerHTML = iter;
+  }
+  function setPMode(m) {
+    pMode = m; $('#modeP').setAttribute('aria-pressed', String(m === 'P')); $('#modeQ').setAttribute('aria-pressed', String(m === 'Q'));
+    $('#fQ').hidden = m !== 'P'; $('#fP').hidden = m !== 'Q'; solvePump();
+  }
+  $('#modeP').addEventListener('click', () => setPMode('P'));
+  $('#modeQ').addEventListener('click', () => setPMode('Q'));
+  Object.values(pIn).forEach(i => i.addEventListener('input', solvePump));
+  const PPRE = { base: { eps: 0, mode: 'P' }, v1: { eps: 75, mode: 'P' }, v3: { eps: 0, mode: 'Q' } };
+  document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+    const p = PPRE[b.dataset.p];
+    Object.assign(pIn.L, { value: 100 }); pIn.z.value = 10; pIn.D.value = 75; pIn.Q.value = 10; pIn.P.value = 153; pIn.nu.value = 0.000001; pIn.eps.value = p.eps;
+    document.querySelectorAll('[data-p]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    setPMode(p.mode);
+  }));
+
+  /* ---------- theme changes redraw canvas ---------- */
+  const redraw = () => { if (W) drawPipe(); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+  new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* ---------- boot ---------- */
+  setHeroRe(1000);
+  calcRe();
+  drawProfile();
+  calcMoody();
+  solvePump();
+  document.querySelector('[data-p="base"]').setAttribute('aria-pressed', 'true');
+  document.querySelector('[data-m="fox"]').setAttribute('aria-pressed', 'true');
+})();
+</script>

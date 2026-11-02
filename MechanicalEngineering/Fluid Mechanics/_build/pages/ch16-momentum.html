@@ -1,0 +1,251 @@
+<!--title: Forces from Moving Fluids (Ch 16)-->
+<!--short: Ch 16 Momentum-->
+<!--eyebrow: Week 13 · Chapter 16-->
+<!--desc: Lecture companion for Mott Chapter 16: Newton's second law for a control volume, F = ṁ(v_out − v_in), applied to jets, vanes, pipe bends, moving and accelerating bodies, rockets and turbines, with live force diagrams.-->
+<header class="hero">
+  <p class="eyebrow">Week 13 · Mott Chapter 16 (Forces Due to Fluids in Motion) · Slide deck CH 16</p>
+  <h1>Forces from <em>Moving</em> Fluids</h1>
+  <p class="lede">To turn a stream, something has to push on it. Newton's second law for a steady flow says how hard: the net force on the fluid equals the mass flow rate times the change in velocity, \(\vec F = \dot m(\vec v_{out} - \vec v_{in})\). The vane, the pipe bend or the support feels the equal and opposite push.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#law">The momentum equation</a><a href="#bend">Pipe bends</a><a href="#moving">Moving bodies</a><a href="#coanda">Coanda effect</a><a href="#examples">Examples</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Jet on a vane (slides 4–5, 10, 18–19)</h3><div class="seg" role="group" aria-label="Units" id="jSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div></div>
+    <div class="panel-b">
+      <svg id="jSvg" viewBox="0 0 640 280" style="width:100%;display:block" role="img" aria-label="A jet enters from the left, follows a curved vane and leaves at the chosen angle. Arrows show the velocities in and out and the force of the water on the vane with its components."></svg>
+      <div class="fields" id="jFields">
+        <div class="field"><label for="jV" id="jVL">Jet speed V</label><input id="jV" type="text" inputmode="decimal" value="12"></div>
+        <div class="field"><label for="jD" id="jDL">Jet diameter</label><input id="jD" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="jT">Turning angle <span class="mono" id="jTV"></span></label><input id="jT" type="range" min="0" max="180" step="1" value="135"></div>
+        <div class="field"><label for="jV0" id="jV0L">Vane speed V<sub>0</sub> (away from jet)</label><input id="jV0" type="text" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="jSplit">Flow leaves</label><select id="jSplit"><option value="one">one way</option><option value="split">split symmetrically (cone)</option></select></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-j="e161">Ex 16.1 (90°, US)</button><button type="button" class="chip" data-j="vane">s18 vane, 135°</button><button type="button" class="chip" data-j="car">s19 car at 8 m/s</button><button type="button" class="chip" data-j="cone45">s10 cone, θ = 45°</button><button type="button" class="chip" data-j="cone90">s10 cone, θ = 90°</button></div>
+      <div class="out">
+        <div class="stat"><span class="lbl">Mass flow hitting the vane</span><span class="val" id="jM"></span></div>
+        <div class="stat hot"><span class="lbl">Force of water on vane</span><span class="val" id="jF" style="font-size:17px"></span></div>
+        <div class="stat"><span class="lbl">Power delivered to the vane</span><span class="val" id="jP"></span></div>
+      </div>
+      <p class="small" id="jNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#law">The momentum equation</a></li><li><a href="#bend">Pipe bends</a></li><li><a href="#moving">Moving &amp; accelerating bodies</a></li><li><a href="#coanda">Coanda effect</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="law">
+  <div class="sec-head"><p class="eyebrow">Slides 2–3, 6, 9 · Mott §16.2–16.4</p><h2>Newton's second law for a flowing stream</h2></div>
+  <div class="two">
+    <ol class="steps">
+      <li><span class="sn">1</span><div class="sb"><h4>For a solid body</h4>\[ F = \frac{dP}{dt} = m\frac{dV}{dt} \]<p>The body's momentum P changes because its velocity changes.</p></div></li>
+      <li><span class="sn">2</span><div class="sb"><h4>For steady flow through a tapered pipe (slide 3)</h4><p>Nothing inside the pipe changes with time, yet the fluid speeds up. In time dt, a slug of mass \(\rho A_{out}V_{out}dt\) leaves with velocity \(V_{out}\) while \(\rho A_{in}V_{in}dt\) arrives with \(V_{in}\). The momentum in the pipe changed only by that exchange:</p>\[ F = \frac{\rho A V_{out}dt\,V_{out} - \rho A V_{in}dt\,V_{in}}{dt} = \dot m\,(V_{out} - V_{in}) \]<p class="why">Continuity makes \(\rho AV\) the same at both ends: that's \(\dot m\). This bookkeeping between a fixed region and the fluid passing through it is the Reynolds transport theorem (the slide's title).</p></div></li>
+      <li class="final"><span class="sn">3</span><div class="sb"><h4>In 2-D or 3-D, one equation per direction</h4><div class="boxed">\[ F_x = \dot m(v_{2x} - v_{1x}),\quad F_y = \dot m(v_{2y} - v_{1y}) \]</div><p class="why">F is the <b>net external force on the fluid</b> in the control volume: from walls and supports, from pressure on the inlet and outlet faces, and gravity if it matters.</p></div></li>
+    </ol>
+    <div class="read">
+      <h3>Mott's procedure (§16.3)</h3>
+      <ol>
+        <li>Draw a control volume around the fluid that turns. Pick x and y.</li>
+        <li>Mark the inlet and outlet velocities, with signs, and the pressure forces \(pA\) pushing <b>inward</b> on the inlet and outlet faces.</li>
+        <li>Write \(\Sigma F = \dot m(v_{out} - v_{in})\) in each direction and solve for the unknown wall or support force.</li>
+        <li><b>Newton's third law</b> (slide 6): the force of the fluid on the vane is equal and opposite.</li>
+      </ol>
+      <div class="trap"><span class="tag">Trap</span><p>Decide up front whether you want the force <b>on the water</b> or <b>on the vane</b>: they differ only in sign, and slides 4 and 5 ask one each. A free jet in air is at atmospheric pressure, so it carries no pressure force (gauge 0).</p></div>
+      <div class="trap"><span class="tag">Trap</span><p>Use <b>gauge</b> pressures when the outside of the pipe is at atmospheric pressure: the atmosphere pushes on the outside of the bend too, and gauge pressure accounts for that (slide 11 gives an absolute pressure; subtract atmospheric first).</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="bend">
+  <div class="sec-head"><p class="eyebrow">Slides 8, 11 · Mott §16.5, Example 16.2</p><h2>Forces on pipe bends</h2><p class="dek">A bend changes the flow's direction and often its speed, and the fluid's pressure pushes on both open ends. The support (or the bolts and the pipe beyond) must take what's left over.</p></div>
+  <div class="panel"><div class="panel-b">
+    <div class="two">
+      <div>
+        <div class="fields" id="bFields">
+          <div class="field"><label for="bQ">Flow rate <span class="unit">L/min</span></label><input id="bQ" type="text" inputmode="decimal" value="3000"></div>
+          <div class="field"><label for="bA1">Inlet area <span class="unit">m²</span></label><input id="bA1" type="text" inputmode="decimal" value="8.213e-3"></div>
+          <div class="field"><label for="bA2">Outlet area <span class="unit">m²</span></label><input id="bA2" type="text" inputmode="decimal" value="8.213e-3"></div>
+          <div class="field"><label for="bP1">Inlet pressure <span class="unit">kPa gauge</span></label><input id="bP1" type="text" inputmode="decimal" value="550"></div>
+          <div class="field"><label for="bP2">Outlet pressure <span class="unit">kPa gauge</span></label><input id="bP2" type="text" inputmode="decimal" value="440"></div>
+          <div class="field"><label for="bPhi">Outlet direction <span class="mono" id="bPhiV"></span></label><input id="bPhi" type="range" min="-180" max="180" step="5" value="90"></div>
+          <div class="field"><label for="bRho">Density <span class="unit">kg/m³</span></label><input id="bRho" type="text" inputmode="decimal" value="1000"></div>
+        </div>
+        <div class="chips"><button type="button" class="chip" data-b="e162">Ex 16.2 elbow (s8)</button><button type="button" class="chip" data-b="mount">s11 reducing elbow to air</button></div>
+      </div>
+      <svg id="bSvg" viewBox="0 0 320 300" style="width:100%;display:block" role="img" aria-label="Pipe bend with the inlet from the left, the outlet in the chosen direction, pressure forces on both faces, and the support force needed to hold it."></svg>
+    </div>
+    <div class="out"><div class="stat"><span class="lbl">v<sub>1</sub>, v<sub>2</sub>, ṁ</span><span class="val" id="bV" style="font-size:15px"></span></div><div class="stat hot"><span class="lbl">Support force on the bend</span><span class="val" id="bR" style="font-size:17px"></span></div><div class="stat"><span class="lbl">Magnitude</span><span class="val" id="bRm"></span></div></div>
+    <div class="workline" id="bWork"></div>
+  </div></div>
+</section>
+
+<section id="moving">
+  <div class="sec-head"><p class="eyebrow">Slides 19–24 · Mott §16.6</p><h2>Moving and accelerating bodies</h2></div>
+  <div class="two">
+    <div class="read">
+      <p><b>A vane moving away at constant speed V<sub>0</sub></b> (slide 19): ride along with it. Relative to the vane the jet arrives at \(V - V_0\), and only \(\rho A(V - V_0)\) of mass reaches it each second (the jet has to catch up). With a 12 m/s relative speed, a 20 m/s jet on a car doing 8 m/s feels exactly like a 12 m/s jet on a fixed vane: same force.</p>
+      <p><b>A wheel of vanes</b> (a Pelton turbine, slide 24): a new vane is always in the jet, so all the jet's mass flow \(\rho AV\) does work. Power = force × blade speed.</p>
+      <p><b>Terminal speed with drag</b> (slide 20): the jet pushes with \(c(U - V)^2\), where \(c = \rho A(1 - \cos\theta)\), and air drag pulls back \(kV^2\). They balance when \(\sqrt c\,(U - V) = \sqrt k\,V\).</p>
+      <p><b>Accelerating from rest</b> (slides 22–23): \(m\,dV/dt = c(U - V)^2\) separates and integrates to</p>
+      \[ \frac{V}{U} = \frac{(cU/m)\,t}{1 + (cU/m)\,t} \]
+      <div class="trap note"><span class="tag">Slide 23</span><p>The slide writes the left side as U/V; it must be V/U (V starts at 0 and approaches U). Also, \(\rho A(1 + \cos45°) = 1000(1.963\times10^{-3})(1.707) = 3.35\), which the slide rounds to 3.5, so \(cU/m\) is 0.67 rather than 0.7.</p></div>
+      <p><b>Rockets</b> (slide 21): the exhaust leaves at \(v_e\) relative to the rocket, so thrust \(= \dot m v_e\).</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Cart pushed by a jet</h3></div><div class="panel-b">
+      <div class="fields" id="cFields">
+        <div class="field"><label for="cU">Jet speed U <span class="unit">m/s</span></label><input id="cU" type="text" inputmode="decimal" value="20"></div>
+        <div class="field"><label for="cD">Jet diameter <span class="unit">mm</span></label><input id="cD" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="cM">Cart mass <span class="unit">kg</span></label><input id="cM" type="text" inputmode="decimal" value="100"></div>
+        <div class="field"><label for="cK">Air drag k in kV² <span class="unit">N·s²/m²</span> <span class="mono" id="cKV"></span></label><input id="cK" type="range" min="0" max="40" step="0.5" value="10"></div>
+      </div>
+      <svg id="cPlot" style="width:100%;display:block" role="img" aria-label="Cart speed against time from rest, with and without air drag."></svg>
+      <div class="out"><div class="stat hot"><span class="lbl">Terminal speed</span><span class="val" id="cVt"></span></div><div class="stat"><span class="lbl">Acceleration at 8 m/s, no drag</span><span class="val" id="cA"></span></div></div>
+      <p class="small muted">Vane turns the jet 135° (slides 19–23). Dashed: no drag, the slide 23 result. Solid: with drag. Slide 22 notes the real motion is more complicated; this is the same simple model.</p>
+    </div></div>
+  </div>
+</section>
+
+<section id="coanda">
+  <div class="sec-head"><p class="eyebrow">Slides 14–16</p><h2>The Coanda effect</h2></div>
+  <div class="read">
+    <p>A stream tends to cling to a curved surface next to it: tea runs down the outside of a tipped cup, and a faucet stream bends around the back of a spoon. Viscosity drags the thin layer of air between the jet and the surface along until it's thinned out, the pressure there drops, and the jet is pulled onto the surface. Once it follows the curve, momentum takes over: turning the stream toward one side means the surface pushes the water that way, so the water pulls the surface the other way, <b>into</b> the stream. A ladle held under a faucet is drawn toward the water, not pushed away (slide 15).</p>
+    <p>Aircraft use it (slide 16): slats and flaps help the airflow follow the wing's curved upper surface at high angles of attack, turning more air downward and making more lift. This is the other half of the Magnus effect story from Chapter 6.</p>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Every worked problem in the CH 16 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s4–5</span>Ex 16.1 · jet turned 90° by a vane</span><span class="s">1 in water jet at 20 ft/s, turned straight up</span><span class="ans">on water: −4.23i + 4.23j lb</span></summary><div class="dbody"><ol><li>\(A = \pi(1/12)^2/4 = 5.45\times10^{-3}\) ft², \(\dot m = \rho AV = 1.94(5.45\times10^{-3})(20) = 0.212\) slug/s.</li><li>x: \(F_x = \dot m(0 - 20) = -4.23\) lb. y: \(F_y = \dot m(20 - 0) = +4.23\) lb. That's the force the plate applies <b>on the water</b> (slide 4).</li><li>Slide 5's variation, the force of the water <b>on the plate</b>: \(+4.23\) lb in x and \(-4.23\) lb in y (Newton's third law).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s7</span>Levitation</span><span class="s">An 825 N plate held up by a 60 mm water jet that spreads out sideways</span><span class="ans">17.1 m/s</span></summary><div class="dbody"><ol><li>The jet arrives going up and leaves horizontally in all directions, so its vertical momentum is destroyed: \(F = \dot mV = \rho AV^2\).</li><li>\(1000\,\pi(0.03)^2 V^2 = 825\) gives \(V = 17.1\) m/s at the plate. Same as Ex 16.1 with a different geometry, as the slide says.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s8</span>Ex 16.2 · 90° elbow</span><span class="s">4 in Sch 40, 3000 L/min of water, 550 kPa in, 440 kPa out</span><span class="ans">R = −4820i + 3920j N</span></summary><div class="dbody"><ol><li>\(A = 8.21\times10^{-3}\) m², \(Q = 0.05\) m³/s, \(v = 6.09\) m/s, \(\dot m = 50\) kg/s, \(\dot mv = 304\) N.</li><li>Pressure forces: \(p_1A_1 = 4517\) N pushing in +x on the inlet face; \(p_2A_2 = 3614\) N pushing in −y on the outlet face.</li><li>x: \(R_x + 4517 = 50(0 - 6.09)\), so \(R_x = -4821\) N. y: \(R_y - 3614 = 50(6.09 - 0)\), so \(R_y = 3918\) N. The slide rounds to −4800i + 3900j N. Load it in the bend calculator.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s10</span>2023 Final · jet split by a cone</span><span class="s">2 cm jet at 20 m/s split symmetrically, leaving at θ to the axis; speed unchanged</span><span class="ans">−36.8i N (45°); −125.7i N (90°)</span></summary><div class="dbody"><ol><li>\(\dot m = 1000\,\pi(0.01)^2(20) = 6.28\) kg/s, \(\dot mV = 125.7\) N. The two halves' y-momenta cancel.</li><li>x on the water: \(F_x = \dot m(V\cos\theta - V) = -125.7(1 - \cos\theta)\). The water pushes the cone with the opposite force, so the hand must supply \(F = -125.7(1 - \cos\theta)\,\hat i\): −36.8 N at 45° and −125.7 N at 90°.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s11</span>Reducing elbow discharging to air</span><span class="s">Inlet 220 kPa absolute, 0.01 m²; outlet 0.0025 m² at 16 m/s pointing down, to atmosphere</span><span class="ans">R = −1350i − 640j N</span></summary><div class="dbody"><ol><li>\(v_1 = 16(0.0025/0.01) = 4\) m/s, \(\dot m = 1000(0.0025)(16) = 40\) kg/s.</li><li>Gauge inlet pressure: 220 − 101 = 119 kPa (the atmosphere also acts on the outside). Outlet: 0 gauge.</li><li>x: \(R_x + (119\,000)(0.01) = 40(0 - 4)\), \(R_x = -1350\) N. y: \(R_y = 40(-16 - 0) = -640\) N. Weight neglected.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s12</span>Garden hose with a thumb</span><span class="s">Hose area 4 × 10⁻⁴ m², 2 m/s, 0 gauge at the open end; block 60 % of the outlet</span><span class="ans">−1.8 N on the water</span></summary><div class="dbody"><ol><li>Assuming the same flow (Ch 6 hose problem): the outlet is 40 % open, so the jet leaves at 5 m/s. \(\dot m = 1000(4\times10^{-4})(2) = 0.8\) kg/s.</li><li>Bernoulli gives the pressure just upstream of the thumb: \(p_1 = \tfrac{1000}{2}(5^2 - 2^2) = 10.5\) kPa, so \(p_1A_1 = 4.2\) N pushing downstream.</li><li>Momentum: \(4.2 + F = 0.8(5 - 2) = 2.4\), so \(F = -1.8\) N: the thumb pushes back on the water with 1.8 N, and the water pushes the thumb forward with 1.8 N.</li></ol><p class="note">"Doesn't make sense" at first: the water speeds up, so why isn't the thumb pulled back? Because the pressure that builds up behind the thumb is bigger than the momentum change.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s13</span>Sluice gate</span><span class="s">3 m deep at 1 m/s upstream; 0.429 m at 7 m/s downstream; hydrostatic pressure at both sections</span><span class="ans">−25.2 kN per metre of width</span></summary><div class="dbody"><ol><li>Per metre of width: \(\dot m = 1000(3)(1) = 3000\) kg/s.</li><li>Pressure forces \(\tfrac12\rho gD^2\): 44.1 kN/m upstream (pushing +x), 0.90 kN/m downstream (pushing −x).</li><li>\(R_x + 44.1 - 0.90 = 3000(7 - 1)/1000 = 18.0\) kN/m, so \(R_x = -25.2\) kN/m: the gate holds the water back with 25.2 kN per metre. With the gate closed and still water it would be the full 44.1 kN/m; flow relieves it.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s15</span>Coanda · ladle under a faucet</span><span class="s">1 m/s, 1 cm² stream, turned 30° by the ladle; gravity ignored</span><span class="ans">−0.05 N</span></summary><div class="dbody"><p>\(\dot m = 1000(10^{-4})(1) = 0.1\) kg/s. The stream arrives vertically and leaves with a horizontal component \(1 \times \sin30° = 0.5\) m/s, so the ladle pushes the water with \(0.1 \times 0.5 = 0.05\) N horizontally. The water pulls the ladle 0.05 N the other way, into the stream.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s17</span>Conveyor belt filling with sand</span><span class="s">Belt at 3 ft/s; sand falls at 500 lbm/s</span><span class="ans">46.6 lbf</span></summary><div class="dbody"><p>The sand arrives with no horizontal velocity and leaves at the belt speed. \(T = \dot mV_{belt} = (500/32.2)(3) = 46.6\) lbf. The same momentum idea works for any stream of mass, not just fluids.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s18–19</span>Vane turning a jet 135°, fixed and moving</span><span class="s">5 cm water jet at 12 m/s; then 20 m/s on a car moving at 8 m/s</span><span class="ans">483i − 200j N both times</span></summary><div class="dbody"><ol><li>Fixed: \(\dot m = 1000\,\pi(0.025)^2(12) = 23.6\) kg/s, \(\dot mV = 283\) N. The jet leaves at 135° from its arrival direction: on the water, \(F_x = 283(\cos135° - 1) = -483\) N, \(F_y = 283\sin135° = 200\) N. On the vane: \(483\hat i - 200\hat j\) N.</li><li>Moving at 8 m/s: relative speed 12 m/s and relative mass flow \(\rho A(12)\): identical numbers. Power to the car: 483 × 8 = 3.86 kW.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s20–23</span>Car pushed by the jet: drag, acceleration, speed over time</span><span class="s">20 m/s jet, 5 cm, 135° vane; 100 kg; drag 10V²</span><span class="ans">7.3 m/s; 4.83 m/s²; V/U = 0.67t/(1 + 0.67t)</span></summary><div class="dbody"><ol><li>\(c = \rho A(1 - \cos135°) = 3.35\) kg/m. Terminal speed: \(3.35(20 - V)^2 = 10V^2\), so \(1.831(20 - V) = 3.162V\), \(V = 7.33\) m/s.</li><li>At 8 m/s with no drag: \(a = 3.35(12)^2/100 = 4.83\) m/s².</li><li>From rest with no drag: \(\int dV/(U - V)^2 = (c/m)\int dt\) gives \(V/U = 0.670t/(1 + 0.670t)\) (t in seconds). After 1 s the car does 8.0 m/s. See the plot in the moving-bodies section.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s21</span>Rocket thrust</span><span class="s">15.2 lbm/s of propellant, exhaust at 3220 ft/s relative</span><span class="ans">1520 lbf</span></summary><div class="dbody"><p>\(F = \dot mv_e = (15.2/32.2)(3220) = 1520\) lbf. Constant velocity means the thrust balances drag and the rocket's weight component; in the rocket's frame the propellant arrives at rest and leaves at 3220 ft/s.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s24</span>Turbine blade (Mott 16.29–16.30)</span><span class="s">7.5 mm jet at 25 m/s, arriving 10° above the blade's direction of motion and leaving along the blade at 60° from the reverse direction; blades at 10 m/s</span><span class="ans">≈ 245 W (wheel)</span></summary><div class="dbody"><ol><li>Check the geometry with Problem 16.29 (blade fixed): \(\dot mV = 1000(4.42\times10^{-5})(25)^2 = 27.6\) N; \(F_x = 27.6(\cos60° + \cos10°) = 41.0\) N and \(F_y = 27.6(\sin60° - \sin10°) = 19.1\) N, the book's answers.</li><li>Blade moving at 10 m/s: relative inlet velocity \((24.62 - 10,\ 4.34) = (14.62, 4.34)\), 15.25 m/s. It leaves along the blade at the same relative speed: \((-7.63, 13.21)\), so the absolute exit velocity is \((2.37, 13.21)\) m/s.</li><li>As part of a wheel, all \(\dot m = \rho AV = 1.10\) kg/s does work: \(F_x = 1.10(24.62 - 2.37) = 24.6\) N on the blades, power \(= 24.6 \times 10 = 245\) W, 71 % of the jet's 345 W of kinetic power.</li></ol><p class="note">The blade angles are read from the slide's figure, and Mott's answer to 16.30 isn't in the back of the book, so treat this as my worked solution. A single blade alone (not a wheel) receives only \(\rho A|w| = 0.674\) kg/s and gets 150 W.</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. A jet is turned straight back (180°) by a fixed vane, speed unchanged. Compared with a flat plate (90°, splashing sideways), the force is</p><div class="opts"><button class="opt" data-k="a">the same</button><button class="opt" data-k="b">half</button><button class="opt" data-k="c">twice</button><button class="opt" data-k="d">zero</button></div><p class="fb" hidden>F = ṁV(1 − cos θ): 1 at 90°, 2 at 180°. Pelton buckets turn the jet back for this reason.</p></div>
+    <div class="q" data-answer="b"><p class="qt">2. A vane moves away from a jet at half the jet speed. Compared with a fixed vane, the force is</p><div class="opts"><button class="opt" data-k="a">half</button><button class="opt" data-k="b">a quarter</button><button class="opt" data-k="c">the same</button></div><p class="fb" hidden>Relative speed halves and the mass flow reaching it halves: (1/2)² = 1/4.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. In a bend calculation, which pressure belongs in pA?</p><div class="opts"><button class="opt" data-k="a">Gauge, when the outside is at atmospheric pressure</button><button class="opt" data-k="b">Always absolute</button><button class="opt" data-k="c">Neither; pressure doesn't enter</button></div><p class="fb" hidden>The atmosphere pushes on the outside of the pipe too; gauge pressure nets that out (slide 11).</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Momentum equation</span>\[ \vec F = \dot m(\vec v_{out} - \vec v_{in}) \]<span class="wh">Net force on the fluid; ṁ = ρQ.</span></div>
+    <div><span class="nm">Jet on a fixed vane</span>\[ F_x = \dot mV(1 - \cos\theta),\ F_y = \dot mV\sin\theta \]<span class="wh">θ = turning angle.</span></div>
+    <div><span class="nm">Moving vane</span>\[ \dot m = \rho A(V - V_0),\ \text{use } V - V_0 \]<span class="wh">Wheel of vanes: ṁ = ρAV.</span></div>
+    <div><span class="nm">Pipe bend</span>\[ \vec R + p_1A_1\hat n_1 + p_2A_2\hat n_2 = \dot m(\vec v_2 - \vec v_1) \]<span class="wh">n̂: inward normals; gauge pressures.</span></div>
+    <div><span class="nm">Rocket thrust</span>\[ F = \dot m\,v_e \]<span class="wh">v<sub>e</sub> relative to the rocket.</span></div>
+    <div><span class="nm">Power to a vane</span>\[ P = F_xV_0 \]<span class="wh">Force along the motion × speed.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* ---------- jet on vane ---------- */
+  let jsys = 'SI';
+  const JPRE = {
+    e161: ['US', 20, 1, 90, 0, 'one', 'Ex 16.1: 1 in jet at 20 ft/s. The card shows the force on the vane; the force on the water is the opposite, −4.23i + 4.23j lb.'],
+    vane: ['SI', 12, 50, 135, 0, 'one', 'Slide 18: the vane sends the water back up at 45° (a 135° turn).'],
+    car: ['SI', 20, 50, 135, 8, 'one', 'Slide 19: same vane on a car moving at 8 m/s; relative speed 12 m/s gives the same force as slide 18.'],
+    cone45: ['SI', 20, 20, 45, 0, 'split', 'Slide 10 (θ = 45°): the force shown is the water on the cone; the holding force is its opposite, −36.8i N.'],
+    cone90: ['SI', 20, 20, 90, 0, 'split', 'Slide 10 (θ = 90°): holding force −125.7i N.'],
+  };
+  function jLabels() { const us = jsys === 'US'; $('#jVL').innerHTML = `Jet speed V <span class="unit">${us ? 'ft/s' : 'm/s'}</span>`; $('#jDL').innerHTML = `Jet diameter <span class="unit">${us ? 'in' : 'mm'}</span>`; $('#jV0L').innerHTML = `Vane speed V<sub>0</sub> (away from jet) <span class="unit">${us ? 'ft/s' : 'm/s'}</span>`; }
+  function jet() {
+    const us = jsys === 'US', V = num('#jV'), D = num('#jD') / (us ? 12 : 1000), th = num('#jT'), V0 = num('#jV0'), split = $('#jSplit').value === 'split';
+    $('#jTV').textContent = `${th}°`;
+    if (!(V > 0 && D > 0 && V0 >= 0 && V0 < V)) { $('#jNote').textContent = 'Need a jet faster than the vane.'; return; }
+    const r = C.jetVane({ V, D, rho: us ? 1.94 : 1000, turn: th, V0, split }), FU = us ? 'lb' : 'N';
+    $('#jM').textContent = us ? `${f(r.mdot, 4)} slug/s` : `${f(r.mdot, 4)} kg/s`;
+    $('#jF').textContent = `${f(r.Fx, 4)} i ${r.Fy < 0 ? '−' : '+'} ${f(Math.abs(r.Fy), 4)} j ${FU}`;
+    $('#jP').textContent = V0 > 0 ? (us ? `${f(r.P / 550, 3)} hp` : `${f(r.P, 4)} W`) : '0 (vane fixed)';
+    if (!$('#jNote').dataset.keep) $('#jNote').textContent = `F_x = ṁ(V − V₀)(1 − cos θ) = ${f(r.mdot, 4)} × ${f(r.Vr, 4)} × ${f(1 - Math.cos(th * Math.PI / 180), 3)}. ` + (split ? 'Split flow: the y-forces of the two halves cancel.' : `F_y = −ṁ(V − V₀) sin θ.`);
+    // drawing
+    const s = $('#jSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const cx = 330, cy = 160, R = 70, t = th * Math.PI / 180;
+    const aW = FM.arrowDef(s, 'fl-water', 'ja'), aD = FM.arrowDef(s, 'fl-dye', 'jd'), aI = FM.arrowDef(s, 'fl-ink2', 'ji');
+    el('line', { x1: 40, x2: cx, y1: cy, y2: cy, class: 'st-water', 'stroke-width': 12, opacity: 0.45 }, s);
+    el('line', { x1: 60, x2: 160, y1: cy - 26, y2: cy - 26, class: 'st-water', 'stroke-width': 2.5, 'marker-end': aW }, s); text(s, 60, cy - 34, 'v in', { 'font-size': 12.5, class: 'fl-water' });
+    const branch = (sg) => { // sg = -1 up (SVG), +1 down
+      const ex = Math.cos(t), ey = Math.sin(t) * sg; // direction leaving (x right, SVG y down; up = negative)
+      const path = `M${cx},${cy} Q${cx + R * 0.9},${cy} ${cx + R * 0.9 + 60 * ex},${cy + 60 * ey}`;
+      el('path', { d: path, fill: 'none', class: 'st-water', 'stroke-width': split ? 8 : 12, opacity: 0.45 }, s);
+      const x0 = cx + R * 0.9 + 60 * ex, y0 = cy + 60 * ey;
+      el('line', { x1: x0, y1: y0, x2: x0 + 80 * ex, y2: y0 + 80 * ey, class: 'st-water', 'stroke-width': 2.5, 'marker-end': aW }, s);
+      text(s, x0 + 84 * ex + 4, y0 + 84 * ey, 'v out', { 'font-size': 12.5, class: 'fl-water' });
+    };
+    branch(-1); if (split) branch(1);
+    // vane body
+    el('path', { d: `M${cx - 10},${cy + 12} Q${cx + R},${cy + 12} ${cx + R + 50 * Math.cos(t)},${cy + 12 - 50 * Math.sin(t)}`, fill: 'none', class: 'st-green', 'stroke-width': 7 }, s);
+    if (V0 > 0) { el('line', { x1: cx - 40, x2: cx + 40, y1: cy + 60, y2: cy + 60, class: 'st-ink2', 'stroke-width': 2, 'marker-end': aI }, s); text(s, cx - 40, cy + 78, `vane moves at V₀`, { 'font-size': 12 }); }
+    // force arrow (on vane), scaled
+    const Fm = r.F || 1, L = 90, fx = r.Fx / Fm * L, fy = -r.Fy / Fm * L; // SVG y down: Fy negative (down) => +fy
+    const ox = cx + 30, oy = cy + 20;
+    el('line', { x1: ox, y1: oy, x2: ox + fx, y2: oy + fy, class: 'st-dye', 'stroke-width': 3.5, 'marker-end': aD }, s);
+    text(s, ox + fx + 8, oy + fy + 4, `F on vane`, { 'font-size': 12.5, class: 'fl-dye' });
+  }
+  $$('[data-j]').forEach((b) => b.addEventListener('click', () => { const v = JPRE[b.dataset.j]; jsys = v[0]; $$('#jSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === jsys))); $('#jV').value = v[1]; $('#jD').value = v[2]; $('#jT').value = v[3]; $('#jV0').value = v[4]; $('#jSplit').value = v[5]; jLabels(); $('#jNote').dataset.keep = '1'; jet(); $('#jNote').textContent = v[6]; delete $('#jNote').dataset.keep; }));
+  segmented($('#jSys'), (v) => { jsys = v; jLabels(); jet(); });
+  onInputs('#jFields', jet); jLabels(); jet();
+
+  /* ---------- bend ---------- */
+  const BPRE = { e162: { bQ: 3000, bA1: 8.213e-3, bA2: 8.213e-3, bP1: 550, bP2: 440, bPhi: 90, bRho: 1000 }, mount: { bQ: 2400, bA1: 0.01, bA2: 0.0025, bP1: 119, bP2: 0, bPhi: -90, bRho: 1000 } };
+  function bend() {
+    const Q = num('#bQ') / 60000, A1 = num('#bA1'), A2 = num('#bA2'), p1 = num('#bP1') * 1000, p2 = num('#bP2') * 1000, phi = num('#bPhi'), rho = num('#bRho');
+    $('#bPhiV').textContent = `${phi}°`;
+    if (!(Q > 0 && A1 > 0 && A2 > 0 && rho > 0)) return;
+    const r = C.bendForce({ Q, A1, A2, p1, p2, phi, rho });
+    $('#bV').textContent = `${f(r.v1, 3)}, ${f(r.v2, 3)} m/s, ${f(r.m, 3)} kg/s`; $('#bR').textContent = `${f(r.Rx, 4)} i ${r.Ry < 0 ? '−' : '+'} ${f(Math.abs(r.Ry), 4)} j N`; $('#bRm').textContent = `${f(r.R, 4)} N`;
+    const snap = (x) => (Math.abs(x) < 1e-12 ? 0 : x), c = snap(Math.cos(phi * Math.PI / 180)), s0 = snap(Math.sin(phi * Math.PI / 180));
+    $('#bWork').innerHTML = `<div>x: R_x + p₁A₁ − p₂A₂cos φ = ṁ(v₂cos φ − v₁) → R_x = ${f(r.m, 4)}(${f(r.v2 * c, 4)} − ${f(r.v1, 4)}) − ${f(p1 * A1, 4)} + ${f(p2 * A2 * c, 4)} = ${f(r.Rx, 4)} N</div><div>y: R_y − p₂A₂sin φ = ṁ v₂ sin φ → R_y = ${f(r.m * r.v2 * s0, 4)} + ${f(p2 * A2 * s0, 4)} = ${f(r.Ry, 4)} N</div>`;
+    const s = $('#bSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const cx = 150, cy = 150, ex = c, ey = -s0;
+    el('path', { d: `M20,${cy} L${cx},${cy} L${cx + 100 * ex},${cy + 100 * ey}`, fill: 'none', class: 'st-ink2', 'stroke-width': 18, opacity: 0.3, 'stroke-linejoin': 'round' }, s);
+    const aW = FM.arrowDef(s, 'fl-water', 'ba'), aI = FM.arrowDef(s, 'fl-ink2', 'bi'), aD = FM.arrowDef(s, 'fl-dye', 'bd');
+    el('line', { x1: 30, x2: 90, y1: cy - 22, y2: cy - 22, class: 'st-water', 'stroke-width': 2, 'marker-end': aW }, s); text(s, 30, cy - 30, 'v₁', { 'font-size': 12, class: 'fl-water' });
+    el('line', { x1: cx + 70 * ex, y1: cy + 70 * ey, x2: cx + 120 * ex, y2: cy + 120 * ey, class: 'st-water', 'stroke-width': 2, 'marker-end': aW }, s); text(s, cx + 128 * ex, cy + 128 * ey, 'v₂', { 'font-size': 12, class: 'fl-water' });
+    if (p1 > 0) { el('line', { x1: 0, x2: 22, y1: cy + 22, y2: cy + 22, class: 'st-ink2', 'stroke-width': 2, 'marker-end': aI }, s); text(s, 2, cy + 40, 'p₁A₁', { 'font-size': 11 }); /* inlet pressure force */ }
+    if (p2 > 0) { const x0 = cx + 130 * ex, y0 = cy + 130 * ey; el('line', { x1: x0 + 18 * ey, y1: y0 - 18 * ex, x2: x0 - 22 * ex + 18 * ey, y2: y0 - 22 * ey - 18 * ex, class: 'st-ink2', 'stroke-width': 2, 'marker-end': aI }, s); text(s, x0 + 24 * ey, y0 - 24 * ex, 'p₂A₂', { 'font-size': 11 }); }
+    const L = 80, rx = r.Rx / r.R * L, ry = -r.Ry / r.R * L;
+    el('line', { x1: cx, y1: cy, x2: cx + rx, y2: cy + ry, class: 'st-dye', 'stroke-width': 3.5, 'marker-end': aD }, s); text(s, Math.max(40, Math.min(280, cx + rx)), cy + ry + (ry >= 0 ? 22 : -10), 'R (support)', { 'font-size': 12, class: 'fl-dye', 'text-anchor': 'middle' });
+  }
+  $$('[data-b]').forEach((b) => b.addEventListener('click', () => { FM.setVals(BPRE[b.dataset.b]); bend(); }));
+  onInputs('#bFields', bend); bend();
+
+  /* ---------- cart ---------- */
+  function cart() {
+    const U = num('#cU'), D = num('#cD') / 1000, m = num('#cM'), k = num('#cK'); $('#cKV').textContent = k;
+    if (!(U > 0 && D > 0 && m > 0)) return;
+    const tEnd = 15, a = C.jetCart({ U, D, rho: 1000, turn: 135, mass: m, k, tEnd, dt: 0.02 }), b = C.jetCart({ U, D, rho: 1000, turn: 135, mass: m, k: 0, tEnd, dt: 0.02 });
+    const p = FM.plot($('#cPlot'), { W: 380, H: 230, m: { l: 48, r: 12, t: 12, b: 42 }, x: { min: 0, max: tEnd, label: 'time (s)' }, y: { min: 0, max: U, label: 'cart speed (m/s)' } });
+    FM.line(p, b.pts, { class: 'st-ink2', 'stroke-dasharray': '5 4', 'stroke-width': 1.6 }); FM.line(p, a.pts, { class: 'st-water', 'stroke-width': 2.5 });
+    if (k > 0) { el('line', { x1: p.sx(0), x2: p.sx(tEnd), y1: p.sy(a.Vterm), y2: p.sy(a.Vterm), class: 'st-dye', 'stroke-dasharray': '3 3' }, p.g); text(p.g, p.sx(tEnd) - 4, p.sy(a.Vterm) - 5, `terminal ${f(a.Vterm, 3)} m/s`, { 'font-size': 11, class: 'fl-dye', 'text-anchor': 'end' }); }
+    $('#cVt').textContent = k > 0 ? `${f(a.Vterm, 3)} m/s` : `→ ${U} m/s (no drag)`; $('#cA').textContent = U > 8 ? `${f(a.c * (U - 8) ** 2 / m, 3)} m/s²` : '—';
+  }
+  onInputs('#cFields', cart); cart();
+})();
+</script>

@@ -1,0 +1,259 @@
+<!--title: The General Energy Equation (Ch 7)-->
+<!--short: Ch 7 Energy equation-->
+<!--eyebrow: Week 5 · Chapter 7-->
+<!--desc: Lecture companion for Mott Chapter 7: adding pump head, motor head and losses to Bernoulli's equation, pump power and efficiency, and why pump inlets cavitate, with a live energy-line diagram of the slide exercises.-->
+<header class="hero">
+  <p class="eyebrow">Week 5 · Mott Chapter 7 (General Energy Equation) · Slide deck CH 7</p>
+  <h1>The General <em>Energy</em> Equation</h1>
+  <p class="lede">Bernoulli assumed nothing adds or removes energy between two points. Real pipelines have pumps that add it, turbines and motors that take it out, and friction that wastes it. Three new heads, \(h_A\), \(h_R\) and \(h_L\), keep the books balanced.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#why">Why Bernoulli isn't enough</a><a href="#eq">The equation</a><a href="#power">Power &amp; efficiency</a><a href="#loop">Pump system</a><a href="#cav">Cavitation</a><a href="#pipe">Pipe sizes</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Energy line through a pumped system (slides 22–27)</h3><div class="chips"><button type="button" class="chip" data-l="s23">s23: no losses</button><button type="button" class="chip" data-l="s25">s24–25: 9 ft loss</button><button type="button" class="chip" data-l="s27">s26–27: + 5 ft suction loss</button><button type="button" class="chip" data-l="s27b">s27: at 20 ft/s</button></div></div>
+    <div class="panel-b">
+      <svg id="heroSvg" viewBox="0 0 640 300" style="width:100%;display:block" role="img" aria-label="Lower reservoir, suction pipe, pump, discharge pipe and upper reservoir. The energy grade line falls along each pipe by its loss and jumps up at the pump by the pump head; the hydraulic grade line sits one velocity head below it."></svg>
+      <div class="fields" id="lFields">
+        <div class="field"><label for="lDz">Lift, upper − lower surface <span class="unit">ft</span></label><input id="lDz" type="text" inputmode="decimal" value="6"></div>
+        <div class="field"><label for="lD">Pump depth below lower surface <span class="unit">ft</span></label><input id="lD" type="text" inputmode="decimal" value="4"></div>
+        <div class="field"><label for="lHs">Suction-line loss <span class="unit">ft</span> <span class="mono" id="lHsV"></span></label><input id="lHs" type="range" min="0" max="40" step="0.5" value="5"></div>
+        <div class="field"><label for="lHd">Discharge-line loss <span class="unit">ft</span> <span class="mono" id="lHdV"></span></label><input id="lHd" type="range" min="0" max="40" step="0.5" value="9"></div>
+        <div class="field"><label for="lV">Pipe velocity <span class="unit">ft/s</span> <span class="mono" id="lVV"></span></label><input id="lV" type="range" min="1" max="40" step="0.5" value="10"></div>
+        <div class="field"><label for="lQ">Flow rate <span class="unit">ft³/s</span></label><input id="lQ" type="text" inputmode="decimal" value="2"></div>
+        <div class="field"><label for="lE">Pump efficiency</label><input id="lE" type="text" inputmode="decimal" value="0.80"></div>
+      </div>
+      <div class="out">
+        <div class="stat hot"><span class="lbl">Pump head h<sub>A</sub></span><span class="val" id="lHA"></span></div>
+        <div class="stat"><span class="lbl">Power input P<sub>I</sub></span><span class="val" id="lP"></span></div>
+        <div class="stat"><span class="lbl">Pressure head, pump inlet</span><span class="val" id="lPin"></span></div>
+        <div class="stat"><span class="lbl">Pressure head, pump outlet</span><span class="val" id="lPout"></span></div>
+      </div>
+      <p class="small" id="lNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#why">Why Bernoulli isn't enough</a></li><li><a href="#eq">The general energy equation</a></li><li><a href="#power">Power &amp; efficiency</a></li><li><a href="#loop">Pump system, step by step</a></li><li><a href="#cav">Cavitation</a></li><li><a href="#pipe">Pipe sizes &amp; schedules</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="why">
+  <div class="sec-head"><p class="eyebrow">Slides 2–5, 10–12</p><h2>A horizontal pipe that loses pressure</h2><p class="dek">The slides open with a thought experiment. Answer each step before you read on.</p></div>
+  <div class="quiz">
+    <div class="q" data-answer="a"><p class="qt">1. Water flows steadily through a horizontal 3 in pipe of uniform diameter. The inlet velocity is 10 ft/s. The outlet velocity is</p><div class="opts"><button class="opt" data-k="a">10 ft/s</button><button class="opt" data-k="b">less than 10 ft/s, because of friction</button><button class="opt" data-k="c">more than 10 ft/s</button></div><p class="fb" hidden>Continuity: same area, same Q, same velocity. Friction can't slow the flow down in a pipe of constant area (slide 4).</p></div>
+    <div class="q" data-answer="b"><p class="qt">2. With no losses, the inlet pressure head is 3 ft. The outlet pressure head is</p><div class="opts"><button class="opt" data-k="a">less than 3 ft</button><button class="opt" data-k="b">3 ft</button><button class="opt" data-k="c">more than 3 ft</button></div><p class="fb" hidden>Same z, same v, so Bernoulli leaves p₁/γ = p₂/γ (slide 5).</p></div>
+    <div class="q" data-answer="c"><p class="qt">3. You measure 3 ft of pressure head at the inlet and only 1 ft at the outlet. That means</p><div class="opts"><button class="opt" data-k="a">the flow sped up</button><button class="opt" data-k="b">the gauges are wrong; Bernoulli says they must match</button><button class="opt" data-k="c">2 ft of head was lost to friction</button></div><p class="fb" hidden>The velocity and elevation didn't change, so the missing 2 ft of pressure head went into friction: h_L = 2 ft (slide 10). Chapter 8 explains how to predict it; industry publishes it as charts of pressure drop per length of pipe (slide 11).</p></div>
+    <div class="q" data-answer="a"><p class="qt">4. To deliver the fluid at the outlet with the same pressure it had at the inlet, as on the Trans-Alaska Pipeline, you need</p><div class="opts"><button class="opt" data-k="a">a pump adding the lost head back</button><button class="opt" data-k="b">a bigger outlet</button><button class="opt" data-k="c">a turbine</button></div><p class="fb" hidden>A pump adds head h_A = h_L (slides 12–14). A turbine removes energy instead.</p></div>
+  </div>
+</section>
+
+<section id="eq">
+  <div class="sec-head"><p class="eyebrow">Slides 6–9, 20–21 · Mott §7.3–7.4</p><h2>The general energy equation</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>Keep Bernoulli's energy-per-unit-weight bookkeeping and add three terms, each also in feet or metres of head:</p>
+      <ul>
+        <li>\(h_A\): energy <b>added</b> by a pump.</li>
+        <li>\(h_R\): energy <b>removed</b> for useful work by a turbine or fluid motor.</li>
+        <li>\(h_L\): energy <b>lost</b> to friction in pipes, valves and fittings (it becomes heat).</li>
+      </ul>
+      <div class="boxed">\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} + h_A - h_R - h_L = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]</div>
+      <p>Read it as: energy at 1, plus what's added, minus what's taken out, equals energy at 2. Flow goes from 1 to 2. Like Bernoulli, it can be written per unit volume (multiply through by γ), which the slides skip for time.</p>
+      <p>Slide 21: use it either way. Given the pump head and losses, find a pressure, velocity or elevation; or given the pressures you need, find the pump head.</p>
+    </div>
+    <div class="read">
+      <h3>Reading Mott's Figure 7.3 (slide 20)</h3>
+      <p>Between point 1 (before the pump) and point 2 (after the motor), the fluid gains \(h_A\) in the pump, loses \(h_L\) in the pipe, valve and elbows, and gives up \(h_R\) in the motor. The energy at 2 is the energy at 1 plus \(h_A - h_R - h_L\).</p>
+      <h3>Pumps (slide 13) and motors (slide 19)</h3>
+      <p><b>Positive-displacement</b> pumps trap a fixed volume and push it out (gear, piston, vane). <b>Kinetic</b> pumps (centrifugal) add speed with an impeller and convert it to pressure. A hydraulic motor is a pump run backward: pressure in, shaft work out. Chapter 13 covers pumps in detail.</p>
+      <div class="trap"><span class="tag">Trap</span><p>Units: \(h_A\), \(h_R\), \(h_L\) are N·m/N = m (or lb·ft/lb = ft). They are energies per unit weight, not powers and not pressures.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="power">
+  <div class="sec-head"><p class="eyebrow">Slides 15–18 · Mott §7.6–7.7</p><h2>Power and efficiency</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>Head is energy per pound (or newton) of fluid; the weight flow rate \(W = \gamma Q\) is pounds per second. Multiply:</p>
+      <div class="boxed">\[ P_A = h_A W = h_A\gamma Q \]</div>
+      <p>The pump's shaft must supply more than that, because of friction and leakage inside the pump. The <b>mechanical efficiency</b> is</p>
+      \[ e_M = \frac{P_A}{P_I} &lt; 1 \]
+      <p>For a fluid motor it runs the other way: the fluid delivers \(P_R = h_R\gamma Q\) and the shaft gets \(P_O = e_M P_R\).</p>
+      <p class="small muted">Conversions: 1 hp = 550 ft·lb/s = 745.7 W; 1 ft·lb/s = 1.356 W.</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Power calculator</h3><div class="seg" role="group" aria-label="Device" id="wDev"><button type="button" data-v="pump" aria-pressed="true">Pump</button><button type="button" data-v="motor" aria-pressed="false">Fluid motor</button></div></div><div class="panel-b">
+      <div class="fields" id="wFields">
+        <div class="field"><label for="wH" id="wHL">Head h<sub>A</sub></label><input id="wH" type="text" inputmode="decimal" value="2"></div>
+        <div class="field"><label for="wU">Units</label><select id="wU"><option value="US">ft, ft³/s, lb/ft³</option><option value="SI">m, m³/s, N/m³</option></select></div>
+        <div class="field"><label for="wQ">Flow rate Q</label><input id="wQ" type="text" inputmode="decimal" value="5"></div>
+        <div class="field"><label for="wG">Specific weight γ</label><input id="wG" type="text" inputmode="decimal" value="62.4"></div>
+        <div class="field"><label for="wE">Efficiency e<sub>M</sub></label><input id="wE" type="text" inputmode="decimal" value="0.5"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-w="s17">Slides 14–18</button><button type="button" class="chip" data-w="e73">Ex 7.3</button><button type="button" class="chip" data-w="p711">Prob 7.11</button></div>
+      <div class="out"><div class="stat"><span class="lbl" id="wP1L">Power to fluid P<sub>A</sub></span><span class="val" id="wP1" style="font-size:17px"></span></div><div class="stat hot"><span class="lbl" id="wP2L">Power input P<sub>I</sub></span><span class="val" id="wP2" style="font-size:17px"></span></div></div>
+      <p class="small muted" id="wNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="loop">
+  <div class="sec-head"><p class="eyebrow">Slides 22–27</p><h2>A pumped system, one step at a time</h2><p class="dek">Water is pumped from an open reservoir to another open reservoir 6 ft higher. The slides add complications one at a time; the energy-line diagram at the top of the page follows along.</p></div>
+  <ol class="steps">
+    <li><span class="sn">1</span><div class="sb"><h4>No losses (slide 23)</h4><p>Surface to surface: \(p = 0\) and \(v \approx 0\) at both ends, so \(z_1 + h_A = z_2\), \(h_A = 6\) ft. Even a frictionless pump must lift the water.</p></div></li>
+    <li><span class="sn">2</span><div class="sb"><h4>9 ft of loss in the discharge line (slide 24)</h4><p>\(h_A = 6 + 9 = 15\) ft. At 2 ft³/s and 80 % efficiency: \(P_I = 15(62.4)(2)/0.8 = 2340\) ft·lb/s = 4.25 hp.</p></div></li>
+    <li><span class="sn">3</span><div class="sb"><h4>Pressure at the pump outlet (slide 25)</h4><p>From the pump outlet (10 ft below the upper surface, 10 ft/s) to the upper surface: \(\dfrac{p_o}{\gamma} + \dfrac{v^2}{2g} - 9 = 10\), so \(\dfrac{p_o}{\gamma} = 10 + 9 - \dfrac{100}{64.4} = 17.4\) ft.</p></div></li>
+    <li><span class="sn">4</span><div class="sb"><h4>Add 5 ft of loss in the suction line (slide 26)</h4><p>\(h_A = 6 + 9 + 5 = 20\) ft. The pump makes up every loss plus the lift.</p></div></li>
+    <li class="final"><span class="sn">5</span><div class="sb"><h4>Pressure at the pump inlet (slide 27)</h4><p>From the lower surface to the pump inlet (4 ft below it): \(4 - 5 = \dfrac{p_i}{\gamma} + \dfrac{v^2}{2g}\), so \(\dfrac{p_i}{\gamma} = 4 - 5 - 1.55 = -2.55\) ft: <b>below atmospheric</b>. At 20 ft/s the velocity head is 6.21 ft and the inlet drops to −7.21 ft.</p><p class="why">Slide 28: the low inlet pressure comes partly from the suction-line loss and partly from converting pressure head into velocity head.</p></div></li>
+  </ol>
+</section>
+
+<section id="cav">
+  <div class="sec-head"><p class="eyebrow">Slides 28–29 · more in Mott §13.11 (NPSH)</p><h2>Too low a pressure: flashing and cavitation</h2></div>
+  <div class="read">
+    <p>Water boils when its pressure falls to its <b>vapor pressure</b>, at any temperature. At room temperature that is about 2.3 kPa absolute (roughly 0.8 ft of water at 70 °F), far below atmospheric. If the pressure at a pump inlet falls that low, vapor bubbles form (flashing). Carried into the higher-pressure part of the pump they collapse violently (cavitation), which is noisy, cuts the flow and pits the impeller.</p>
+    <p>So compare <b>absolute</b> pressure heads: atmospheric is about 33.9 ft (10.3 m) of water. In slide 27's case at 20 ft/s the inlet sits at 33.9 − 7.2 ≈ 26.7 ft absolute, still safe. Push the velocity or suction loss far enough in the diagram at the top and it warns you. Designers keep suction lines short, wide and with few fittings, and put pumps below the supply surface when they can. Chapter 13 turns this into the net positive suction head (NPSH) check.</p>
+  </div>
+</section>
+
+<section id="pipe">
+  <div class="sec-head"><p class="eyebrow">Slides 32–33 ("not on exam, but can be important") · Mott Appendix F</p><h2>Pipe sizes and schedules</h2><p class="dek">A "4-inch" pipe isn't 4 inches across anywhere. The nominal size names a family with a fixed outside diameter; the schedule sets the wall thickness, so a heavier schedule has a smaller inside diameter. Flow calculations need the inside diameter.</p></div>
+  <div class="panel"><div class="panel-b">
+    <div class="fields" id="sFields">
+      <div class="field"><label for="sN">Nominal size (NPS)</label><select id="sN"></select></div>
+      <div class="field"><label for="sS">Schedule</label><select id="sS"><option value="40">40</option><option value="80">80</option></select></div>
+    </div>
+    <div class="out">
+      <div class="stat"><span class="lbl">Outside diameter</span><span class="val" id="sOD" style="font-size:17px"></span></div>
+      <div class="stat"><span class="lbl">Wall</span><span class="val" id="sT" style="font-size:17px"></span></div>
+      <div class="stat hot"><span class="lbl">Inside diameter</span><span class="val" id="sID" style="font-size:17px"></span></div>
+      <div class="stat"><span class="lbl">Flow area</span><span class="val" id="sA" style="font-size:17px"></span></div>
+    </div>
+    <p class="small muted">Values from Mott Appendix F (ASME B36.10 steel pipe). Slide 33's sample table agrees except for three entries: it lists 0.375 in for 12-in Schedule 40 and 0.500 in for 10- and 12-in Schedule 80, which are the "standard" and "extra-strong" weights. Mott gives 0.406, 0.593 and 0.687 in. (It also shows 0.275 in for 2½-in Schedule 80, where Mott has 0.276 in.)</p>
+  </div></div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problems from the CH 7 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s14–18</span>Pump to make up a pipeline's loss</span><span class="s">h<sub>L</sub> = 2 ft, Q = 5 ft³/s of water; then 50 % efficient</span><span class="ans">1.13 hp; 2.27 hp</span></summary><div class="dbody"><ol><li>\(h_A = h_L = 2\) ft (same pressure, velocity and elevation at both ends).</li><li>\(P_A = h_A\gamma Q = 2(62.4)(5) = 624\) ft·lb/s ÷ 550 = 1.13 hp.</li><li>\(P_I = P_A/e_M = 1.13/0.5 = 2.27\) hp.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s23</span>Lift with no losses</span><span class="s">Reservoir to reservoir, 6 ft up</span><span class="ans">h<sub>A</sub> = 6 ft</span></summary><div class="dbody"><p>Both surfaces are open (p = 0) and still (v = 0), so only elevation is left: \(h_A = z_2 - z_1 = 6\) ft.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s24</span>Group discussion · lift plus loss</span><span class="s">6 ft lift, 9 ft discharge loss, 2 ft³/s, 80 % efficient</span><span class="ans">15 ft; 2340 ft·lb/s = 4.25 hp</span></summary><div class="dbody"><ol><li>\(h_A = 6 + 9 = 15\) ft.</li><li>\(P_I = h_A\gamma Q/e_M = 15(62.4)(2)/0.8 = 2340\) ft·lb/s = 4.25 hp. The slide writes this as 30 × 62.4/0.8.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s25</span>Pressure at the pump outlet</span><span class="s">10 ft/s; outlet 10 ft below the upper surface</span><span class="ans">17.4 ft</span></summary><div class="dbody"><p>Energy equation from the pump outlet to the upper surface: \(\dfrac{p_o}{\gamma} + z_o + \dfrac{v^2}{2g} - 9 = z_U\), with \(z_U - z_o = 10\). So \(\dfrac{p_o}{\gamma} = 9 - \dfrac{100}{2(32.2)} + 10 = 17.4\) ft, matching the slide's expression. That's \(17.4 \times 62.4/144 = 7.6\) psig.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s26</span>Add suction-line loss</span><span class="s">6 ft lift, 9 ft discharge loss, 5 ft suction loss</span><span class="ans">20 ft</span></summary><div class="dbody"><p>\(h_A = (z_2 - z_1) + h_{L,total} = 6 + 9 + 5 = 20\) ft. Where the loss happens doesn't matter for \(h_A\); it does matter for the pressures along the way.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s27</span>Pressure at the pump inlet</span><span class="s">Inlet 4 ft below the lower surface; 10 ft/s, then 20 ft/s</span><span class="ans">−2.55 ft; −7.21 ft</span></summary><div class="dbody"><ol><li>Lower surface to pump inlet: \(z_L - 5 = \dfrac{p_i}{\gamma} + z_i + \dfrac{v^2}{2g}\), with \(z_L - z_i = 4\).</li><li>\(\dfrac{p_i}{\gamma} = -5 - \dfrac{100}{64.4} + 4 = -2.55\) ft (−1.1 psig).</li><li>At 20 ft/s the velocity head quadruples to 6.21 ft: \(\dfrac{p_i}{\gamma} = -7.21\) ft (−3.1 psig).</li></ol></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott problems on the CH 7 slides (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">Ex 7.1</span>Total loss from a draining reservoir</span><span class="s">1.20 ft³/s through a pipe ending in a 3 in free jet, 25 ft below the reservoir surface (12 ft + 13 ft)</span><span class="ans">15.7 ft</span></summary><div class="dbody"><ol><li>Surface (p = 0, v = 0) to free jet (p = 0): \(z_1 - h_L = z_2 + v_2^2/2g\), so \(h_L = (z_1 - z_2) - v_2^2/2g\).</li><li>\(v_2 = 1.20/0.04909 = 24.4\) ft/s, \(v_2^2/2g = 9.28\) ft.</li><li>\(h_L = 25 - 9.28 = 15.72\) ft, as on the slide. Mott's text rounds the area to 0.0491 ft² and gets 15.75 ft.</li></ol><p class="note">More than half the available 25 ft is lost to the entrance, valve, elbows and pipe friction.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 7.3</span>Pump efficiency from a manometer</span><span class="s">Oil 56.0 lb/ft³ at 500 gal/min; 6 in Sch 40 in, 4 in Sch 40 out; mercury manometer reads 20.4 in; input 3.85 hp</span><span class="ans">e<sub>M</sub> ≈ 0.77</span></summary><div class="dbody"><ol><li>Manometer (the unknown leg height cancels): \(\dfrac{p_2 - p_1}{\gamma_o} = \left(\dfrac{\gamma_m}{\gamma_o} - 1\right)(20.4\text{ in}) = \left(\dfrac{844.9}{56.0} - 1\right)(1.70\text{ ft}) = 24.0\) ft.</li><li>\(Q = 500/449 = 1.114\) ft³/s. Areas 0.2006 and 0.0884 ft², so \(v_1 = 5.55\), \(v_2 = 12.6\) ft/s and \((v_2^2 - v_1^2)/2g = 1.99\) ft.</li><li>\(h_A = 24.0 + 0 + 1.99 = 26.0\) ft; \(P_A = 26.0(56.0)(1.114)/550 = 2.95\) hp.</li><li>\(e_M = 2.95/3.85 = 0.77\). Carrying full precision gives 0.76; the book rounds the manometer ratio to 15.1.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">7.11</span>Deep-well pump</span><span class="s">745 gal/h through 1 in Sch 40 to a tank at 40 psig, 120 ft above the well level; 10.5 ft of loss; pump draws 1 hp</span><span class="ans">0.700 hp; 70 %</span></summary><div class="dbody"><ol><li>Well surface (p = 0, v = 0) to the tank's water surface (p = 40 psig, v = 0): \(h_A = 120 + \dfrac{40(144)}{62.4} + 10.5 = 120 + 92.3 + 10.5 = 222.8\) ft.</li><li>\(Q = 745/(449 \times 60) = 0.02765\) ft³/s.</li><li>\(P_A = 222.8(62.4)(0.02765) = 384\) ft·lb/s = 0.700 hp. Matches the book.</li><li>\(e_M = 0.700/1 = 70\) %.</li></ol><p class="note">The 1 in pipe size isn't needed because the loss is given. I read the 120 ft as measured from the well level to the tank's water surface, per Mott's figure.</p></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="b"><p class="qt">1. A pump moves water between two open reservoirs with the same surface level. With 12 ft of total pipe loss, h<sub>A</sub> is</p><div class="opts"><button class="opt" data-k="a">0</button><button class="opt" data-k="b">12 ft</button><button class="opt" data-k="c">depends on the pipe velocity</button><button class="opt" data-k="d">24 ft</button></div><p class="fb" hidden>Surface to surface: p, v and z cancel; h_A = h_L. Velocity heads matter only at points inside pipes.</p></div>
+    <div class="q" data-answer="c"><p class="qt">2. Doubling the flow rate through a pump at the same head multiplies the power by</p><div class="opts"><button class="opt" data-k="a">1</button><button class="opt" data-k="b">4</button><button class="opt" data-k="c">2</button><button class="opt" data-k="d">√2</button></div><p class="fb" hidden>P_A = h_A γ Q. (In a real system, more flow also means more loss, so the head rises too; Chapter 11.)</p></div>
+    <div class="q" data-answer="d"><p class="qt">3. Which change makes cavitation at a pump inlet more likely?</p><div class="opts"><button class="opt" data-k="a">Lowering the pump below the supply surface</button><button class="opt" data-k="b">Using a wider suction pipe</button><button class="opt" data-k="c">Removing an elbow from the suction line</button><button class="opt" data-k="d">Heating the water</button></div><p class="fb" hidden>Hot water has a higher vapor pressure, so it boils at a higher pressure. The other three all raise the inlet pressure.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">General energy equation</span>\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} + h_A - h_R - h_L = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]<span class="wh">Flow from 1 to 2.</span></div>
+    <div><span class="nm">Pump power</span>\[ P_A = h_A\gamma Q,\quad P_I = P_A/e_M \]<span class="wh">1 hp = 550 ft·lb/s = 745.7 W.</span></div>
+    <div><span class="nm">Motor power</span>\[ P_R = h_R\gamma Q,\quad P_O = e_M P_R \]<span class="wh">Fluid to shaft.</span></div>
+    <div><span class="nm">Surface to surface</span>\[ h_A = (z_2 - z_1) + \Sigma h_L \]<span class="wh">Open, still reservoirs.</span></div>
+    <div><span class="nm">Pump inlet</span>\[ \frac{p_i}{\gamma} = (z_1 - z_i) - h_{L,s} - \frac{v^2}{2g} \]<span class="wh">Compare absolute value with vapor pressure.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* hero: pumped system */
+  const LPRE = { s23: { lDz: 6, lD: 4, lHs: 0, lHd: 0, lV: 10, lQ: 2, lE: 0.8 }, s25: { lDz: 6, lD: 4, lHs: 0, lHd: 9, lV: 10, lQ: 2, lE: 0.8 }, s27: { lDz: 6, lD: 4, lHs: 5, lHd: 9, lV: 10, lQ: 2, lE: 0.8 }, s27b: { lDz: 6, lD: 4, lHs: 5, lHd: 9, lV: 20, lQ: 2, lE: 0.8 } };
+  function loop() {
+    const dz = num('#lDz'), d = num('#lD'), hs = num('#lHs'), hd = num('#lHd'), v = num('#lV'), Q = num('#lQ'), e = num('#lE');
+    $('#lHsV').textContent = hs; $('#lHdV').textContent = hd; $('#lVV').textContent = v;
+    if (!(isFinite(dz) && isFinite(d) && v > 0 && Q >= 0 && e > 0 && e <= 1)) return;
+    const r = C.pumpLoop({ dz, d, hLs: hs, hLd: hd, v, g: 32.2 }), P = C.pumpPower({ hA: r.hA, Q, gamma: 62.4, eff: e });
+    $('#lHA').textContent = `${f(r.hA, 4)} ft`; $('#lP').textContent = `${f(P.PI / 550, 3)} hp`;
+    $('#lPin').textContent = `${f(r.pin, 3)} ft (${f(r.pin * 62.4 / 144, 3)} psig)`; $('#lPout').textContent = `${f(r.pout, 3)} ft (${f(r.pout * 62.4 / 144, 3)} psig)`;
+    const abs = 33.9 + r.pin, vap = 0.8;
+    $('#lNote').innerHTML = `h<sub>A</sub> = lift + losses = ${f(dz, 3)} + ${f(hs, 3)} + ${f(hd, 3)} ft. P<sub>A</sub> = h<sub>A</sub>γQ = ${f(P.PA, 4)} ft·lb/s; P<sub>I</sub> = P<sub>A</sub>/e<sub>M</sub>. ` + (abs < vap ? `<b>Cavitation:</b> the pump inlet would need ${f(abs, 3)} ft absolute${abs < 0 ? ', which is impossible (below zero absolute)' : ''}, below water's vapor pressure (≈ 0.8 ft at 70 °F). The water boils before it reaches the pump, and these numbers no longer describe the real flow.` : `Pump inlet: ${f(abs, 3)} ft absolute (atmosphere ≈ 33.9 ft).`);
+    // drawing
+    const s = $('#heroSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const zL = 0, zU = dz, zp = -d, Ein = zL - hs, Eout = Ein + r.hA, Hin = Ein - r.hv, Hout = Eout - r.hv;
+    const lo = Math.min(zp - 2, Hin, zL - 3), hi = Math.max(Eout, zU + 2), sc = 240 / (hi - lo), Y = (z) => 30 + (hi - z) * sc;
+    const xr1 = 110, xp = 300, xr2 = 500;
+    // reservoirs
+    el('rect', { x: 20, y: Y(zL), width: xr1 - 20, height: Math.max(8, Y(Math.min(zp - 1.5, zL - 2)) - Y(zL)), class: 'fl-water', 'fill-opacity': 0.3 }, s);
+    el('rect', { x: xr2, y: Y(zU), width: 120, height: Math.max(8, Y(zp - 1.5) - Y(zU)), class: 'fl-water', 'fill-opacity': 0.3 }, s);
+    el('line', { x1: 20, x2: xr1, y1: Y(zL), y2: Y(zL), class: 'st-water', 'stroke-width': 2 }, s);
+    el('line', { x1: xr2, x2: 620, y1: Y(zU), y2: Y(zU), class: 'st-water', 'stroke-width': 2 }, s);
+    // pipes
+    el('line', { x1: xr1, x2: xp - 14, y1: Y(zp), y2: Y(zp), class: 'st-ink2', 'stroke-width': 8, opacity: 0.35 }, s);
+    el('line', { x1: xp + 14, x2: xr2, y1: Y(zp), y2: Y(zp), class: 'st-ink2', 'stroke-width': 8, opacity: 0.35 }, s);
+    el('circle', { cx: xp, cy: Y(zp), r: 14, class: 'fl-surface', stroke: 'var(--ink)', 'stroke-width': 2 }, s); text(s, xp, Y(zp) + 4, 'P', { 'text-anchor': 'middle', 'font-size': 12, class: 'svg-ink' });
+    // EGL and HGL
+    const egl = `M${xr1 - 60},${Y(zL)} L${xr1},${Y(zL)} L${xp - 14},${Y(Ein)} L${xp + 14},${Y(Eout)} L${xr2},${Y(zU)} L${xr2 + 60},${Y(zU)}`;
+    el('path', { d: egl, fill: 'none', class: 'st-ink', 'stroke-width': 2 }, s);
+    el('path', { d: `M${xr1},${Y(zL - r.hv)} L${xp - 14},${Y(Hin)} M${xp + 14},${Y(Hout)} L${xr2},${Y(zU - r.hv)}`, fill: 'none', class: 'st-water', 'stroke-width': 2, 'stroke-dasharray': '6 4' }, s);
+    el('line', { x1: 22, x2: 52, y1: 14, y2: 14, class: 'st-ink', 'stroke-width': 2 }, s); text(s, 58, 18, 'EGL (total head)', { 'font-size': 12, class: 'svg-ink' });
+    el('line', { x1: 200, x2: 230, y1: 14, y2: 14, class: 'st-water', 'stroke-width': 2, 'stroke-dasharray': '6 4' }, s); text(s, 236, 18, 'HGL = EGL − v²/2g', { 'font-size': 12, class: 'fl-water' });
+    // pump jump label
+    el('line', { x1: xp + 22, x2: xp + 22, y1: Y(Ein), y2: Y(Eout), class: 'st-dye', 'stroke-width': 1.5, 'marker-end': FM.arrowDef(s, 'fl-dye', 'hAa') }, s);
+    text(s, xp + 28, (Y(Ein) + Y(Eout)) / 2, `h_A = ${f(r.hA, 3)} ft`, { 'font-size': 12.5, class: 'fl-dye' });
+    // pressure head at pump inlet
+    el('line', { x1: xp - 24, x2: xp - 24, y1: Y(zp), y2: Y(Hin), class: r.pin < 0 ? 'st-dye' : 'st-water', 'stroke-width': 3 }, s);
+    text(s, xp - 30, Math.max(Y(zp), Y(Hin)) + 18, `p_i/γ = ${f(r.pin, 3)} ft`, { 'font-size': 12, 'text-anchor': 'end', class: r.pin < 0 ? 'fl-dye' : 'fl-water' });
+    text(s, 24, Y(zL) - 8, 'lower reservoir', { 'font-size': 11.5 }); text(s, 616, Y(zU) - 8, 'upper', { 'font-size': 11.5, 'text-anchor': 'end' });
+    if (hs > 0) text(s, (xr1 + xp) / 2, Y((zL + Ein) / 2) - 14, `−${f(hs, 3)}`, { 'font-size': 11.5, 'text-anchor': 'middle' });
+    if (hd > 0) text(s, (xp + xr2) / 2 + 10, Y((Eout + zU) / 2) - 14, `−${f(hd, 3)}`, { 'font-size': 11.5, 'text-anchor': 'middle' });
+  }
+  $$('[data-l]').forEach((b) => b.addEventListener('click', () => { FM.setVals(LPRE[b.dataset.l]); loop(); }));
+  onInputs('#lFields', loop); loop();
+
+  /* power */
+  let dev = 'pump';
+  const WPRE = { s17: ['pump', 2, 'US', 5, 62.4, 0.5, 'Slides 14–18: make up 2 ft of loss at 5 ft³/s, then a 50 % efficient pump.'], e73: ['pump', 25.99, 'US', 500 / 449, 56.0, 0.766, 'Ex 7.3: h_A = 26.0 ft of oil at 500 gal/min; the efficiency shown is the answer (3.85 hp input).'], p711: ['pump', 222.8, 'US', 745 / 449 / 60, 62.4, 0.70, 'Prob 7.11: h_A = 222.8 ft at 745 gal/h; 70 % makes the input 1.0 hp.'] };
+  function power() {
+    const h = num('#wH'), Q = num('#wQ'), g = num('#wG'), e = num('#wE'), us = $('#wU').value === 'US';
+    $('#wHL').innerHTML = dev === 'pump' ? 'Head h<sub>A</sub>' : 'Head h<sub>R</sub>';
+    $('#wP1L').innerHTML = dev === 'pump' ? 'Power to fluid P<sub>A</sub>' : 'Power from fluid P<sub>R</sub>';
+    $('#wP2L').innerHTML = dev === 'pump' ? 'Power input P<sub>I</sub>' : 'Shaft output P<sub>O</sub>';
+    if (!(h >= 0 && Q >= 0 && g > 0 && e > 0 && e <= 1)) return;
+    const P1 = h * g * Q, P2 = dev === 'pump' ? P1 / e : P1 * e;
+    const show = (P) => us ? `${f(P, 4)} ft·lb/s = ${f(P / 550, 4)} hp` : `${f(P, 4)} W = ${f(P / 745.7, 4)} hp`;
+    $('#wP1').textContent = show(P1); $('#wP2').textContent = show(P2);
+  }
+  segmented($('#wDev'), (v) => { dev = v; $('#wNote').textContent = ''; power(); });
+  $$('[data-w]').forEach((b) => b.addEventListener('click', () => { const v = WPRE[b.dataset.w]; dev = v[0]; $$('#wDev button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === dev))); $('#wH').value = v[1]; $('#wU').value = v[2]; $('#wQ').value = +v[3].toFixed(6); $('#wG').value = v[4]; $('#wE').value = v[5]; $('#wNote').textContent = v[6]; power(); }));
+  $('#wU').addEventListener('change', () => { $('#wG').value = $('#wU').value === 'US' ? 62.4 : 9810; });
+  onInputs('#wFields', power); power();
+
+  /* pipe sizes */
+  const sel = $('#sN'); Object.keys(C.PIPE).forEach((k) => { const o = document.createElement('option'); o.value = k; o.textContent = `${k} in`; if (k === '4') o.selected = true; sel.appendChild(o); });
+  function pipe() {
+    const r = C.steelPipe($('#sN').value, +$('#sS').value);
+    $('#sOD').textContent = `${r.OD.toFixed(3)} in`; $('#sT').textContent = `${r.t.toFixed(3)} in`;
+    $('#sID').textContent = `${r.ID.toFixed(3)} in = ${f(r.IDmm, 4)} mm`; $('#sA').textContent = `${f(r.Aft, 4)} ft² = ${f(r.Am, 4)} m²`;
+  }
+  onInputs('#sFields', pipe); pipe();
+})();
+</script>
