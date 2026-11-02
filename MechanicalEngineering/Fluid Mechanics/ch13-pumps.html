@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Pump Selection (Ch 13)</title>
+<meta name="description" content="Lecture companion for Mott Chapter 13: positive-displacement and kinetic pumps, reading performance curves, the system curve and operating point, NPSH and cavitation, affinity laws and specific speed, with a live operating-point simulator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=JetBrains+Mono:wght@400..600&display=swap">
+<link rel="stylesheet" href="assets/fm.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],packages:{'[+]':['html']}},svg:{fontCache:'global'},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script defer src="assets/mathjax/tex-svg-full.js"></script>
+<script src="assets/fm-core.js"></script>
+<script src="assets/fm-ui.js"></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a class="home" href="index.html">Fluid Mechanics · ENGR 4254</a>
+  <span class="pn"><a href="ch11-pipe-systems.html">← Ch 11–12 Pipe systems</a><a href="ch16-momentum.html">Ch 16 Momentum →</a><button type="button" class="themebtn presbtn" aria-pressed="false" title="Larger type for projecting in lecture">Present</button><button type="button" class="themebtn" id="themebtn" aria-label="Color theme">Auto</button></span>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Weeks 10–11 · Mott Chapter 13 (Pump Selection and Application) · Slide deck CH 13</p>
+  <h1>Pump <em>Selection</em></h1>
+  <p class="lede">A centrifugal pump doesn't decide its own flow rate. Its curve says how much head it can give at each flow; the piping says how much head it needs. The pump runs where the two curves cross, and choosing a pump means putting that crossing where you want it, near the pump's best efficiency, with enough suction pressure to avoid cavitation.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#what">What a pump does</a><a href="#types">Pump types</a><a href="#curves">Reading curves</a><a href="#system">System curve</a><a href="#npsh">NPSH</a><a href="#affinity">Affinity laws</a><a href="#ns">Specific speed</a><a href="#examples">Examples</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Operating point (slides 21–22)</h3><span class="eyebrow">Illustrative pump, made-up curve</span></div>
+    <div class="panel-b">
+      <svg id="opPlot" style="width:100%;display:block" role="img" aria-label="Total head against capacity: the pump curve falls, the system curve rises from the static head, and they cross at the operating point. Efficiency and power are shown beneath."></svg>
+      <div class="fields" id="opFields">
+        <div class="field"><label for="opN">Speed <span class="unit">rpm</span> <span class="mono" id="opNV"></span></label><input id="opN" type="range" min="1750" max="3600" step="10" value="3500"></div>
+        <div class="field"><label for="opD">Impeller diameter <span class="unit">in</span> <span class="mono" id="opDV"></span></label><input id="opD" type="range" min="7" max="10" step="0.1" value="10"></div>
+        <div class="field"><label for="opH0">Static head h<sub>o</sub> <span class="unit">ft</span> <span class="mono" id="opH0V"></span></label><input id="opH0" type="range" min="0" max="350" step="5" value="150"></div>
+        <div class="field"><label for="opK">Pipe resistance (valve opening) <span class="mono" id="opKV"></span></label><input id="opK" type="range" min="0.5" max="12" step="0.1" value="3"></div>
+      </div>
+      <div class="out">
+        <div class="stat hot"><span class="lbl">Capacity at operating point</span><span class="val" id="opQ"></span></div>
+        <div class="stat"><span class="lbl">Total head</span><span class="val" id="opH"></span></div>
+        <div class="stat"><span class="lbl">Efficiency</span><span class="val" id="opE"></span></div>
+        <div class="stat"><span class="lbl">Power input</span><span class="val" id="opP"></span></div>
+      </div>
+      <p class="small" id="opNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#what">What a pump does</a></li><li><a href="#types">Pump types</a></li><li><a href="#curves">Reading performance curves</a></li><li><a href="#system">System curve &amp; selection</a></li><li><a href="#npsh">NPSH &amp; cavitation</a></li><li><a href="#affinity">Affinity laws</a></li><li><a href="#ns">Specific speed</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="what">
+  <div class="sec-head"><p class="eyebrow">Slides 2–3 · review of Chapter 7</p><h2>What a pump does</h2></div>
+  <div class="read">
+    <p>A pump delivers a <b>flow rate</b> Q against a <b>total head</b> \(h_A\). From the energy equation between the suction and discharge sides,</p>
+    \[ h_A = \frac{p_2 - p_1}{\gamma} + (z_2 - z_1) + \frac{v_2^2 - v_1^2}{2g} + h_L \]
+    <p>Then the power added to the fluid is \(P_A = h_A\gamma Q\), and with mechanical efficiency \(e_M\) the motor must supply \(P_I = P_A/e_M\). Pump catalogs give that input power as <b>BHP</b>, brake horsepower (slide 17).</p>
+  </div>
+</section>
+
+<section id="types">
+  <div class="sec-head"><p class="eyebrow">Slides 4–11, 14 · Mott §13.3–13.5</p><h2>Positive-displacement vs kinetic</h2></div>
+  <div class="two">
+    <div class="card"><h4>Positive displacement (gear, lobe, screw, piston)</h4><p>Each revolution traps and pushes out a fixed volume, so Q is set by the speed and barely changes with pressure: the head–capacity line is nearly vertical (slide 10).</p><ul><li><b>Pros:</b> accurate flow; can make very high pressure; handles viscous fluids.</li><li><b>Cons:</b> pulsating flow; sensitive to particles; a blocked outlet keeps building pressure until something breaks, so it needs a <b>relief valve</b>.</li></ul></div>
+    <div class="card"><h4>Kinetic (centrifugal: radial, mixed, axial)</h4><p>An impeller throws fluid outward, adding velocity that the casing turns into pressure. Head falls as flow rises, and the flow depends on what it's pumping against (slide 11).</p><ul><li><b>Pros:</b> large, smooth flow at fair pressure; simple; tolerant of a closed valve for short periods.</li><li><b>Cons:</b> large flows can cavitate at the suction; needs <b>priming</b> (can't pump air); doesn't guarantee a flow rate.</li><li><b>Axial</b> (propeller): low head, huge flow. <b>Radial</b>: high head, moderate flow (slide 15).</li></ul></div>
+  </div>
+  <svg id="typeSvg" viewBox="0 0 640 200" style="width:100%;display:block;margin-top:12px" role="img" aria-label="Idealized curves: a positive-displacement pump's capacity hardly changes with pressure, while a centrifugal pump's head falls as capacity rises."></svg>
+</section>
+
+<section id="curves">
+  <div class="sec-head"><p class="eyebrow">Slides 12–13, 16–18 · Mott §13.8</p><h2>Reading a pump performance chart</h2></div>
+  <div class="two">
+    <div class="read">
+      <p><b>Designation:</b> a "3 × 4 − 10" pump has a 3 in discharge, a 4 in suction and a casing that holds impellers up to 10 in (slide 12). The suction is bigger so that its velocity, and the pressure drop entering the pump, stay low, which helps against cavitation.</p>
+      <p><b>On a complete chart</b> (like Mott Fig. 13.28 on slides 13 and 20) you'll find, for one speed:</p>
+      <ul>
+        <li>head–capacity curves, one per impeller diameter;</li>
+        <li>efficiency contours (islands) with the peak, the <b>best efficiency point (BEP)</b>, in the middle;</li>
+        <li>dashed lines of constant input power (hp);</li>
+        <li>a separate strip of NPSH required against capacity.</li>
+      </ul>
+      <p><b>Two-pole and four-pole motors:</b> on 60 Hz power they run near 3500 and 1750 rpm, which is why charts come at those speeds.</p>
+    </div>
+    <div class="read">
+      <h3>How to use one</h3>
+      <ol>
+        <li><b>Given Q and h</b> (slide 19, on the exam): find the point; pick the smallest impeller whose curve lies on or above it; read efficiency, power and NPSHr there.</li>
+        <li><b>Given a system curve</b> (also on the exam): the operating point is where it crosses the chosen impeller's curve.</li>
+        <li><b>Given only the piping</b>: you'd compute the system curve point by point (Chapters 8–11) first. That's the "real problem" of slide 23, beyond hand calculation for the exam.</li>
+      </ol>
+      <div class="trap"><span class="tag">Remember</span><p>A pump with a bigger impeller than needed will run at a higher flow than you asked for, or need throttling, which wastes energy. Aim for the BEP.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="system">
+  <div class="sec-head"><p class="eyebrow">Slides 19–23 · Mott §13.12–13.13</p><h2>System curve and selection</h2></div>
+  <div class="read">
+    <p>For the piping, apply the energy equation at a range of flow rates. At zero flow the pump must still supply the <b>static head</b> \(h_o\): the elevation rise plus any pressure difference between the two surfaces. Every loss and velocity head grows with \(v^2\), so</p>
+    \[ h_{system} \approx h_o + KQ^2 \]
+    <p>a parabola starting at \(h_o\) (slide 21). Close a valve and K grows: the curve steepens and the operating point slides left to less flow and more head. Slow the pump or trim the impeller and the pump curve drops instead. Try both in the simulator at the top; watch the efficiency.</p>
+  </div>
+</section>
+
+<section id="npsh">
+  <div class="sec-head"><p class="eyebrow">Slides 24–28 · Mott §13.9–13.10</p><h2>NPSH: keeping the suction from boiling</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>Inside the impeller eye the pressure drops below the suction pressure. If it reaches the liquid's vapor pressure, bubbles form and then collapse violently further in: <b>cavitation</b> (Chapter 7, slides 28–29).</p>
+      <ul>
+        <li><b>NPSH<sub>R</sub></b> (required): from the manufacturer. The head above vapor pressure the pump needs at its inlet. It rises with flow.</li>
+        <li><b>NPSH<sub>A</sub></b> (available): what your suction piping actually provides (Mott Eq. 13–13):</li>
+      </ul>
+      \[ \text{NPSH}_A = h_{sp} \pm h_s - h_f - h_{vp} \]
+      <p>\(h_{sp}\) = <b>absolute</b> pressure head on the supply surface; \(h_s\) = elevation of that surface above the pump inlet (+ if above, − if the pump lifts from below: the slide warns that this sign is the opposite of the usual habit); \(h_f\) = suction-line losses; \(h_{vp}\) = vapor pressure head.</p>
+      <p>Slide 25's blank: NPSH<sub>R</sub> should be <b>less than</b> NPSH<sub>A</sub>. Mott (and the Hydraulic Institute) ask for a margin: <b>NPSH<sub>A</sub> &gt; 1.10 NPSH<sub>R</sub></b>.</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>NPSH<sub>A</sub> calculator</h3><div class="seg" role="group" aria-label="Units" id="nSys"><button type="button" data-v="SI" aria-pressed="true">SI</button><button type="button" data-v="US" aria-pressed="false">US</button></div></div><div class="panel-b">
+      <div class="fields" id="nFields">
+        <div class="field"><label for="nPa" id="nPaL">Absolute pressure on the supply surface</label><input id="nPa" type="text" inputmode="decimal" value="80.5"></div>
+        <div class="field"><label for="nT" id="nTL">Liquid temperature</label><input id="nT" type="text" inputmode="decimal" value="70"></div>
+        <div class="field"><label for="nHs" id="nHsL">Surface above (+) or below (−) the pump inlet</label><input id="nHs" type="text" inputmode="decimal" value="2.5"></div>
+        <div class="field"><label for="nHf" id="nHfL">Suction-line losses h<sub>f</sub></label><input id="nHf" type="text" inputmode="decimal" value="1.147"></div>
+        <div class="field"><label for="nR" id="nRL">NPSH<sub>R</sub> from the pump chart</label><input id="nR" type="text" inputmode="decimal" value="4.5"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-n="e133">Ex 13.3 closed tank</button><button type="button" class="chip" data-n="lift">Lifting from a pit, 60 °F</button><button type="button" class="chip" data-n="hot">Hot water, 180 °F</button></div>
+      <div class="out"><div class="stat"><span class="lbl">h<sub>sp</sub>, h<sub>vp</sub></span><span class="val" id="nHsp" style="font-size:15px"></span></div><div class="stat hot"><span class="lbl">NPSH<sub>A</sub></span><span class="val" id="nA"></span></div><div class="stat"><span class="lbl">Margin over NPSH<sub>R</sub></span><span class="val" id="nM" style="font-size:16px"></span></div></div>
+      <p class="small muted" id="nNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="affinity">
+  <div class="sec-head"><p class="eyebrow">Slides 29–31 · Mott §13.7</p><h2>Affinity laws</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>For one centrifugal pump, changing the speed N (diameter fixed) scales its whole curve (slide 29):</p>
+      \[ \frac{Q_1}{Q_2} = \frac{N_1}{N_2},\qquad \frac{h_{a1}}{h_{a2}} = \left(\frac{N_1}{N_2}\right)^2,\qquad \frac{P_1}{P_2} = \left(\frac{N_1}{N_2}\right)^3 \]
+      <p>The caveat on the slide matters: the two points compared must be at the same efficiency (corresponding points), not the same flow.</p>
+      <p><b>Changing the impeller diameter</b> at fixed speed, slide 30 gives \(Q \propto D^3\), \(h \propto D^2\), \(P \propto D^5\). Mott (Eqs. 13–8 to 13–10) gives</p>
+      \[ \frac{Q_1}{Q_2} = \frac{D_1}{D_2},\qquad \frac{h_{a1}}{h_{a2}} = \left(\frac{D_1}{D_2}\right)^2,\qquad \frac{P_1}{P_2} = \left(\frac{D_1}{D_2}\right)^3 \]
+      <div class="trap note"><span class="tag">Slides 30–31</span><p>Both sets are real, for different situations. Mott's is for <b>trimming the impeller in the same casing</b>, which is what a pump catalog's impeller curves show and what Problems 13.19 and 13.20 ask. The D³/D⁵ set is for <b>geometrically similar pumps of different size</b> (everything scaled, including the casing). Slide 31 applies D³ to Problem 13.19, but the book's answer (capacity down 25 % for a 25 % smaller impeller) uses Mott's Q ∝ D. Ask your instructor which is expected on the exam.</p></div>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Affinity calculator</h3><div class="seg" role="group" aria-label="Diameter law" id="aMode"><button type="button" data-v="trim" aria-pressed="true">Trim (Mott)</button><button type="button" data-v="similar" aria-pressed="false">Similar pumps (slide 30)</button></div></div><div class="panel-b">
+      <div class="fields" id="aFields">
+        <div class="field"><label for="aQ">Capacity Q<sub>1</sub> <span class="unit">gal/min</span></label><input id="aQ" type="text" inputmode="decimal" value="1500"></div>
+        <div class="field"><label for="aH">Head h<sub>1</sub> <span class="unit">ft</span></label><input id="aH" type="text" inputmode="decimal" value="130"></div>
+        <div class="field"><label for="aP">Power P<sub>1</sub> <span class="unit">hp</span></label><input id="aP" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="aN1">Speed N<sub>1</sub> → N<sub>2</sub> <span class="unit">rpm</span></label><div style="display:flex;gap:6px"><input id="aN1" type="text" inputmode="decimal" value="1750" aria-label="N1"><input id="aN2" type="text" inputmode="decimal" value="1250" aria-label="N2"></div></div>
+        <div class="field"><label for="aD1">Impeller D<sub>1</sub> → D<sub>2</sub> <span class="unit">in</span></label><div style="display:flex;gap:6px"><input id="aD1" type="text" inputmode="decimal" value="13" aria-label="D1"><input id="aD2" type="text" inputmode="decimal" value="13" aria-label="D2"></div></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-a="e131">Ex 13.1: 1750 → 1250 rpm</button><button type="button" class="chip" data-a="half">13.17–13.18: half speed</button><button type="button" class="chip" data-a="trim">13.19–13.21: 25 % smaller impeller</button></div>
+      <div class="out"><div class="stat hot"><span class="lbl">Q<sub>2</sub></span><span class="val" id="aQ2"></span></div><div class="stat"><span class="lbl">h<sub>2</sub></span><span class="val" id="aH2"></span></div><div class="stat"><span class="lbl">P<sub>2</sub></span><span class="val" id="aP2"></span></div></div>
+      <p class="small muted" id="aNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="ns">
+  <div class="sec-head"><p class="eyebrow">Slide 15 · Mott §13.11</p><h2>Specific speed: radial, mixed or axial?</h2></div>
+  <div class="two">
+    <div class="read">
+      \[ N_s = \frac{N\sqrt{Q}}{h^{3/4}} \]
+      <p>evaluated at the best efficiency point, in Mott's US convention: N in rpm, Q in gal/min, h in ft. It isn't truly dimensionless (the units are part of the definition), so always quote it with its convention.</p>
+      <p>Low N<sub>s</sub> (under about 2000 to 4000) means a <b>radial</b> impeller built for high head; high N<sub>s</sub> (roughly 9000 to 15,000) an <b>axial</b> propeller built for flow; <b>mixed-flow</b> impellers sit between (slide 15's chart).</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="nsFields">
+        <div class="field"><label for="nsN">Speed N <span class="unit">rpm</span></label><input id="nsN" type="text" inputmode="decimal" value="1750"></div>
+        <div class="field"><label for="nsQ">Capacity Q <span class="unit">gal/min</span></label><input id="nsQ" type="text" inputmode="decimal" value="12000"></div>
+        <div class="field"><label for="nsH">Head h <span class="unit">ft</span></label><input id="nsH" type="text" inputmode="decimal" value="300"></div>
+      </div>
+      <div class="out"><div class="stat hot"><span class="lbl">N<sub>s</sub></span><span class="val" id="nsOut"></span></div><div class="stat"><span class="lbl">Impeller type (roughly)</span><span class="val" id="nsType" style="font-size:16px"></span></div></div>
+      <p class="small muted">Default: Mott Problem 13.39 (book answer N<sub>s</sub> = 2659). The type boundaries are approximate; Mott's Fig. 13.53 shows overlapping bands.</p>
+    </div></div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problems from the CH 13 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s12</span>Head and power at 1500 gal/min</span><span class="s">Pump of Mott Fig. 13.21, 13 in impeller, 1750 rpm</span><span class="ans">130 ft; 50 hp</span></summary><div class="dbody"><p>Project up from 1500 gal/min to the head curve and the power curve: about 130 ft and 50 hp (Mott Example 13.1). At 1250 rpm the affinity laws give 1071 gal/min, 66.3 ft and 18.2 hp: a 29 % slowdown cuts the power by 64 %.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s13</span>2022 Midterm #2 · best efficiency point, 10 in impeller</span><span class="s">2 × 3 − 10 pump at 3500 rpm (Mott Fig. 13.28)</span><span class="ans">≈ 230 gal/min, ≈ 410 ft, 58.7 %</span></summary><div class="dbody"><p>Follow the 10 in head curve until it touches the innermost efficiency contour it reaches: on the slide's chart that's the 58.7 % mark. Reading the photo of the chart, that point sits near 230 gal/min and roughly 410 ft. These are my readings of a small image, good to perhaps ±10 gal/min and ±10 ft; read your own copy of the chart.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s20</span>2023 Final #2 · smallest impeller for 225 gal/min at 350 ft</span><span class="s">2 × 3 − 10 pump at 3500 rpm</span><span class="ans">10 in; ≈ 330 gal/min</span></summary><div class="dbody"><ol><li>Locate (225 gal/min, 350 ft). The 9 in curve passes about 300 ft at 225 gal/min (Mott Ex 13.2 reads 229 gal/min at 300 ft), so it falls short. The 10 in curve is above the point: <b>10 in</b> is the smallest that works.</li><li>With the 10 in impeller against 350 ft, follow the 350 ft line right to the 10 in curve: by my reading, about 330 gal/min (near the 56–57 % contours, between 40 and 50 hp).</li></ol><p class="note">The second answer comes from reading a photographed chart; treat it as ±15 gal/min. The exam says small eyeballing errors are fine.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s16</span>Practice · Problem 13.36</span><span class="s">6 × 8 − 17 pump at 1780 rpm, 15 in impeller, 200 ft system head</span><span class="ans">method</span></summary><div class="dbody"><ol><li>On Mott Fig. 13.32, go across at 200 ft to the 15 in curve and read Q.</li><li>Specific speed: \(N_s = 1780\sqrt{Q}/200^{0.75}\). For example, if you read Q = 2500 gal/min, \(N_s = 1780(50)/53.2 = 1670\): a radial pump.</li></ol><p class="note">I can't read that chart's 15 in curve reliably from the slide image, so the 2500 gal/min is only a placeholder for the arithmetic, not an answer. The book doesn't list the answer to this even-numbered problem.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s31</span>Affinity practice · Problems 13.17–13.20</span><span class="s">Half speed; 25 % smaller impeller</span><span class="ans">h ÷ 4, P ÷ 8; Q −25 %, h −44 %</span></summary><div class="dbody"><ul><li>13.17: half speed, head \(\times(1/2)^2\) = one quarter. 13.18: power \(\times(1/2)^3\) = one eighth.</li><li>13.19: impeller 25 % smaller, \(D_2/D_1 = 0.75\). Mott's law: capacity × 0.75, down 25 % (the book's answer). Slide 31's D³: × 0.42, down 58 %.</li><li>13.20: head × 0.75² = 0.5625, down 44 % (same either way). 13.21 (power): × 0.75³ = 0.42, down 58 % by Mott's law.</li></ul></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott's NPSH example (statement paraphrased)</p><h2>Textbook problem, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">Ex 13.3</span>NPSH<sub>A</sub> from a closed tank</span><span class="s">Water at 70 °C, tank at −20 kPa gauge (atmosphere 100.5 kPa), surface 2.5 m above the inlet; 12 m of DN 40 Sch 40, one elbow, an open globe valve, 95 L/min</span><span class="ans">6.49 m; NPSH<sub>R</sub> ≤ 5.90 m</span></summary><div class="dbody"><ol><li>\(h_{sp} = (100.5 - 20)/9.59 = 8.39\) m (absolute pressure over γ at 70 °C).</li><li>\(v = 1.21\) m/s, \(N_R = 1.20\times10^5\), f = 0.0225, \(f_T = 0.020\): \(h_f = 0.0746[0.0225(12/0.0409) + 0.020(60) + 0.020(340) + 0.78] = 1.15\) m.</li><li>\(h_{vp} = 3.25\) m at 70 °C (Table 13.2).</li><li>\(\text{NPSH}_A = 8.39 + 2.5 - 1.15 - 3.25 = 6.49\) m, so the pump must need no more than 6.49/1.10 = 5.90 m. Load it in the calculator.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="b"><p class="qt">1. A discharge valve downstream of a centrifugal pump is partly closed. The operating point moves to</p><div class="opts"><button class="opt" data-k="a">more flow, less head</button><button class="opt" data-k="b">less flow, more head</button><button class="opt" data-k="c">the same flow</button></div><p class="fb" hidden>The system curve steepens and meets the falling pump curve further left.</p></div>
+    <div class="q" data-answer="c"><p class="qt">2. A positive-displacement pump's outlet is blocked. What protects it?</p><div class="opts"><button class="opt" data-k="a">Its curve flattens</button><button class="opt" data-k="b">Nothing is needed</button><button class="opt" data-k="c">A relief valve</button></div><p class="fb" hidden>It keeps pushing its fixed volume; pressure rises until something gives (slide 10).</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. Pumping warmer water with the same piping, NPSH<sub>A</sub></p><div class="opts"><button class="opt" data-k="a">decreases</button><button class="opt" data-k="b">increases</button><button class="opt" data-k="c">doesn't change</button></div><p class="fb" hidden>Vapor pressure head rises fast with temperature (0.24 m at 20 °C, 3.25 m at 70 °C).</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. Cutting a pump's speed in half (same impeller) changes its power by a factor of</p><div class="opts"><button class="opt" data-k="a">1/2</button><button class="opt" data-k="b">1/4</button><button class="opt" data-k="c">2</button><button class="opt" data-k="d">1/8</button></div><p class="fb" hidden>P ∝ N³. That's why variable-speed drives save so much energy.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Pump head</span>\[ h_A = \frac{\Delta p}{\gamma} + \Delta z + \frac{\Delta v^2}{2g} + h_L \]<span class="wh">P<sub>A</sub> = h<sub>A</sub>γQ, P<sub>I</sub> = P<sub>A</sub>/e<sub>M</sub>.</span></div>
+    <div><span class="nm">System curve</span>\[ h = h_o + KQ^2 \]<span class="wh">Operating point: where it meets the pump curve.</span></div>
+    <div><span class="nm">NPSH available</span>\[ \text{NPSH}_A = h_{sp} \pm h_s - h_f - h_{vp} \]<span class="wh">Require NPSH<sub>A</sub> &gt; 1.10 NPSH<sub>R</sub>.</span></div>
+    <div><span class="nm">Affinity, speed</span>\[ Q \propto N,\ h \propto N^2,\ P \propto N^3 \]<span class="wh">Same efficiency points.</span></div>
+    <div><span class="nm">Affinity, impeller trim (Mott)</span>\[ Q \propto D,\ h \propto D^2,\ P \propto D^3 \]<span class="wh">Similar pumps (slide 30): D³, D², D⁵.</span></div>
+    <div><span class="nm">Specific speed</span>\[ N_s = \frac{N\sqrt Q}{h^{3/4}} \]<span class="wh">rpm, gal/min, ft, at the BEP.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* ---------- operating point ---------- */
+  function op() {
+    const N = num('#opN'), D = num('#opD'), h0 = num('#opH0'), Kv = num('#opK'), s = (N / C.DEMO_PUMP.N0) * (D / C.DEMO_PUMP.D0), K = Kv * 1e-3;
+    $('#opNV').textContent = N; $('#opDV').textContent = D.toFixed(1); $('#opH0V').textContent = h0; $('#opKV').textContent = Kv.toFixed(1);
+    const r = C.operatingPoint(s, h0, K);
+    const Qmax = 650, p = FM.plot($('#opPlot'), { W: 640, H: 300, m: { l: 58, r: 54, t: 14, b: 44 }, x: { min: 0, max: Qmax, label: 'capacity (gal/min)' }, y: { min: 0, max: 480, label: 'total head (ft)' } });
+    // efficiency (right axis 0-100 %) and family of trims for context
+    [7, 8, 9, 10].forEach((d) => { const ss = (N / C.DEMO_PUMP.N0) * (d / 10), pts = []; for (let q = 0; q <= Qmax; q += 5) { const h = C.demoPump(q, ss).H; if (h >= 0) pts.push([q, h]); } FM.line(p, pts, { class: 'st-ink2', 'stroke-width': 1, opacity: 0.45 }); const last = pts[Math.min(pts.length - 1, 4)]; text(p.g, p.sx(4), p.sy(C.demoPump(0, ss).H) - 4, `${d} in`, { 'font-size': 10.5 }); });
+    const pc = [], ec = [], sc = [];
+    for (let q = 0; q <= Qmax; q += 4) { const d = C.demoPump(q, s); if (d.H >= 0) pc.push([q, d.H]); ec.push([q, d.eff * 480 / 0.8]); sc.push([q, h0 + K * q * q]); }
+    FM.line(p, ec.filter((q) => q[1] > 0), { class: 'st-green', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' });
+    FM.line(p, sc, { class: 'st-dye', 'stroke-width': 2.4 });
+    FM.line(p, pc, { class: 'st-water', 'stroke-width': 2.8 });
+    // right axis labels for efficiency
+    [0, 20, 40, 60, 80].forEach((e) => text(p.axes, 640 - 50, p.sy(e / 100 * 480 / 0.8) + 4, `${e}%`, { 'font-size': 11 }));
+    text(p.axes, 640 - 8, 160, 'efficiency', { 'font-size': 11.5, 'text-anchor': 'middle', transform: 'rotate(90 632 160)', class: 'fl-green' });
+    text(p.g, p.sx(Qmax) - 4, p.sy(Math.min(470, h0 + K * Qmax * Qmax)) + 14, 'system curve', { 'font-size': 12, 'text-anchor': 'end', class: 'fl-dye' });
+    const bep = C.DEMO_PUMP.Qbep * s; FM.dot(p, bep, C.demoPump(bep, s).H, { class: 'fl-green', r: 4 }); text(p.g, p.sx(bep) + 6, p.sy(C.demoPump(bep, s).H) - 6, 'BEP', { 'font-size': 11, class: 'fl-green' });
+    if (r) { FM.dot(p, r.Q, r.H, { r: 6 }); el('line', { x1: p.sx(r.Q), x2: p.sx(r.Q), y1: p.sy(r.H), y2: p.sy(0), class: 'st-dye', 'stroke-dasharray': '3 3' }, p.g); }
+    if (!r) { ['#opQ', '#opH', '#opE', '#opP'].forEach((id) => ($(id).textContent = '—')); $('#opNote').textContent = 'The pump can’t even reach the static head at zero flow: no flow at all. Speed up the pump, use a bigger impeller, or lower h₀.'; return; }
+    $('#opQ').textContent = `${f(r.Q, 3)} gal/min`; $('#opH').textContent = `${f(r.H, 3)} ft`; $('#opE').textContent = `${f(r.eff * 100, 3)} %`; $('#opP').textContent = `${f(r.hp, 3)} hp`;
+    const off = r.Q / bep;
+    $('#opNote').textContent = `Operating at ${f(100 * off, 3)} % of the best-efficiency flow. ` + (off < 0.7 ? 'Far left of the BEP: low efficiency, and running there for long causes recirculation and vibration. A smaller impeller or lower speed would fit better.' : off > 1.2 ? 'Far right of the BEP: efficiency falls and the NPSH required climbs (' + f(r.npshr, 3) + ' ft here). Check cavitation.' : 'Close to the BEP: a good selection.') + ' (This pump is a made-up teaching curve.)';
+  }
+  onInputs('#opFields', op); op();
+  document.addEventListener('fm-theme', op);
+
+  /* ---------- type sketch ---------- */
+  (function types() {
+    const s = $('#typeSvg'); const ax = (x0, lx, ly) => { el('line', { x1: x0, x2: x0, y1: 20, y2: 170, class: 'st-ink', 'stroke-width': 1.5 }, s); el('line', { x1: x0, x2: x0 + 250, y1: 170, y2: 170, class: 'st-ink', 'stroke-width': 1.5 }, s); text(s, x0 + 125, 192, lx, { 'text-anchor': 'middle', 'font-size': 12.5 }); text(s, x0 - 10, 95, ly, { 'text-anchor': 'middle', 'font-size': 12.5, transform: `rotate(-90 ${x0 - 10} 95)` }); };
+    ax(50, 'capacity', 'pressure (head)'); ax(370, 'capacity', 'head');
+    el('path', { d: 'M200,30 L192,170', fill: 'none', class: 'st-dye', 'stroke-width': 3 }, s); text(s, 64, 34, 'positive displacement:', { 'font-size': 12.5, class: 'fl-dye' }); text(s, 64, 50, 'Q nearly fixed by speed', { 'font-size': 12.5, class: 'fl-dye' });
+    el('path', { d: 'M370,45 C470,48 540,80 600,168', fill: 'none', class: 'st-water', 'stroke-width': 3 }, s); text(s, 470, 34, 'centrifugal:', { 'font-size': 12.5, class: 'fl-water' }); text(s, 470, 50, 'head falls as Q rises', { 'font-size': 12.5, class: 'fl-water' });
+  })();
+
+  /* ---------- NPSH ---------- */
+  let nsys = 'SI';
+  const NPRE = {
+    e133: ['SI', 80.5, 70, 2.5, 1.147, 4.5, 'Mott Ex 13.3: tank at −20 kPa gauge with 100.5 kPa atmosphere = 80.5 kPa absolute; losses 1.147 m. NPSH_R here is just an example value.'],
+    lift: ['US', 14.7, 60, -10, 3.0, 12, 'Pump 10 ft above the water it lifts (h_s negative), 3 ft of suction loss, open tank at 14.7 psia.'],
+    hot: ['US', 14.7, 180, 4, 2.0, 8, 'Hot water at 180 °F: the vapor pressure head is 17.6 ft (Mott Table 13.2), so even a flooded suction can fall short.'],
+  };
+  function nLabels() { const us = nsys === 'US', L = us ? 'ft' : 'm'; $('#nPaL').innerHTML = `Absolute pressure on the supply surface <span class="unit">${us ? 'psia' : 'kPa abs'}</span>`; $('#nTL').innerHTML = `Liquid temperature <span class="unit">${us ? '°F' : '°C'}</span>`; $('#nHsL').innerHTML = `Surface above (+) or below (−) the inlet <span class="unit">${L}</span>`; $('#nHfL').innerHTML = `Suction-line losses h<sub>f</sub> <span class="unit">${L}</span>`; $('#nRL').innerHTML = `NPSH<sub>R</sub> from the pump chart <span class="unit">${L}</span>`; }
+  function npsh() {
+    const us = nsys === 'US', pa = num('#nPa'), T = num('#nT'), hs = num('#nHs'), hf = num('#nHf'), R = num('#nR'), L = us ? 'ft' : 'm';
+    const tmin = us ? 32 : 0, tmax = us ? 212 : 100;
+    if (!(pa > 0 && T >= tmin && T <= tmax && isFinite(hs) && hf >= 0)) { $('#nNote').textContent = `Temperature must be within ${tmin}–${tmax} ${us ? '°F' : '°C'} (the range of Mott Table 13.2).`; return; }
+    const v = C.vapor(T, nsys), hsp = us ? pa * 144 / v.gamma : pa / v.gamma, A = C.npsha({ hsp, hs, hf, hvp: v.hvp });
+    $('#nHsp').textContent = `${f(hsp, 4)}, ${f(v.hvp, 3)} ${L}`; $('#nA').textContent = `${f(A, 4)} ${L}`;
+    const M = R > 0 ? (A - R) / R : NaN;
+    $('#nM').innerHTML = R > 0 ? `${f(100 * M, 3)} % ${A > 1.1 * R ? '<span class="ok">OK (≥ 10 %)</span>' : A > R ? '<span class="err">too thin</span>' : '<span class="err">cavitates</span>'}` : '—';
+    if (!$('#nNote').dataset.locked) $('#nNote').textContent = `Vapor pressure at ${T}${us ? ' °F' : ' °C'}: ${f(v.p, 3)} ${us ? 'psia' : 'kPa abs'} (interpolated in Mott Table 13.2). Largest NPSH_R this system allows: ${f(A / 1.1, 3)} ${L}.`;
+  }
+  $$('[data-n]').forEach((b) => b.addEventListener('click', () => { const v = NPRE[b.dataset.n]; nsys = v[0]; $$('#nSys button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === nsys))); ['nPa', 'nT', 'nHs', 'nHf', 'nR'].forEach((id, i) => ($('#' + id).value = v[i + 1])); nLabels(); delete $('#nNote').dataset.locked; npsh(); $('#nNote').textContent = v[6] + ' ' + $('#nNote').textContent; }));
+  segmented($('#nSys'), (v) => { nsys = v; if (v === 'US') FM.setVals({ nPa: 14.7, nT: 60, nHs: 5, nHf: 2, nR: 8 }); else FM.setVals({ nPa: 101.3, nT: 20, nHs: 1.5, nHf: 0.6, nR: 3 }); nLabels(); npsh(); });
+  onInputs('#nFields', npsh); nLabels(); npsh();
+
+  /* ---------- affinity ---------- */
+  let amode = 'trim';
+  const APRE = { e131: { aQ: 1500, aH: 130, aP: 50, aN1: 1750, aN2: 1250, aD1: 13, aD2: 13 }, half: { aQ: 1500, aH: 130, aP: 50, aN1: 1750, aN2: 875, aD1: 13, aD2: 13 }, trim: { aQ: 1500, aH: 130, aP: 50, aN1: 1750, aN2: 1750, aD1: 10, aD2: 7.5 } };
+  function aff() {
+    const r = C.affinity({ Q: num('#aQ'), H: num('#aH'), P: num('#aP'), N1: num('#aN1'), N2: num('#aN2'), D1: num('#aD1'), D2: num('#aD2'), mode: amode });
+    if (!isFinite(r.Q)) return;
+    $('#aQ2').textContent = `${f(r.Q, 4)} gal/min`; $('#aH2').textContent = `${f(r.H, 4)} ft`; $('#aP2').textContent = `${f(r.P, 4)} hp`;
+    $('#aNote').textContent = amode === 'trim' ? 'Diameter law: Mott Eqs. 13–8 to 13–10 (impeller trimmed in the same casing).' : 'Diameter law: slide 30 (geometrically similar pumps, the whole pump scaled).';
+  }
+  segmented($('#aMode'), (v) => { amode = v; aff(); });
+  $$('[data-a]').forEach((b) => b.addEventListener('click', () => { FM.setVals(APRE[b.dataset.a]); aff(); }));
+  onInputs('#aFields', aff); aff();
+
+  /* ---------- specific speed ---------- */
+  function ns() { const v = C.specificSpeed(num('#nsN'), num('#nsQ'), num('#nsH')); if (!isFinite(v)) return; $('#nsOut').textContent = f(v, 4); $('#nsType').textContent = v < 4000 ? 'radial (centrifugal)' : v < 9000 ? 'mixed flow' : 'axial (propeller)'; }
+  onInputs('#nsFields', ns); ns();
+})();
+</script>
+
+<footer>
+  <div class="pager"><a href="ch11-pipe-systems.html">← Ch 11–12 Pipe systems</a><a href="ch16-momentum.html">Ch 16 Momentum →</a></div>
+  <p>Lecture companion for ENGR/EGTG 4254 Fluid Mechanics (FDU), keyed to the instructor's slide numbers and to Mott &amp; Untener, <i>Applied Fluid Mechanics</i>, 8th ed. (Pearson, 2022). Usable as in-class lecture material (press Present for projector-sized type) and as a study guide afterward. Figures are drawn for this site. Check numbers against your textbook's tables on graded work.</p>
+</footer>
+</div>
+</body>
+</html>

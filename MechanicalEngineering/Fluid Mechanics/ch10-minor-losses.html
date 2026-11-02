@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Minor Losses (Ch 10)</title>
+<meta name="description" content="Lecture companion for Mott Chapter 10: resistance coefficients for enlargements, contractions, entrances, exits, reducers and bends, equivalent lengths of valves and fittings, and total head loss in a real line, with a K explorer and a system loss builder.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=JetBrains+Mono:wght@400..600&display=swap">
+<link rel="stylesheet" href="assets/fm.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],packages:{'[+]':['html']}},svg:{fontCache:'global'},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script defer src="assets/mathjax/tex-svg-full.js"></script>
+<script src="assets/fm-core.js"></script>
+<script src="assets/fm-ui.js"></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a class="home" href="index.html">Fluid Mechanics · ENGR 4254</a>
+  <span class="pn"><a href="ch09-noncircular.html">← Ch 9 Noncircular</a><a href="ch11-pipe-systems.html">Ch 11–12 Pipe systems →</a><button type="button" class="themebtn presbtn" aria-pressed="false" title="Larger type for projecting in lecture">Present</button><button type="button" class="themebtn" id="themebtn" aria-label="Color theme">Auto</button></span>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Week 8 · Mott Chapter 10 (Minor Losses) · Slide deck CH 10</p>
+  <h1>Minor <em>Losses</em></h1>
+  <p class="lede">Every valve, elbow, entrance, exit and change of size disturbs the flow, and the eddies it makes turn energy into heat. Each one costs \(h_L = K\,v^2/2g\). "Minor" is a name, not a promise (slide 2): in a short line full of fittings they can be most of the loss.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#k">The K idea</a><a href="#each">Each fitting</a><a href="#le">Equivalent length</a><a href="#system">System builder</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>K explorer (slides 7–12)</h3><div class="seg" role="group" aria-label="Fitting" id="kType"><button type="button" data-v="enl" aria-pressed="true">Enlargement</button><button type="button" data-v="con" aria-pressed="false">Contraction</button><button type="button" data-v="red" aria-pressed="false">Reducer</button><button type="button" data-v="ent" aria-pressed="false">Entrance</button></div></div>
+    <div class="panel-b">
+      <div class="two">
+        <svg id="kGeo" viewBox="0 0 360 200" style="width:100%;display:block" role="img" aria-label="Sketch of the fitting with the flow and the eddy zones where energy is lost."></svg>
+        <svg id="kPlot" style="width:100%;display:block" role="img" aria-label="Resistance coefficient K against diameter ratio."></svg>
+      </div>
+      <div class="fields" id="kFields">
+        <div class="field"><label for="kR" id="kRL">Diameter ratio <span class="mono" id="kRV"></span></label><input id="kR" type="range" min="1" max="6" step="0.01" value="2"></div>
+        <div class="field" id="kVf"><label for="kV">Velocity in the small pipe <span class="unit">m/s</span> <span class="mono" id="kVV"></span></label><input id="kV" type="range" min="0.6" max="12" step="0.1" value="1.2"></div>
+        <div class="field" id="kThf" hidden><label for="kTh">Included angle θ <span class="mono" id="kThV"></span></label><input id="kTh" type="range" min="5" max="180" step="1" value="30"></div>
+        <div class="field" id="kEf" hidden><label for="kE">Entrance shape</label><select id="kE"><option value="0.8">Re-entrant (projecting in): 0.8</option><option value="0.5" selected>Sharp-edged: 0.5</option><option value="0.2">Slightly rounded: 0.2</option><option value="0.04">Well rounded: 0.04</option></select></div>
+      </div>
+      <div class="out"><div class="stat hot"><span class="lbl">K</span><span class="val" id="kK"></span></div><div class="stat"><span class="lbl">Loss h<sub>L</sub> = K v²/2g</span><span class="val" id="kH"></span></div><div class="stat"><span class="lbl">Velocity used</span><span class="val" id="kRef" style="font-size:15px"></span></div></div>
+      <p class="small" id="kNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#k">The resistance coefficient</a></li><li><a href="#each">Each fitting, in turn</a></li><li><a href="#le">Equivalent length &amp; valves</a></li><li><a href="#system">System loss builder</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="k">
+  <div class="sec-head"><p class="eyebrow">Slides 2–6, 15 · Mott §10.1–10.3</p><h2>The resistance coefficient</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>A straight pipe loses \(f\,\dfrac{L}{D}\,\dfrac{v^2}{2g}\). A fitting is described the same way, with one number standing in for \(fL/D\):</p>
+      <div class="boxed">\[ h_L = K\,\frac{v^2}{2g} \]</div>
+      <p>\(K\), the <b>resistance</b> or <b>loss coefficient</b>, is dimensionless, like \(f\) and \(L/D\), so it's the same in SI and US units (slide 3). Add every loss along the line (slide 4):</p>
+      \[ h_L = \sum_i f_i\frac{L_i}{D_i}\frac{v_i^2}{2g} + \sum_j K_j\frac{v_j^2}{2g} \quad\xrightarrow{\text{one diameter}}\quad h_L = \left(f\frac{L}{D} + \sum K\right)\frac{v^2}{2g} \]
+    </div>
+    <div class="read">
+      <h3>Slide 6: how to treat these formulas</h3>
+      <ul>
+        <li>None of them is derived from first principles; they are fits to experiments. You don't need to memorize them, but expect qualitative questions on how K behaves.</li>
+        <li>The course assumes fully turbulent flow, where K (and f) barely change with N<sub>R</sub>.</li>
+        <li>Always check <b>which velocity</b> a K is defined with. Enlargements and exits use the upstream (fast) velocity; contractions and entrances use the downstream (fast) velocity. Either way it's the larger velocity.</li>
+      </ul>
+      <p class="small muted">Why the losses happen (slide 14's video): whenever the flow has to change direction or speed abruptly, it separates from the wall and forms recirculating eddies. Keeping those eddies spinning is where the energy goes.</p>
+    </div>
+  </div>
+</section>
+
+<section id="each">
+  <div class="sec-head"><p class="eyebrow">Slides 7–13 · Mott §10.4–10.10</p><h2>Each fitting, in turn</h2></div>
+  <div class="dlist">
+    <details open><summary><span class="t"><span class="src sl">s7</span>Exit into a tank</span><span class="s">Pipe discharging into a large reservoir</span><span class="ans">K = 1</span></summary><div class="dbody"><p>All the pipe's velocity head is spent: the jet mixes into still water and its kinetic energy becomes heat. Writing it as \(\dfrac{p_1}{\gamma} + \dfrac{v_1^2}{2g} - K\dfrac{v_1^2}{2g} = \dfrac{p_2}{\gamma}\), the tank pressure \(p_2\) equals the pipe pressure \(p_1\) only if \(K = 1\). That's what experiments show: none of the velocity head is recovered as pressure (the 2022 midterm problem below).</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s8</span>Sudden enlargement</span><span class="s">Small pipe D<sub>1</sub> into large pipe D<sub>2</sub>; K uses v<sub>1</sub></span><span class="ans">K ≈ [1 − (D<sub>1</sub>/D<sub>2</sub>)²]²</span></summary><div class="dbody"><p>Some velocity head is recovered as pressure (the flow slows to \(v_2\)), but the jet's mixing wastes the rest. Momentum (Chapter 16) gives \(K = [1 - (A_1/A_2)]^2\). Mott's Table 10.1A shows the measured K is a little lower at high velocity and higher at low velocity; the explorer plots both. As \(D_2/D_1 \to \infty\), K → 1: an exit into a tank is the limit.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s9</span>Sudden contraction</span><span class="s">Large into small; K uses v<sub>2</sub></span><span class="ans">K ≈ 0.4–0.5 for big ratios</span></summary><div class="dbody"><p>The flow overshoots into a <b>vena contracta</b> narrower than the small pipe, then re-expands to fill it. The loss is mostly that re-expansion, so it's much smaller than a sudden enlargement's for the same ratio.</p><p class="note">Slide 9 writes \(K \approx 0.42[1 - (D_2/D_1)^2]^2\). The form I've seen elsewhere (White's <i>Fluid Mechanics</i>) is \(0.42[1 - (D_2/D_1)^2]\) with no outer square. I don't know which one your instructor intends. Mott's measured Table 10.3A falls between the two, and the explorer shows all three, so check with your instructor if a number depends on it.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s10</span>Gradual enlargement (diffuser)</span><span class="s">K uses v<sub>1</sub> and depends on D<sub>1</sub>/D<sub>2</sub> and the cone angle</span><span class="ans">θ ≈ 7–20° is best</span></summary><div class="dbody"><p>A gentle cone lets the flow slow down without separating, so more velocity head comes back as pressure. Slide 10's figure (θ = 20°) lists K = 0.30, 0.25, 0.15, 0.10 for d/D = 0.2, 0.4, 0.6, 0.8. Too wide an angle and it acts like a sudden enlargement; too narrow and the cone is so long that wall friction adds up (Mott Fig. 10.5 has the full curves).</p><p>A diffuser built to raise pressure is rated by its <b>recovery factor</b>, \(\Delta p_{real}/\Delta p_{ideal}\), with</p>\[ \Delta p_{ideal} = \frac{\gamma(v_1^2 - v_2^2)}{2g},\qquad \Delta p_{real} = \gamma\left[\frac{v_1^2 - v_2^2}{2g} - h_L\right] \]<p class="note">Slide 10 writes the real one as \(\gamma(v_1^2 - v_2^2 - h_L)/2g\), which subtracts a length from a velocity squared. \(h_L\) belongs outside the fraction, as above.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s11</span>Gradual contraction (reducer)</span><span class="s">β = D<sub>2</sub>/D<sub>1</sub>, included angle θ</span><span class="ans">small K: 0.02–0.2 typical</span></summary><div class="dbody"><p>The formulas on slide 11 are the Crane Technical Paper 410 correlations:</p>\[ K = \frac{0.8\sin(\theta/2)(1-\beta^2)}{\beta^4}\ (\theta \le 45°),\qquad K = \frac{0.5\sqrt{\sin(\theta/2)}\,(1-\beta^2)}{\beta^4}\ (45° &lt; \theta \le 180°) \]<p class="note">Dividing by β⁴ converts K to the <b>large</b> pipe's velocity (Crane gives both forms). Slide 11 pairs them with \(v_2^2/2g\), the small pipe's velocity, which overstates the loss by \(1/\beta^4\) (16× for β = 0.5). With \(v_2\), use \(K = 0.8\sin(\theta/2)(1 - \beta^2)\) without the β⁴. Check: at θ = 180° the small-pipe form gives \(0.5(1 - \beta^2)\), the familiar sudden-contraction value. The explorer shows both.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s12</span>Entrance from a tank</span><span class="s">K uses the pipe velocity</span><span class="ans">0.8, 0.5, 0.2, 0.04</span></summary><div class="dbody"><p>A pipe sticking into the tank (re-entrant) is worst, then a sharp square edge (0.5), then slightly and well-rounded inlets. Mott's Fig. 10.14 lists 1.0 for an inward-projecting pipe where the slide uses 0.8; both are in use, so use whichever your instructor specifies.</p><p><b>Back to the leaking tub (slide 12):</b> a sharp-edged hole has K ≈ 0.5, so the energy equation gives \(h = (1 + K)v^2/2g\), \(v = \sqrt{2gh/1.5} = 0.82\sqrt{2gh}\). Torricelli overestimates the speed by about 20 % for a sharp hole and 2 % for a well-rounded one.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s13</span>Bends</span><span class="s">K depends on the bend radius R/d and roughness</span><span class="ans">minimum near R/d ≈ 3–5</span></summary><div class="dbody"><p>The fluid on the outside of a bend is pushed outward, setting up a pair of swirling <b>secondary flows</b>. A tight bend separates; a very gentle one is long, adding friction, so K has a minimum around R/d of 3 to 5. A bend is one of the few fittings where roughness clearly matters (slide 13's chart). Mott handles bends with equivalent lengths (§10.11).</p></div></details>
+  </div>
+</section>
+
+<section id="le">
+  <div class="sec-head"><p class="eyebrow">Slides 19–22 · Mott §10.11, Tables 10.4–10.5</p><h2>Equivalent length, and valves</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>With one diameter, \(h_L = (fL/D + K)\,v^2/2g\). Pretend the fitting is extra pipe:</p>
+      \[ h_L = f\,\frac{L + L_e}{D}\,\frac{v^2}{2g},\qquad L_e = \frac{KD}{f} \]
+      <p>Tables give \(L_e/D\) for valves and fittings (Mott Table 10.4), and Mott's procedure turns it into K using the friction factor in the zone of complete turbulence for that pipe, \(f_T\) (Table 10.5):</p>
+      <div class="boxed">\[ K = f_T\,\frac{L_e}{D} \]</div>
+      <p>Then the whole line is "one long straight pipe" (slide 21). It works best where f barely changes: fully turbulent flow in fittings the same size as the pipe.</p>
+    </div>
+    <div class="read">
+      <h3>Valves (slide 22; L<sub>e</sub>/D from Mott Table 10.4)</h3>
+      <div class="scroll-x"><table class="tbl"><thead><tr><th>Valve, fully open</th><th class="num">L<sub>e</sub>/D</th><th>Character</th></tr></thead><tbody>
+        <tr><td>Globe</td><td class="num">340</td><td>Seals well, throttles well; big loss</td></tr>
+        <tr><td>Angle</td><td class="num">150</td><td>A globe valve built into a 90° turn</td></tr>
+        <tr><td>Gate</td><td class="num">8</td><td>Nearly a straight pipe when open; poor for throttling</td></tr>
+        <tr><td>Gate, ½ open</td><td class="num">160</td><td>Loss rises steeply as it closes</td></tr>
+        <tr><td>Swing check</td><td class="num">100</td><td>Lets flow one way only</td></tr>
+        <tr><td>Butterfly (2–8 in)</td><td class="num">45</td><td>Compact; disc stays in the flow</td></tr>
+        <tr><td>90° standard elbow</td><td class="num">30</td><td>(fitting, for comparison)</td></tr>
+        <tr><td>Tee, flow through branch</td><td class="num">60</td><td>(fitting)</td></tr>
+      </tbody></table></div>
+      <p class="small muted">A ball valve is like a gate valve taken to the extreme: a full-bore hole when open. A plug valve sits between gate and globe. Slide 21's sample table lists equivalent <b>feet</b> of pipe for each nominal size instead of L<sub>e</sub>/D; same idea.</p>
+    </div>
+  </div>
+</section>
+
+<section id="system">
+  <div class="sec-head"><p class="eyebrow">Slides 15–17 · Mott §10.11</p><h2>System loss builder</h2><p class="dek">One pipe size, any number of fittings. Pick the pipe, the flow and the fittings; the builder finds f from Colebrook, each K, and the total, then the pump head and power if you give the static lift.</p></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Pipe line</h3><div class="chips"><button type="button" class="chip" data-s="well">Slides 16–17 well pump</button><button type="button" class="chip" data-s="wellv">+ a globe valve</button><button type="button" class="chip" data-s="e108">Ex 10.8 globe valve only</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="sFields">
+        <div class="field"><label for="sN">Schedule 40 steel pipe</label><select id="sN"></select></div>
+        <div class="field"><label for="sL">Pipe length <span class="unit">ft</span></label><input id="sL" type="text" inputmode="decimal" value="140"></div>
+        <div class="field"><label for="sQ">Flow rate <span class="unit">gal/min</span></label><input id="sQ" type="text" inputmode="decimal" value="12.417"></div>
+        <div class="field"><label for="sNu">Kinematic viscosity <span class="unit">ft²/s</span></label><input id="sNu" type="text" inputmode="decimal" value="1.21e-5"></div>
+        <div class="field"><label for="sE">Roughness ε <span class="unit">ft</span></label><input id="sE" type="text" inputmode="decimal" value="3.5e-4"></div>
+        <div class="field"><label for="sZ">Static head (lift + pressure) <span class="unit">ft</span></label><input id="sZ" type="text" inputmode="decimal" value="212.3"></div>
+        <div class="field"><label for="sG">Specific weight <span class="unit">lb/ft³</span></label><input id="sG" type="text" inputmode="decimal" value="62.4"></div>
+      </div>
+      <div class="fields">
+        <div class="field"><label for="sAdd">Add a fitting</label><select id="sAdd">
+          <option value="">Choose…</option>
+          <option value="K:1:Exit into tank">Exit into tank (K = 1)</option>
+          <option value="K:0.5:Sharp-edged entrance">Sharp-edged entrance (K = 0.5)</option>
+          <option value="K:0.8:Re-entrant entrance">Re-entrant entrance (K = 0.8)</option>
+          <option value="K:0.04:Well-rounded entrance">Well-rounded entrance (K = 0.04)</option>
+          <option value="K:1:Elbow (slide's K ≈ 1)">Elbow, slide's K ≈ 1</option>
+          <option value="LD:30:90° standard elbow">90° standard elbow (L<sub>e</sub>/D 30)</option>
+          <option value="LD:20:90° long-radius elbow">90° long-radius elbow (20)</option>
+          <option value="LD:340:Globe valve, open">Globe valve, open (340)</option>
+          <option value="LD:150:Angle valve, open">Angle valve, open (150)</option>
+          <option value="LD:8:Gate valve, open">Gate valve, open (8)</option>
+          <option value="LD:160:Gate valve, ½ open">Gate valve, ½ open (160)</option>
+          <option value="LD:100:Swing check valve">Swing check valve (100)</option>
+          <option value="LD:20:Tee, through run">Tee, through run (20)</option>
+          <option value="LD:60:Tee, through branch">Tee, through branch (60)</option>
+        </select></div>
+      </div>
+      <div class="scroll-x"><table class="tbl calc" id="sTbl"><thead><tr><th>Item</th><th>How</th><th>Loss (ft)</th></tr></thead><tbody></tbody></table></div>
+      <div class="out">
+        <div class="stat"><span class="lbl">v, N<sub>R</sub>, f</span><span class="val" id="sVf" style="font-size:15px"></span></div>
+        <div class="stat"><span class="lbl">Major + minor</span><span class="val" id="sMm" style="font-size:16px"></span></div>
+        <div class="stat hot"><span class="lbl">Total h<sub>L</sub></span><span class="val" id="sHL"></span></div>
+        <div class="stat"><span class="lbl">h<sub>A</sub>, P<sub>A</sub></span><span class="val" id="sHA" style="font-size:15px"></span></div>
+      </div>
+      <p class="small muted" id="sNote"></p>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problems from the CH 10 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s16–17</span>Well pump with minor losses (Mott 8.34 extended)</span><span class="s">745 gal/h of 60 °F water, 140 ft of 1 in Sch 40, 120 ft lift to a 40 psig tank; add exit, entrance and elbow losses</span><span class="ans">h<sub>L</sub> ≈ 17 ft; 0.72 hp</span></summary><div class="dbody"><ol><li>From Ch 8 (slide 17): static head \(120 + 40(144)/62.4 = 212.3\) ft; \(Q = 0.0277\) ft³/s, \(D = 1.049\) in, \(v = 4.61\) ft/s, \(N_R = 3.3\times10^4\).</li><li>The slide uses \(D/\varepsilon \approx 250\) and \(f \approx 0.03\) (Colebrook gives 0.031), so the pipe loses \(0.03 \times \dfrac{140}{0.0874} \times 0.330 = 15.9 \approx 16\) ft.</li><li>Minor losses: \(v^2/2g = 0.33\) ft, \(K_{exit} = 1\), \(K_{entrance} = 0.8\), \(K_{bend} = 1\): \(2.8 \times 0.33 = 0.92 \approx 1\) ft.</li><li>Total ≈ 17 ft, \(h_A \approx 229\) ft, \(P_A = h_A\gamma Q = 229(62.4)(0.0277) = 396\) ft·lb/s = 0.72 hp. Here the minor losses are small because the pipe is long.</li><li><b>"What if there's a valve?"</b> A fully open globe valve: \(K = f_T(L_e/D) = 0.022 \times 340 = 7.5\), another 2.5 ft, more than all the other fittings together. A gate valve: \(K = 0.18\), negligible. Load both in the builder.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s18</span>2022 Midterm #2 · water level in a tank fed by a pipe</span><span class="s">Pipe at 20 kPa gauge and 3 m/s discharges into the bottom of a tank; K = 1 for the expansion</span><span class="ans">2.50 m without loss; 2.04 m with it</span></summary><div class="dbody"><p class="given">Assumptions: the tank's air space is at atmospheric pressure, the water surface is still, and h is measured from the pipe's centerline.</p><ol><li>Bernoulli, pipe to surface: \(h = \dfrac{p}{\gamma} + \dfrac{v^2}{2g} = \dfrac{20}{9.81} + \dfrac{9}{19.62} = 2.04 + 0.46 = 2.50\) m.</li><li>With the exit loss: \(h = \dfrac{p}{\gamma} + \dfrac{v^2}{2g} - (1)\dfrac{v^2}{2g} = 2.04\) m. The velocity head is lost entirely, so the level is set by the pipe's pressure alone.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott examples for these topics (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">Ex 10.1</span>Sudden enlargement in copper tube</span><span class="s">100 L/min of water, 25 mm × 1.5 mm tube into 80 mm × 2.8 mm tube</span><span class="ans">K ≈ 0.74; h<sub>L</sub> ≈ 0.72 m</span></summary><div class="dbody"><ol><li>Inside diameters 22.0 and 74.4 mm, \(D_2/D_1 = 3.38\). \(v_1 = Q/A_1 = 4.385\) m/s, \(v_1^2/2g = 0.980\) m.</li><li>Mott's chart at 4.4 m/s gives K ≈ 0.72–0.74 (the table interpolates to 0.73), so \(h_L \approx 0.72\) m. The book reads 0.725 m. The theoretical formula gives 0.83, higher, as the book warns for high velocities.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 10.5</span>Sudden contraction, the reverse</span><span class="s">Same tubes, flow from large to small</span><span class="ans">K ≈ 0.415; h<sub>L</sub> = 0.41 m</span></summary><div class="dbody"><ol><li>\(D_1/D_2 = 3.38\), \(v_2 = 4.385\) m/s, \(v_2^2/2g = 0.980\) m.</li><li>Mott Fig. 10.8: K = 0.415, so \(h_L = 0.407\) m. Compare with 0.72 m for the enlargement: same tubes, same flow, but contracting loses much less.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 10.7</span>K of a globe valve</span><span class="s">Fully open, in 6 in Sch 40 steel</span><span class="ans">K = 5.10; L<sub>e</sub> = 172 ft</span></summary><div class="dbody"><ol><li>\(L_e/D = 340\), \(f_T = 0.015\): \(K = 340(0.015) = 5.10\).</li><li>\(L_e = (L_e/D)D = 340(0.5054\text{ ft}) = 172\) ft of pipe.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 10.8</span>Pressure drop across a globe valve</span><span class="s">4 in Sch 40, 400 gal/min of oil, sg 0.87</span><span class="ans">h<sub>L</sub> = 8.6 ft; Δp = 3.2 psi</span></summary><div class="dbody"><ol><li>\(K = 340 \times 0.016 = 5.44\). \(Q = 400/449 = 0.891\) ft³/s, \(v = 0.891/0.0884 = 10.1\) ft/s, \(v^2/2g = 1.58\) ft.</li><li>\(h_L = 5.44 \times 1.58 = 8.6\) ft; \(\Delta p = \gamma h_L = 0.87(62.4)(8.6)/144 = 3.2\) psi.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test (slide 6: expect qualitative questions)</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. Same two pipe sizes, same flow rate. Which loses more energy?</p><div class="opts"><button class="opt" data-k="a">Sudden contraction</button><button class="opt" data-k="b">They're equal</button><button class="opt" data-k="c">Sudden enlargement</button></div><p class="fb" hidden>The enlargement's jet mixing is far more wasteful (Ex 10.1 vs 10.5: 0.72 m vs 0.41 m).</p></div>
+    <div class="q" data-answer="a"><p class="qt">2. The K for a pipe exit into a large tank is about</p><div class="opts"><button class="opt" data-k="a">1</button><button class="opt" data-k="b">0.5</button><button class="opt" data-k="c">0</button><button class="opt" data-k="d">2</button></div><p class="fb" hidden>All the velocity head is lost in the tank.</p></div>
+    <div class="q" data-answer="d"><p class="qt">3. You must throttle a flow precisely. The valve with the highest open loss but the best control is the</p><div class="opts"><button class="opt" data-k="a">gate valve</button><button class="opt" data-k="b">ball valve</button><button class="opt" data-k="c">check valve</button><button class="opt" data-k="d">globe valve</button></div><p class="fb" hidden>Globe valves (L_e/D = 340) throttle and seal well; gate and ball valves are for full open or closed.</p></div>
+    <div class="q" data-answer="b"><p class="qt">4. Rounding the entrance of a pipe from a tank changes K from 0.5 to 0.04. The total head loss of a long line</p><div class="opts"><button class="opt" data-k="a">drops by about 90 %</button><button class="opt" data-k="b">barely changes if pipe friction dominates</button><button class="opt" data-k="c">increases</button></div><p class="fb" hidden>In the slide 16 well pump, the entrance is under 2 % of the loss. Minor losses matter most in short lines with many fittings.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Minor loss</span>\[ h_L = K\frac{v^2}{2g} \]<span class="wh">v: the faster of the two velocities.</span></div>
+    <div><span class="nm">Total loss, one diameter</span>\[ h_L = \left(f\frac{L}{D} + \sum K\right)\frac{v^2}{2g} \]<span class="wh">Add sections separately if D changes.</span></div>
+    <div><span class="nm">Sudden enlargement</span>\[ K \approx \left[1 - \left(\frac{D_1}{D_2}\right)^2\right]^2 \]<span class="wh">Uses v<sub>1</sub>; → 1 for an exit.</span></div>
+    <div><span class="nm">Valves and fittings</span>\[ K = f_T\frac{L_e}{D} \]<span class="wh">f<sub>T</sub>: complete turbulence (Table 10.5).</span></div>
+    <div><span class="nm">Equivalent length</span>\[ L_e = \frac{KD}{f} \]<span class="wh">Then h<sub>L</sub> = f(L + L<sub>e</sub>)/D · v²/2g.</span></div>
+    <div><span class="nm">Typical K</span>\[ \text{exit } 1,\ \text{sharp entrance } 0.5,\ \text{rounded } 0.04 \]<span class="wh">Re-entrant 0.8 (slides) or 1.0 (Mott).</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* ---------- K explorer ---------- */
+  let kt = 'enl';
+  function kexp() {
+    const r = num('#kR'), v = num('#kV'), th = num('#kTh'), hv = v * v / 19.62;
+    $('#kRV').textContent = kt === 'red' ? f(1 / r, 3) : f(r, 3); $('#kVV').textContent = v; $('#kThV').textContent = `${th}°`;
+    $('#kThf').hidden = kt !== 'red'; $('#kEf').hidden = kt !== 'ent'; $('#kR').parentElement.hidden = kt === 'ent';
+    $('#kRL').innerHTML = (kt === 'enl' ? 'D<sub>2</sub>/D<sub>1</sub> (large/small)' : kt === 'con' ? 'D<sub>1</sub>/D<sub>2</sub> (large/small)' : 'β = D<sub>2</sub>/D<sub>1</sub>') + ` <span class="mono" id="kRV">${kt === 'red' ? f(1 / r, 3) : f(r, 3)}</span>`;
+    let K, note, series = [], ref = 'small pipe (fast)';
+    const xs = []; for (let x = 1; x <= 6.0001; x += 0.05) xs.push(x);
+    if (kt === 'enl') {
+      K = C.kEnlMott(r, v);
+      series = [{ pts: xs.map((x) => [x, C.kEnlTheory(x)]), cls: 'st-ink2', dash: '5 4', lab: 'theory [1 − (D₁/D₂)²]²' }, { pts: xs.map((x) => [x, C.kEnlMott(x, v)]), cls: 'st-water', lab: `Mott Table 10.1A at ${v} m/s` }];
+      note = `Mott's table: K = ${f(K, 3)}; the theoretical formula gives ${f(C.kEnlTheory(r), 3)}. They agree near 1.2 m/s.`;
+    } else if (kt === 'con') {
+      K = C.kConMott(r, v);
+      series = [{ pts: xs.map((x) => [x, C.kConSlide(x)]), cls: 'st-dye', dash: '5 4', lab: 'slide 9 as written' }, { pts: xs.map((x) => [x, C.kConAlt(x)]), cls: 'st-ink2', dash: '2 3', lab: 'without the outer square' }, { pts: xs.map((x) => [x, C.kConMott(x, v)]), cls: 'st-water', lab: `Mott Table 10.3A at ${v} m/s` }];
+      note = `Mott's table: K = ${f(K, 3)}. Slide 9's formula gives ${f(C.kConSlide(r), 3)}; without its outer square, ${f(C.kConAlt(r), 3)}.`;
+    } else if (kt === 'red') {
+      const beta = 1 / r, k = C.kReducer(beta, th); K = k.Ksmall;
+      series = [{ pts: xs.map((x) => [x, C.kReducer(1 / x, th).Ksmall]), cls: 'st-water', lab: 'K for v₂ (small pipe)' }, { pts: xs.map((x) => [x, Math.min(3, C.kReducer(1 / x, th).Klarge)]), cls: 'st-dye', dash: '5 4', lab: 'slide 11 (÷β⁴): K for v₁' }];
+      note = `K = ${f(k.Ksmall, 3)} with the small-pipe velocity v₂, or ${f(k.Klarge, 3)} with the large-pipe velocity v₁ = β²v₂. Both describe the same loss.`;
+    } else {
+      K = num('#kE'); ref = 'pipe';
+      note = `h_L = ${f(K, 3)} v²/2g. For the leaking tub, the jet speed is ${f(1 / Math.sqrt(1 + K), 3)} × √(2gh): Torricelli is off by ${f(100 * (1 - 1 / Math.sqrt(1 + K)), 2)} %.`;
+    }
+    $('#kK').textContent = f(K, 3); $('#kH').textContent = `${f(K * hv, 3)} m`; $('#kRef').textContent = ref; $('#kNote').textContent = note;
+    // plot
+    const svg = $('#kPlot');
+    if (kt === 'ent') {
+      const p = FM.plot(svg, { W: 380, H: 240, m: { l: 50, r: 12, t: 14, b: 42 }, x: { min: 0, max: 4, label: 'entrance type', ticks: [] }, y: { min: 0, max: 1, label: 'K' } });
+      [['re-entrant', 0.8], ['sharp', 0.5], ['slightly rounded', 0.2], ['well rounded', 0.04]].forEach(([n, k], i) => { el('rect', { x: p.sx(i + 0.2), y: p.sy(k), width: p.sx(0.6) - p.sx(0), height: p.sy(0) - p.sy(k), class: Math.abs(k - K) < 1e-9 ? 'fl-dye' : 'fl-water', 'fill-opacity': 0.75 }, p.g); text(p.axes, p.sx(i + 0.5), 222, n, { 'text-anchor': 'middle', 'font-size': 10.5 }); });
+    } else {
+      const ymax = kt === 'red' ? Math.max(0.6, Math.min(3, K * 1.4)) : 1.05;
+      const p = FM.plot(svg, { W: 380, H: 240, m: { l: 50, r: 12, t: 14, b: 42 }, x: { min: 1, max: 6, label: kt === 'red' ? 'D₁/D₂ = 1/β' : kt === 'enl' ? 'D₂/D₁' : 'D₁/D₂' }, y: { min: 0, max: ymax, label: 'K' } });
+      series.forEach((s, i) => { FM.line(p, s.pts, { class: s.cls, 'stroke-dasharray': s.dash || null, 'stroke-width': s.dash ? 1.6 : 2.4 }); text(p.g, p.sx(1.15), p.sy(ymax) + 14 + 14 * i, s.lab, { 'font-size': 11, class: s.cls.replace('st-', 'fl-') }); });
+      FM.dot(p, r, Math.min(K, ymax));
+    }
+    drawGeo(r, th);
+  }
+  function drawGeo(r, th) {
+    const s = $('#kGeo'); while (s.firstChild) s.removeChild(s.firstChild);
+    const cy = 100, small = 22, big = Math.min(80, small * (kt === 'ent' ? 4 : r)), x0 = 170;
+    const W = (d) => d;
+    const wall = { fill: 'none', class: 'st-ink', 'stroke-width': 2.5 };
+    const aid = FM.arrowDef(s, 'fl-water', 'kga');
+    if (kt === 'enl' || kt === 'con') {
+      const L = kt === 'enl' ? small : big, R = kt === 'enl' ? big : small;
+      el('path', Object.assign({ d: `M10,${cy - L} L${x0},${cy - L} L${x0},${cy - R} L350,${cy - R} M10,${cy + L} L${x0},${cy + L} L${x0},${cy + R} L350,${cy + R}` }, wall), s);
+      el('rect', { x: 10, y: cy - L, width: x0 - 10, height: 2 * L, class: 'fl-water', 'fill-opacity': 0.15 }, s); el('rect', { x: x0, y: cy - R, width: 340 - x0, height: 2 * R, class: 'fl-water', 'fill-opacity': 0.15 }, s);
+      if (kt === 'enl') { [-1, 1].forEach((sg) => { el('ellipse', { cx: x0 + 28, cy: cy + sg * (small + (big - small) / 2), rx: 26, ry: Math.max(4, (big - small) / 2 - 2), fill: 'none', class: 'st-dye', 'stroke-dasharray': '3 3' }, s); }); text(s, x0 + 10, cy - big - 6, 'eddies: energy lost here', { 'font-size': 11, class: 'fl-dye' }); }
+      else { const vc = small * 0.62; el('path', { d: `M${x0 - 40},${cy - big * 0.6} Q${x0 + 5},${cy - small} ${x0 + 30},${cy - vc} Q${x0 + 70},${cy - vc} ${x0 + 110},${cy - small}`, fill: 'none', class: 'st-water', 'stroke-width': 1.5 }, s); el('path', { d: `M${x0 - 40},${cy + big * 0.6} Q${x0 + 5},${cy + small} ${x0 + 30},${cy + vc} Q${x0 + 70},${cy + vc} ${x0 + 110},${cy + small}`, fill: 'none', class: 'st-water', 'stroke-width': 1.5 }, s); text(s, x0 + 10, cy - small - 8, 'vena contracta', { 'font-size': 11, class: 'fl-dye' }); }
+      el('line', { x1: 30, x2: 90, y1: cy, y2: cy, class: 'st-water', 'stroke-width': 2, 'marker-end': aid }, s);
+    } else if (kt === 'red') {
+      const R1 = Math.min(80, small * r), len = Math.max(8, Math.min(160, (R1 - small) / Math.tan(Math.max(2.5, th / 2) * PI0)));
+      el('path', Object.assign({ d: `M10,${cy - R1} L${x0 - len / 2},${cy - R1} L${x0 + len / 2},${cy - small} L350,${cy - small} M10,${cy + R1} L${x0 - len / 2},${cy + R1} L${x0 + len / 2},${cy + small} L350,${cy + small}` }, wall), s);
+      el('line', { x1: 30, x2: 90, y1: cy, y2: cy, class: 'st-water', 'stroke-width': 2, 'marker-end': aid }, s);
+      text(s, x0, cy + R1 + 18, `θ = ${th}°`, { 'font-size': 12, 'text-anchor': 'middle' });
+    } else {
+      const K = num('#kE');
+      el('rect', { x: 10, y: 10, width: 140, height: 180, class: 'fl-water', 'fill-opacity': 0.2 }, s); el('line', { x1: 150, x2: 150, y1: 10, y2: cy - small, class: 'st-ink', 'stroke-width': 3 }, s); el('line', { x1: 150, x2: 150, y1: cy + small, y2: 190, class: 'st-ink', 'stroke-width': 3 }, s);
+      const startX = K === 0.8 ? 110 : 150;
+      if (K <= 0.2) { const rr = K === 0.04 ? 20 : 8; el('path', Object.assign({ d: `M${150 - 0},${cy - small - rr} Q150,${cy - small} ${150 + rr},${cy - small} L350,${cy - small} M150,${cy + small + rr} Q150,${cy + small} ${150 + rr},${cy + small} L350,${cy + small}` }, wall), s); }
+      else el('path', Object.assign({ d: `M${startX},${cy - small} L350,${cy - small} M${startX},${cy + small} L350,${cy + small}` }, wall), s);
+      if (K >= 0.5) { el('ellipse', { cx: 185, cy: cy - small + 7, rx: 26, ry: 6, fill: 'none', class: 'st-dye', 'stroke-dasharray': '3 3' }, s); el('ellipse', { cx: 185, cy: cy + small - 7, rx: 26, ry: 6, fill: 'none', class: 'st-dye', 'stroke-dasharray': '3 3' }, s); }
+      el('line', { x1: 60, x2: 130, y1: cy, y2: cy, class: 'st-water', 'stroke-width': 2, 'marker-end': aid }, s);
+    }
+  }
+  const PI0 = Math.PI / 180;
+  segmented($('#kType'), (v) => { kt = v; if (v === 'red') { $('#kR').value = 2; } kexp(); });
+  onInputs('#kFields', kexp); kexp();
+
+  /* ---------- system builder ---------- */
+  const sel = $('#sN'); Object.keys(C.FT40).forEach((k) => { const o = document.createElement('option'); o.value = k; o.textContent = `${k} in`; if (k === '1') o.selected = true; sel.appendChild(o); });
+  let items = [];
+  const SPRE = {
+    well: { pipe: '1', L: 140, Q: 12.417, nu: 1.21e-5, e: 3.5e-4, z: 212.3, g: 62.4, items: [['K', 0.8, 'Entrance (slide: 0.8)'], ['K', 1, 'Elbow (slide: K ≈ 1)'], ['K', 1, 'Exit into tank']], note: 'Slides 16–17: roughness set so D/ε ≈ 250, as the slide assumes; water at 60 °F (ν = 1.21 × 10⁻⁵ ft²/s).' },
+    wellv: { pipe: '1', L: 140, Q: 12.417, nu: 1.21e-5, e: 3.5e-4, z: 212.3, g: 62.4, items: [['K', 0.8, 'Entrance (slide: 0.8)'], ['K', 1, 'Elbow (slide: K ≈ 1)'], ['K', 1, 'Exit into tank'], ['LD', 340, 'Globe valve, open']], note: 'Slide 16 asks "What if there is a valve?" A globe valve adds K = f_T(L_e/D) = 0.022 × 340.' },
+    e108: { pipe: '4', L: 0, Q: 400, nu: 1e-4, e: 1.5e-4, z: 0, g: 0.87 * 62.4, items: [['LD', 340, 'Globe valve, open']], note: 'Ex 10.8: only the valve (L = 0). ν doesn\'t matter here because the valve uses f_T.' },
+  };
+  function sys() {
+    const p = C.steelPipe($('#sN').value, 40), L = num('#sL'), Q = num('#sQ') / 449, nu = num('#sNu'), e = num('#sE'), z = num('#sZ'), g = num('#sG');
+    if (!(p && L >= 0 && Q > 0 && nu > 0 && e >= 0)) return;
+    const v = Q / p.Aft, hv = v * v / 64.4, Re = v * p.IDft / nu, fr = C.frictionFactor(Re, e / p.IDft), fT = C.FT40[$('#sN').value];
+    const major = fr * L / p.IDft * hv; let minor = 0;
+    const rows = [`<tr><td>Pipe friction</td><td>f(L/D)(v²/2g) = ${f(fr, 3)} × ${f(L / p.IDft, 4)} × ${f(hv, 3)}</td><td>${f(major, 3)}</td></tr>`];
+    items.forEach((it, i) => { const K = it[0] === 'K' ? it[1] : fT * it[1]; const h = K * hv; minor += h; rows.push(`<tr><td>${it[2]} <button type="button" class="chip" data-del="${i}" aria-label="Remove ${it[2]}" style="padding:1px 7px">×</button></td><td>${it[0] === 'K' ? `K = ${it[1]}` : `K = f_T(L_e/D) = ${fT} × ${it[1]} = ${f(K, 3)}`}</td><td>${f(h, 3)}</td></tr>`); });
+    const tot = major + minor;
+    rows.push(`<tr class="res"><td>Total</td><td>${items.length} fitting${items.length === 1 ? '' : 's'}; ΣK = ${f(minor / hv, 3)}; L_e = ΣK·D/f = ${f(minor / hv * p.IDft / fr, 3)} ft</td><td>${f(tot, 4)}</td></tr>`);
+    $('#sTbl tbody').innerHTML = rows.join('');
+    $$('[data-del]').forEach((b) => b.addEventListener('click', () => { items.splice(+b.dataset.del, 1); sys(); }));
+    $('#sVf').textContent = `${f(v, 3)} ft/s, ${f(Re, 3)}, ${f(fr, 3)}`; $('#sMm').textContent = `${f(major, 3)} + ${f(minor, 3)} ft`; $('#sHL').textContent = `${f(tot, 4)} ft`;
+    const hA = z + tot, PA = hA * g * Q; $('#sHA').textContent = `${f(hA, 4)} ft, ${f(PA / 550, 3)} hp`;
+  }
+  $('#sAdd').addEventListener('change', () => { const v = $('#sAdd').value; if (!v) return; const [t, n, ...lab] = v.split(':'); items.push([t, +n, lab.join(':')]); $('#sAdd').value = ''; sys(); });
+  $$('[data-s]').forEach((b) => b.addEventListener('click', () => { const s = SPRE[b.dataset.s]; $('#sN').value = s.pipe; $('#sL').value = s.L; $('#sQ').value = s.Q; $('#sNu').value = s.nu; $('#sE').value = s.e; $('#sZ').value = s.z; $('#sG').value = +s.g.toFixed(3); items = s.items.map((x) => x.slice()); $('#sNote').textContent = s.note; sys(); }));
+  onInputs('#sFields', sys);
+  $$('[data-s]')[0].click();
+})();
+</script>
+
+<footer>
+  <div class="pager"><a href="ch09-noncircular.html">← Ch 9 Noncircular</a><a href="ch11-pipe-systems.html">Ch 11–12 Pipe systems →</a></div>
+  <p>Lecture companion for ENGR/EGTG 4254 Fluid Mechanics (FDU), keyed to the instructor's slide numbers and to Mott &amp; Untener, <i>Applied Fluid Mechanics</i>, 8th ed. (Pearson, 2022). Usable as in-class lecture material (press Present for projector-sized type) and as a study guide afterward. Figures are drawn for this site. Check numbers against your textbook's tables on graded work.</p>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Continuity and Bernoulli (Ch 6)</title>
+<meta name="description" content="Lecture companion for Mott Chapter 6: flow rates, the continuity equation, Bernoulli&#x27;s equation as energy per unit weight, Torricelli, draining tanks, siphons, pitot tubes and venturi meters, with live head diagrams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=JetBrains+Mono:wght@400..600&display=swap">
+<link rel="stylesheet" href="assets/fm.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],packages:{'[+]':['html']}},svg:{fontCache:'global'},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script defer src="assets/mathjax/tex-svg-full.js"></script>
+<script src="assets/fm-core.js"></script>
+<script src="assets/fm-ui.js"></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a class="home" href="index.html">Fluid Mechanics · ENGR 4254</a>
+  <span class="pn"><a href="ch05-buoyancy.html">← Ch 5 Buoyancy</a><a href="ch07-energy.html">Ch 7 Energy equation →</a><button type="button" class="themebtn presbtn" aria-pressed="false" title="Larger type for projecting in lecture">Present</button><button type="button" class="themebtn" id="themebtn" aria-label="Color theme">Auto</button></span>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Week 4 · Mott Chapter 6 (Flow of Fluids and Bernoulli's Equation) · Slide deck CH 6</p>
+  <h1>Continuity <em>and</em> Bernoulli</h1>
+  <p class="lede">The fluid starts moving. Two conservation laws carry this chapter: mass in equals mass out (continuity), and with no losses the energy per unit weight stays constant along the flow (Bernoulli). Energy just trades places among pressure, elevation and velocity.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#rates">Flow rates</a><a href="#cont">Continuity</a><a href="#bern">Bernoulli</a><a href="#tank">Torricelli &amp; draining</a><a href="#siphon">Siphon</a><a href="#meters">Pitot &amp; venturi</a><a href="#examples">Examples</a><a href="#textbook">Textbook problems</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Three heads, one total (slide 14)</h3><div class="chips"><button type="button" class="chip" data-p="e1">Exercise #1 (6.60)</button><button type="button" class="chip" data-p="e2">Exercise #2 (6.61)</button><button type="button" class="chip" data-p="e69">Ex 6.9</button></div></div>
+    <div class="panel-b">
+      <svg id="heroSvg" viewBox="0 0 640 300" style="width:100%;display:block" role="img" aria-label="A pipe running from section 1 to section 2. Above each section a stacked bar shows elevation head, pressure head and velocity head; the tops line up on one horizontal total-head line."></svg>
+      <div class="fields" id="pFields">
+        <div class="field"><label for="pQ">Flow rate Q <span class="unit">m³/s</span></label><input id="pQ" type="text" inputmode="decimal" value="0.02"></div>
+        <div class="field"><label for="pD1">D<sub>1</sub> <span class="unit">mm</span></label><input id="pD1" type="text" inputmode="decimal" value="150"></div>
+        <div class="field"><label for="pD2">D<sub>2</sub> <span class="unit">mm</span> <span class="mono" id="pD2v"></span></label><input id="pD2" type="range" min="20" max="650" step="0.1" value="80"></div>
+        <div class="field"><label for="pZ">z<sub>2</sub> − z<sub>1</sub> <span class="unit">m</span> <span class="mono" id="pZv"></span></label><input id="pZ" type="range" min="-5" max="8" step="0.1" value="2"></div>
+        <div class="field"><label for="pP1">p<sub>1</sub> <span class="unit">kPa gauge</span></label><input id="pP1" type="text" inputmode="decimal" value="60"></div>
+        <div class="field"><label for="pSg">Liquid sg</label><input id="pSg" type="text" inputmode="decimal" value="1"></div>
+      </div>
+      <div class="out">
+        <div class="stat"><span class="lbl">v<sub>1</sub>, v<sub>2</sub></span><span class="val" id="pV"></span></div>
+        <div class="stat hot"><span class="lbl">p<sub>2</sub></span><span class="val" id="pP2"></span></div>
+        <div class="stat"><span class="lbl">Total head (from section 1)</span><span class="val" id="pH"></span></div>
+      </div>
+      <p class="small" id="pNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#rates">Flow rates</a></li><li><a href="#cont">Continuity</a></li><li><a href="#bern">Bernoulli's equation</a></li><li><a href="#tank">Torricelli &amp; draining</a></li><li><a href="#siphon">Siphon</a></li><li><a href="#meters">Pitot &amp; venturi</a></li><li><a href="#magnus">Magnus effect</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#textbook">Textbook problems</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="rates">
+  <div class="sec-head"><p class="eyebrow">Slides 4–5 · Mott §6.2</p><h2>Three ways to measure a flow</h2><p class="dek">Volume, weight or mass passing a section each second. They differ only by a property of the fluid.</p></div>
+  <div class="two">
+    <div class="scroll-x"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Name</th><th>Definition</th><th>SI</th><th>US</th></tr></thead>
+      <tbody>
+        <tr><td>\(Q\)</td><td>Volume flow rate</td><td>\(Q = Av\)</td><td>m³/s</td><td>ft³/s</td></tr>
+        <tr><td>\(W\)</td><td>Weight flow rate</td><td>\(W = \gamma Q\)</td><td>N/s</td><td>lb/s</td></tr>
+        <tr><td>\(M\)</td><td>Mass flow rate</td><td>\(M = \rho Q\)</td><td>kg/s</td><td>slugs/s</td></tr>
+      </tbody>
+    </table>
+    <p class="small muted">Handy conversions (Mott §6.2): 1 L/min = 16.67 × 10⁻⁶ m³/s; 1 m³/h = 16.67 L/min; 1 ft³/s = 449 gal/min.</p></div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="rFields">
+        <div class="field"><label for="rQ">Volume flow rate</label><input id="rQ" type="text" inputmode="decimal" value="500"></div>
+        <div class="field"><label for="rU">Unit</label><select id="rU"><option value="1.6667e-5">L/min</option><option value="1">m³/s</option><option value="2.7778e-4">m³/h</option><option value="0.0283168">ft³/s</option><option value="6.309e-5" selected>gal/min</option></select></div>
+        <div class="field"><label for="rSg">Fluid sg</label><input id="rSg" type="text" inputmode="decimal" value="1"></div>
+      </div>
+      <div class="out">
+        <div class="stat"><span class="lbl">Q</span><span class="val" id="rQo" style="font-size:16px"></span></div>
+        <div class="stat"><span class="lbl">W</span><span class="val" id="rWo" style="font-size:16px"></span></div>
+        <div class="stat"><span class="lbl">M</span><span class="val" id="rMo" style="font-size:16px"></span></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<section id="cont">
+  <div class="sec-head"><p class="eyebrow">Slides 6–8 · Mott §6.3</p><h2>Continuity: what goes in comes out</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>In steady flow nothing piles up inside a pipe, so the mass flow rate is the same at every section:</p>
+      \[ \rho_1 A_1 v_1 = \rho_2 A_2 v_2 \]
+      <p>A liquid's density hardly changes, so \(\rho\) cancels:</p>
+      <div class="boxed">\[ A_1 v_1 = A_2 v_2 \quad\text{or}\quad Q_1 = Q_2 \]</div>
+      <p>Halve the diameter and the area drops to a quarter, so the velocity goes up <b>four times</b>. With branches (slide 8), the flows add: \(Q_1 = Q_2 + Q_3\). Gases need the full \(\rho A v\) version because their density changes with pressure.</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Slide 8 practice: one in, two out</h3></div><div class="panel-b">
+      <div class="fields" id="cFields">
+        <div class="field"><label for="cD1">D<sub>1</sub> <span class="unit">mm</span></label><input id="cD1" type="text" inputmode="decimal" value="100"></div>
+        <div class="field"><label for="cV1">v<sub>1</sub> <span class="unit">m/s</span></label><input id="cV1" type="text" inputmode="decimal" value="2.0"></div>
+        <div class="field"><label for="cD2">D<sub>2</sub> <span class="unit">mm</span></label><input id="cD2" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="cV2">v<sub>2</sub> <span class="unit">m/s</span></label><input id="cV2" type="text" inputmode="decimal" value="3.0"></div>
+        <div class="field"><label for="cD3">D<sub>3</sub> <span class="unit">mm</span></label><input id="cD3" type="text" inputmode="decimal" value="60"></div>
+      </div>
+      <div class="out"><div class="stat"><span class="lbl">Q<sub>1</sub></span><span class="val" id="cQ1"></span></div><div class="stat"><span class="lbl">Q<sub>2</sub></span><span class="val" id="cQ2"></span></div><div class="stat hot"><span class="lbl">v<sub>3</sub> = (Q<sub>1</sub> − Q<sub>2</sub>)/A<sub>3</sub></span><span class="val" id="cV3"></span></div></div>
+      <p class="small muted" id="cNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="bern">
+  <div class="sec-head"><p class="eyebrow">Slides 9–14 · Mott §6.6–6.8</p><h2>Bernoulli's equation is energy bookkeeping</h2><p class="dek">Slides 9–11 start with a ball thrown upward: it trades speed for height and back, because (ignoring air drag) its total energy is constant. A water jet does the same. In a pipe, the fluid has a third place to store energy: pressure.</p></div>
+  <div class="two">
+    <ol class="steps">
+      <li><span class="sn">1</span><div class="sb"><h4>Three energies of a fluid element of weight w</h4><p>Potential \(wz\); kinetic \(wv^2/2g\); and flow energy \(wp/\gamma\), the work done pushing the element into the section against pressure \(p\) (Mott §6.6).</p></div></li>
+      <li><span class="sn">2</span><div class="sb"><h4>No losses, no pumps: total is constant</h4>\[ w\frac{p_1}{\gamma} + wz_1 + w\frac{v_1^2}{2g} = w\frac{p_2}{\gamma} + wz_2 + w\frac{v_2^2}{2g} \]</div></li>
+      <li class="final"><span class="sn">3</span><div class="sb"><h4>Divide by w: energy per unit weight = head</h4><div class="boxed">\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]</div><p class="why">Each term is a length: <b>pressure head</b>, <b>elevation head</b>, <b>velocity head</b>; their sum is the <b>total head</b>. Multiply by \(\gamma\) for the per-unit-volume form on slide 12: static pressure + \(\rho g z\) + dynamic pressure \(\rho v^2/2\). Same equation, two habits: academia per volume, industry per weight ("head").</p></div></li>
+    </ol>
+    <div class="read">
+      <h3>Slide 12: the assumptions, and what breaks them</h3>
+      <ul>
+        <li><b>Steady flow</b> between the two points. A draining tank isn't steady, but changes slowly enough (slide 16) to treat as steady moment by moment.</li>
+        <li><b>Incompressible</b>: liquids, and gases at low speed (below roughly a third of the speed of sound).</li>
+        <li><b>No energy losses</b> to friction. Real pipes lose energy, and Chapter 7 adds a loss term \(h_L\).</li>
+        <li><b>No pumps, turbines or heat transfer</b> between the points. Chapter 7 adds \(h_A\) and \(h_R\).</li>
+        <li><b>Same streamline</b> (or the same continuous flow). You can't Bernoulli across a pump or between two separate pipes.</li>
+      </ul>
+      <h3>Mott's procedure</h3>
+      <ol>
+        <li>Pick two points where you know the most (free surfaces: \(p = 0\), \(v \approx 0\); free jets: \(p = 0\)).</li>
+        <li>Write the full equation, then cross out terms that are zero or equal.</li>
+        <li>Use continuity for the second unknown velocity.</li>
+        <li>Solve, then check units: every term must be in metres or feet.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="traps">
+    <div class="trap"><span class="tag">Trap</span><p>Use gauge pressure on both sides or absolute on both sides. Mixing them adds a phantom 10 m of water head.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>Elevation head is measured from any datum you like, but use the <b>same datum</b> at both points.</p></div>
+    <div class="trap"><span class="tag">Trap</span><p>A faster fluid has <b>lower</b> pressure only when elevation doesn't change too. On slide 19 (6.61) the pipe widens <i>and</i> rises; the rise wins and the pressure drops.</p></div>
+  </div>
+</section>
+
+<section id="tank">
+  <div class="sec-head"><p class="eyebrow">Slides 15–17 · Mott §6.9–6.10</p><h2>A leaking tub: Torricelli and the draining tank</h2><p class="dek">Point 1 on the free surface (p = 0, v ≈ 0), point 2 in the jet (p = 0) a depth h below. Bernoulli leaves \(h = v^2/2g\), so \(v = \sqrt{2gh}\): the speed of an object dropped from height h.</p></div>
+  <div class="two">
+    <ol class="steps">
+      <li><span class="sn">1</span><div class="sb"><h4>Speed and rate of loss</h4>\[ v_j = \sqrt{2gh}, \qquad Q = A_j\sqrt{2gh} \]</div></li>
+      <li><span class="sn">2</span><div class="sb"><h4>Rate of change of height</h4><p>The volume leaving equals the volume lost from the tub: \(A_t\,dh = -Q\,dt\), so</p>\[ \frac{dh}{dt} = -\frac{A_j}{A_t}\sqrt{2gh} \]<p class="why">Slide 16's "quite close because…": the tub is much bigger than the hole, so the surface moves very slowly and its velocity head is negligible. That's what lets us use the steady Bernoulli equation.</p></div></li>
+      <li class="final"><span class="sn">3</span><div class="sb"><h4>Time to drain (slide 17, Mott Eq. 6–26)</h4><p>Separate and integrate from \(h_1\) to \(h_2\):</p><div class="boxed">\[ t_2 - t_1 = \frac{2(A_t/A_j)}{\sqrt{2g}}\left(\sqrt{h_1} - \sqrt{h_2}\right) \]</div><p class="why">With \(h_2 = 0\) this is the slide's \(t_{drain}\). The last bit of water takes the longest: it takes as long to drain the bottom quarter of the depth as the top three quarters.</p></div></li>
+    </ol>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="tFields">
+        <div class="field"><label for="tDt">Tank diameter <span class="unit">m</span></label><input id="tDt" type="text" inputmode="decimal" value="1.5"></div>
+        <div class="field"><label for="tDj">Outlet diameter <span class="unit">mm</span></label><input id="tDj" type="text" inputmode="decimal" value="50"></div>
+        <div class="field"><label for="tH1">Start depth h<sub>1</sub> <span class="unit">m</span></label><input id="tH1" type="text" inputmode="decimal" value="3.0"></div>
+        <div class="field"><label for="tH2">End depth h<sub>2</sub> <span class="unit">m</span></label><input id="tH2" type="text" inputmode="decimal" value="0.5"></div>
+        <div class="field"><label for="tP">Air pressure above <span class="unit">kPa gauge</span></label><input id="tP" type="text" inputmode="decimal" value="0"></div>
+        <div class="field"><label for="tK">Outlet</label><select id="tK"><option value="1">Well-rounded nozzle</option><option value="0.62">Sharp-edged orifice (A<sub>j</sub> = 0.62A<sub>o</sub>)</option></select></div>
+      </div>
+      <div class="chips"><button type="button" class="chip" data-t="mott">Mott §6.10 example</button><button type="button" class="chip" data-t="tub">Bathtub</button></div>
+      <svg id="tPlot" style="width:100%;display:block" role="img" aria-label="Depth against time while the tank drains."></svg>
+      <div class="out"><div class="stat"><span class="lbl">Jet speed at h<sub>1</sub></span><span class="val" id="tV"></span></div><div class="stat"><span class="lbl">Q at h<sub>1</sub></span><span class="val" id="tQ"></span></div><div class="stat hot"><span class="lbl">Time h<sub>1</sub> → h<sub>2</sub></span><span class="val" id="tT"></span></div></div>
+      <p class="small muted" id="tNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="siphon">
+  <div class="sec-head"><p class="eyebrow">Slides 21–22 · Mott Example 6.10</p><h2>The siphon</h2><p class="dek">Slide 21 asks for the key parameters. Bernoulli from the pool surface to the free jet says the only one that sets the flow is the drop from the free surface to the outlet. The height of the crest only sets how low the pressure gets there.</p></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Mott Example 6.10 siphon</h3><div class="chips"><button type="button" class="chip" data-s="ex">Example 6.10</button><button type="button" class="chip" data-s="tall">Crest 8 m up</button></div></div>
+    <div class="panel-b">
+      <div class="fields" id="sFields">
+        <div class="field"><label for="sC">Crest C above the surface <span class="unit">m</span> <span class="mono" id="sCv"></span></label><input id="sC" type="range" min="0.2" max="10" step="0.1" value="1.2"></div>
+        <div class="field"><label for="sF">Outlet F below the surface <span class="unit">m</span> <span class="mono" id="sFv"></span></label><input id="sF" type="range" min="0.2" max="6" step="0.1" value="3.0"></div>
+        <div class="field"><label for="sDp">Tube ID <span class="unit">mm</span></label><input id="sDp" type="text" inputmode="decimal" value="40"></div>
+        <div class="field"><label for="sDn">Nozzle diameter <span class="unit">mm</span></label><input id="sDn" type="text" inputmode="decimal" value="25"></div>
+      </div>
+      <div class="two">
+        <svg id="sSvg" viewBox="0 0 360 300" style="width:100%;display:block" role="img" aria-label="Pool with a siphon tube over the rim: B at the surface level inside the tube, C at the crest, D back at surface level outside, E at the bottom before the nozzle, F in the jet."></svg>
+        <div style="display:grid;gap:10px;align-content:start">
+          <div class="out">
+            <div class="stat hot"><span class="lbl">Q</span><span class="val" id="sQ"></span></div>
+            <div class="stat"><span class="lbl">Nozzle jet / tube velocity</span><span class="val" id="sV"></span></div>
+          </div>
+          <div class="scroll-x"><table class="tbl" id="sTbl"><thead><tr><th>Point</th><th>z (m)</th><th>p (kPa gauge)</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+      <p class="small" id="sNote" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<section id="meters">
+  <div class="sec-head"><p class="eyebrow">Slides 23–25 · Mott §6.8, Example 6.11</p><h2>Measuring speed with pressure: pitot tube and venturi</h2></div>
+  <div class="two">
+    <div class="read">
+      <p><b>Pitot tube (slide 23).</b> A tube facing upstream brings the fluid at its tip to rest. Bernoulli from the free stream to that <b>stagnation point</b>: \(p_s + \rho v^2/2 = p_t\). Measure the total (stagnation) pressure and the static pressure, and</p>
+      \[ v = \sqrt{\frac{2(p_t - p_s)}{\rho}} \]
+      <p>It works inside a pipe or on an airplane, which is why it shows up on F1 cars.</p>
+      <p><b>Venturi (slides 24–25).</b> A smooth throat speeds the flow up and drops its pressure. Bernoulli gives one equation with two unknown velocities; continuity, \(A_1v_1 = A_2v_2\), is the second equation the slide says we need. With a differential manometer of deflection h and gauge fluid \(\gamma_g\), the elevation terms cancel (Mott Ex 6.11):</p>
+      \[ \frac{v_2^2 - v_1^2}{2g} = h\left(\frac{\gamma_g}{\gamma} - 1\right),\qquad v_1 = \sqrt{\frac{2gh(\gamma_g/\gamma - 1)}{(A_1/A_2)^2 - 1}} \]
+      <p class="small muted">Real venturis lose a little energy; Chapter 15 adds a discharge coefficient (about 0.98). This page uses the ideal value, as Ex 6.11 does.</p>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Flow meter</h3><div class="seg" role="group" aria-label="Meter type" id="mType"><button type="button" data-v="pitot" aria-pressed="true">Pitot tube</button><button type="button" data-v="venturi" aria-pressed="false">Venturi</button></div></div><div class="panel-b">
+      <div class="fields" id="mFields">
+        <div class="field mpit"><label for="mDp">p<sub>t</sub> − p<sub>s</sub> <span class="unit">Pa</span></label><input id="mDp" type="text" inputmode="decimal" value="600"></div>
+        <div class="field mpit"><label for="mRho">Fluid density <span class="unit">kg/m³</span></label><input id="mRho" type="text" inputmode="decimal" value="1.2"></div>
+        <div class="field mven" hidden><label for="mD1">Inlet D<sub>1</sub> <span class="unit">mm</span></label><input id="mD1" type="text" inputmode="decimal" value="300"></div>
+        <div class="field mven" hidden><label for="mD2">Throat D<sub>2</sub> <span class="unit">mm</span></label><input id="mD2" type="text" inputmode="decimal" value="200"></div>
+        <div class="field mven" hidden><label for="mH">Manometer deflection h <span class="unit">m</span></label><input id="mH" type="text" inputmode="decimal" value="1.18"></div>
+        <div class="field mven" hidden><label for="mR">γ<sub>gage</sub>/γ<sub>fluid</sub></label><input id="mR" type="text" inputmode="decimal" value="1.2711"></div>
+      </div>
+      <div class="out"><div class="stat hot"><span class="lbl" id="mOutL">Velocity</span><span class="val" id="mOut"></span></div><div class="stat"><span class="lbl" id="mOut2L">In other units</span><span class="val" id="mOut2"></span></div></div>
+      <p class="small muted" id="mNote">Default: air (1.2 kg/m³) with 600 Pa between total and static pressure, about a 113 km/h car.</p>
+    </div></div>
+  </div>
+</section>
+
+<section id="magnus">
+  <div class="sec-head"><p class="eyebrow">Slides 26–27</p><h2>The Magnus effect, briefly</h2></div>
+  <div class="read">
+    <p>A spinning ball drags air around with it. On the side where the surface moves with the oncoming air, the flow is faster; on the other side it is slower. Faster flow, lower pressure, so the ball is pushed toward the fast side and curves. The slide is careful: Bernoulli explains only part of it. The spinning surface also deflects the wake to one side, and by Newton's third law the ball is pushed the other way (the Coanda effect, which returns in Chapter 16). Strictly, Bernoulli also needs the two streams to come from the same undisturbed flow upstream, which is a fair approximation here.</p>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problems from the CH 6 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s28</span>2017 Midterm · thumb over a garden hose</span><span class="s">Exit speed 1 m/s; the thumb blocks 80 % of the outlet; p at the outlet was 0 gauge</span><span class="ans">≈ 12 kPa rise</span></summary><div class="dbody"><ol><li>Continuity, assuming the same flow rate: the open area drops to 20 %, so the exit speed rises 5×, to 5 m/s.</li><li>Bernoulli from just inside the hose (velocity 1 m/s, pressure p) to the exit jet (5 m/s, 0 gauge), same height: \(p = \tfrac{\rho}{2}(v_2^2 - v_1^2) = \tfrac{1000}{2}(25 - 1) = 12{,}000\) Pa.</li></ol><p class="note">The "estimate" is in the assumption: a real faucet doesn't hold Q constant when you block the outlet, so the true flow drops a little and the pressure rise is a little less than 12 kPa. Note the fraction: covering 80 % leaves 20 % open, not 80 %.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s15–17</span>Leaking bathtub</span><span class="s">Original numbers: tub 1.5 m × 0.70 m, 0.30 m of water, 40 mm drain</span><span class="ans">2.43 m/s; ≈ 3.1 L/s; ≈ 1.5 min</span></summary><div class="dbody"><ol><li>Leak speed: \(v = \sqrt{2(9.81)(0.30)} = 2.43\) m/s.</li><li>Rate of loss: \(A_j = \pi(0.04)^2/4 = 1.257\times10^{-3}\) m², so \(Q = 3.05\times10^{-3}\) m³/s ≈ 3.1 L/s.</li><li>Height falls at \(dh/dt = -Q/A_t = -3.05\times10^{-3}/1.05 = -2.9\) mm/s at the start.</li><li>Drain time: \(t = \dfrac{2(1.05/1.257\times10^{-3})}{\sqrt{19.62}}\sqrt{0.30} = 207\) s with a rounded outlet. A real drain grate is closer to a sharp orifice: dividing by 0.62 gives about 330 s, 5½ min. Try it in the draining-tank tool (Bathtub).</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s8</span>Practice · one inlet, two outlets</span><span class="s">Slide 8 has no numbers</span><span class="ans">Q<sub>1</sub> = Q<sub>2</sub> + Q<sub>3</sub></span></summary><div class="dbody"><p>Continuity for a liquid with several openings: flow in equals the sum of flows out, \(A_1v_1 = A_2v_2 + A_3v_3\). The <a href="#cont">continuity tool</a> uses made-up numbers to show it.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s22</span>Siphon (Mott Ex 6.10)</span><span class="s">40 mm tube, 25 mm nozzle; crest 1.2 m above the surface, outlet 3.0 m below</span><span class="ans">Q = 3.77 L/s; p<sub>C</sub> = −16.3 kPa</span></summary><div class="dbody"><ol><li>A to F (both 0 gauge, \(v_A = 0\)): \(v_F = \sqrt{2g(3.0)} = 7.67\) m/s, \(Q = 7.67 \times \pi(0.025)^2/4 = 3.77\times10^{-3}\) m³/s.</li><li>In the 40 mm tube: \(v = Q/A = 3.00\) m/s, velocity head 0.459 m.</li><li>Bernoulli from A to each point: \(p = \gamma(z_A - z - v^2/2g)\). B (level with A): −4.50 kPa. C (1.2 m up): −16.27 kPa. D: −4.50 kPa. E (3.0 m down): +24.93 kPa.</li></ol><p class="note">Point B is at the same level as the pool surface but below atmospheric pressure: some of the pressure head became velocity head.</p></div></details>
+  </div>
+</section>
+
+<section id="textbook">
+  <div class="sec-head"><p class="eyebrow">Mott problems on the CH 6 slides, plus the examples they lean on (statements paraphrased)</p><h2>Textbook problems, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src tb">6.60</span>Exercise #1 · gasoline through a reducer</span><span class="s">sg 0.67, 0.11 m³/s, 415 kPa in the 160 mm OD × 5.5 mm wall tube; find p in the 80 mm OD × 2.8 mm wall tube</span><span class="ans">≈ 214 kPa</span></summary><div class="dbody"><ol><li>Inside diameters: 160 − 2(5.5) = 149.0 mm and 80 − 2(2.8) = 74.4 mm. Areas \(1.744\times10^{-2}\) and \(4.347\times10^{-3}\) m² (match Mott's Appendix G tube table to 3 figures).</li><li>\(v_1 = 0.11/0.01744 = 6.31\) m/s, \(v_2 = 25.3\) m/s.</li><li>Same elevation: \(p_2 = p_1 - \tfrac{\rho}{2}(v_2^2 - v_1^2) = 415 - \tfrac{670}{2}(640.2 - 39.8)/1000 = 415 - 201 = 214\) kPa.</li></ol><p class="note">The book answer for this even-numbered problem isn't in the back of the book, so this is my own solution. The OD × wall tube sizes are a common slip: use the <b>inside</b> diameter.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">6.61</span>Exercise #2 · water flowing up a widening pipe</span><span class="s">10 °C, 0.37 m³/s; 300 mm at A, 600 mm at B, 4.5 m higher; p<sub>A</sub> = 66.2 kPa</span><span class="ans">34.9 kPa</span></summary><div class="dbody"><ol><li>\(v_A = 0.37/0.0707 = 5.23\) m/s, \(v_B = 1.31\) m/s. Velocity heads 1.396 m and 0.087 m.</li><li>\(p_B = p_A + \gamma\left[(z_A - z_B) + \dfrac{v_A^2 - v_B^2}{2g}\right] = 66.2 + 9.81(-4.5 + 1.309) = 34.9\) kPa. Matches the book.</li></ol><p class="note">Slowing down gives back 1.31 m of head, but climbing costs 4.5 m: the pressure drops overall.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">6.77</span>Exercise #3 · oil flow from a manometer reading</span><span class="s">Oil 8.64 kN/m³; 100 mm at A, 50 mm at B 600 mm higher; water manometer: 200 mm deflection, its higher water level 150 mm below A</span><span class="ans">1.48 × 10⁻³ m³/s</span></summary><div class="dbody"><ol><li>Manometer, from A down the oil-filled left leg to the water, across, and up the right leg through oil to B: \(p_A + \gamma_o(0.35) - \gamma_w(0.20) - \gamma_o(0.75) = p_B\), so \(p_A - p_B = 8.64(0.40) + 9.81(0.20) = 5.42\) kPa.</li><li>Bernoulli A to B: \(\dfrac{p_A - p_B}{\gamma_o} - 0.60 = \dfrac{v_B^2 - v_A^2}{2g}\), so \(0.627 - 0.600 = 0.0271\) m.</li><li>Continuity: \(v_B = 4v_A\), so \(15v_A^2/2g = 0.0271\), \(v_A = 0.188\) m/s.</li><li>\(Q = 0.188 \times \pi(0.1)^2/4 = 1.48\times10^{-3}\) m³/s. Matches the book.</li></ol><p class="note">The manometer distances are read from the slide's figure. Notice how small the velocity-head difference is (27 mm): small errors in reading the figure change Q a lot.</p></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 6.9</span>Pipe that widens and rises</span><span class="s">Water 10 °C, 25 mm at 345 kPa and 3.0 m/s → 50 mm, 2.0 m higher</span><span class="ans">329.6 kPa</span></summary><div class="dbody"><ol><li>\(v_2 = 3.0(25/50)^2 = 0.75\) m/s.</li><li>\(p_2 = 345 + 9.81\left[-2.0 + (9.0 - 0.5625)/19.62\right] = 345 - 15.4 = 329.6\) kPa. Load it in the head diagram at the top.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 6.11</span>Venturi meter</span><span class="s">Water at 60 °C (9.65 kN/m³), 300 mm to 200 mm, gauge fluid sg 1.25, deflection 1.18 m, throat 0.46 m higher</span><span class="ans">v<sub>A</sub> = 1.24 m/s; Q = 0.0877 m³/s</span></summary><div class="dbody"><ol><li>Manometer: \(\dfrac{p_A - p_B}{\gamma} + (z_A - z_B) = h\left(\dfrac{\gamma_g}{\gamma} - 1\right) = 1.18\left(\dfrac{12.26}{9.65} - 1\right) = 0.32\) m. The 0.46 m rise cancels out.</li><li>\(v_B = 2.25v_A\), so \(v_B^2 - v_A^2 = 4.06v_A^2\) and \(4.06v_A^2/2g = 0.32\), \(v_A = 1.24\) m/s.</li><li>\(Q = 0.0707 \times 1.24 = 0.0877\) m³/s. Load it in the flow-meter tool.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">Ex 6.14</span>Pressurized tank fountain</span><span class="s">Jet to rise 40.0 ft from a nozzle 6.0 ft below the water surface</span><span class="ans">14.73 psig</span></summary><div class="dbody"><ol><li>A jet rises to the total head above the nozzle: \(p_1/\gamma + h = 40.0\) ft.</li><li>\(p_1/\gamma = 34.0\) ft, \(p_1 = 62.4 \times 34.0/144 = 14.73\) psig.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src tb">§6.10</span>Draining a tank</span><span class="s">1.50 m tank, 50 mm nozzle, from 3.0 m to 0.50 m</span><span class="ans">417 s</span></summary><div class="dbody"><ol><li>\(A_t/A_j = (1.50/0.050)^2 = 900\).</li><li>\(t = \dfrac{2(900)}{\sqrt{19.62}}(\sqrt{3.0} - \sqrt{0.5}) = 417\) s = 6 min 57 s.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. Water flows from a 100 mm pipe into a 50 mm pipe. The velocity in the small pipe is</p><div class="opts"><button class="opt" data-k="a">the same</button><button class="opt" data-k="b">2× larger</button><button class="opt" data-k="c">4× larger</button><button class="opt" data-k="d">half</button></div><p class="fb" hidden>v ∝ 1/A ∝ 1/D². Halving D quarters A.</p></div>
+    <div class="q" data-answer="b"><p class="qt">2. A tank's outlet jet leaves at 6.0 m/s. If the water depth is quadrupled, the jet speed becomes</p><div class="opts"><button class="opt" data-k="a">24 m/s</button><button class="opt" data-k="b">12 m/s</button><button class="opt" data-k="c">6 m/s</button><button class="opt" data-k="d">8.5 m/s</button></div><p class="fb" hidden>v = √(2gh): 4× the depth, 2× the speed.</p></div>
+    <div class="q" data-answer="a"><p class="qt">3. In a siphon, raising the crest (while it still flows) changes</p><div class="opts"><button class="opt" data-k="a">only the pressure at the crest</button><button class="opt" data-k="b">only the flow rate</button><button class="opt" data-k="c">both</button><button class="opt" data-k="d">neither</button></div><p class="fb" hidden>Q depends only on the drop from the free surface to the outlet. A higher crest means a lower crest pressure, until it reaches the vapor pressure and the siphon breaks.</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. Bernoulli's equation can't be used directly between</p><div class="opts"><button class="opt" data-k="a">two points in a smooth reducer</button><button class="opt" data-k="b">a free surface and a free jet</button><button class="opt" data-k="c">a pitot tip and the free stream</button><button class="opt" data-k="d">the inlet and outlet of a pump</button></div><p class="fb" hidden>A pump adds energy (h_A); that is the general energy equation of Chapter 7.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Flow rates</span>\[ Q = Av,\ \ W = \gamma Q,\ \ M = \rho Q \]<span class="wh">m³/s, N/s, kg/s.</span></div>
+    <div><span class="nm">Continuity</span>\[ \rho_1A_1v_1 = \rho_2A_2v_2;\ \ A_1v_1 = A_2v_2 \]<span class="wh">Second form for liquids.</span></div>
+    <div><span class="nm">Bernoulli</span>\[ \frac{p_1}{\gamma} + z_1 + \frac{v_1^2}{2g} = \frac{p_2}{\gamma} + z_2 + \frac{v_2^2}{2g} \]<span class="wh">Steady, incompressible, no losses, no pumps.</span></div>
+    <div><span class="nm">Torricelli</span>\[ v = \sqrt{2gh} \]<span class="wh">Add p/γ to h for a pressurized tank.</span></div>
+    <div><span class="nm">Draining time</span>\[ t_2 - t_1 = \frac{2(A_t/A_j)}{\sqrt{2g}}\left(\sqrt{h_1} - \sqrt{h_2}\right) \]<span class="wh">Sharp orifice: A<sub>j</sub> = 0.62A<sub>o</sub>.</span></div>
+    <div><span class="nm">Pitot tube</span>\[ v = \sqrt{2(p_t - p_s)/\rho} \]<span class="wh">Stagnation minus static.</span></div>
+    <div><span class="nm">Venturi + manometer</span>\[ \frac{v_2^2 - v_1^2}{2g} = h\left(\frac{\gamma_g}{\gamma} - 1\right) \]<span class="wh">With A<sub>1</sub>v<sub>1</sub> = A<sub>2</sub>v<sub>2</sub>.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* hero: head diagram */
+  const PPRE = {
+    e1: { pQ: 0.11, pD1: 149, pD2: 74.4, pZ: 0, pP1: 415, pSg: 0.67 },
+    e2: { pQ: 0.37, pD1: 300, pD2: 600, pZ: 4.5, pP1: 66.2, pSg: 1 },
+    e69: { pQ: 1.4726e-3, pD1: 25, pD2: 50, pZ: 2, pP1: 345, pSg: 1 },
+  };
+  function heads() {
+    const Q = num('#pQ'), D1 = num('#pD1') / 1000, D2 = num('#pD2') / 1000, dz = num('#pZ'), p1 = num('#pP1') * 1000, sg = num('#pSg');
+    $('#pD2v').textContent = `${num('#pD2')}`; $('#pZv').textContent = `${dz}`;
+    if (!(Q > 0 && D1 > 0 && D2 > 0 && sg > 0)) return;
+    const gam = sg * 9810, r = C.pipeTwoSection({ Q, D1, D2, p1, z1: 0, z2: dz, gamma: gam });
+    $('#pV').textContent = `${f(r.v1, 3)}, ${f(r.v2, 3)} m/s`; $('#pP2').textContent = `${f(r.p2 / 1000, 4)} kPa`; $('#pH').textContent = `${f(r.H, 4)} m`;
+    const pabs = r.p2 + 101325, pv = 2340; // ~ water vapor pressure at 20 C
+    $('#pNote').innerHTML = `p<sub>2</sub> = p<sub>1</sub> + γ[(z<sub>1</sub> − z<sub>2</sub>) + (v<sub>1</sub>² − v<sub>2</sub>²)/2g] = ${f(p1 / 1000, 4)} + ${f(gam / 1000, 4)} × [${f(-dz, 3)} ${r.hv1 - r.hv2 < 0 ? '−' : '+'} ${f(Math.abs(r.hv1 - r.hv2), 4)}] = ${f(r.p2 / 1000, 4)} kPa.` + (pabs < pv ? ' <b>Below vapor pressure:</b> in a real pipe the liquid would boil (cavitate), and this answer is not physical.' : r.p2 < 0 ? ' Negative gauge pressure: section 2 is below atmospheric.' : '');
+    const s = $('#heroSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    // geometry: datum at y=270; section 1 at x=150, section 2 at x=470
+    const zmin = Math.min(0, dz, r.H, dz + r.hp2), zmax = Math.max(r.H, dz, 0.5), sc = 230 / (zmax - zmin), Y = (z) => 270 - (z - zmin) * sc;
+    const x1 = 150, x2 = 470, bw = 46;
+    el('line', { x1: 20, x2: 620, y1: Y(0), y2: Y(0), class: 'st-rule', 'stroke-dasharray': '6 5' }, s); text(s, 200, Y(0) + 16, 'datum (z = 0 at section 1)', { 'font-size': 12 });
+    // pipe
+    const t1 = Math.max(6, Math.min(30, D1 * 120)), t2 = Math.max(6, Math.min(30, D2 * 120));
+    el('path', { d: `M60,${Y(0) - t1 / 2} L${x1 + 60},${Y(0) - t1 / 2} L${x2 - 60},${Y(dz) - t2 / 2} L600,${Y(dz) - t2 / 2} L600,${Y(dz) + t2 / 2} L${x2 - 60},${Y(dz) + t2 / 2} L${x1 + 60},${Y(0) + t1 / 2} L60,${Y(0) + t1 / 2} Z`, class: 'fl-water', 'fill-opacity': 0.35, stroke: 'var(--ink-2)' }, s);
+    const bar = (x, z, hp, hv, lbl) => {
+      // elevation
+      el('rect', { x: x - bw / 2, y: Math.min(Y(z), Y(0)), width: bw, height: Math.abs(Y(z) - Y(0)), class: 'fl-rule', 'fill-opacity': 0.9 }, s);
+      el('rect', { x: x - bw / 2, y: Math.min(Y(z + hp), Y(z)), width: bw, height: Math.abs(Y(z + hp) - Y(z)), class: hp >= 0 ? 'fl-water' : 'fl-dye', 'fill-opacity': hp >= 0 ? 0.7 : 0.5 }, s);
+      el('rect', { x: x - bw / 2, y: Y(z + hp + hv), width: bw, height: Math.max(0, Y(z + hp) - Y(z + hp + hv)), class: 'fl-amber', 'fill-opacity': 0.85 }, s);
+      text(s, x, 294, lbl, { 'text-anchor': 'middle', 'font-size': 13, class: 'svg-ink' });
+      text(s, x + bw / 2 + 5, Y(z + hp / 2) + 4, `p/γ ${f(hp, 3)}`, { 'font-size': 13 });
+      text(s, x - bw / 2 - 5, Math.max(Y(z + hp + hv / 2) + 4, Y(r.H) + 18), `v²/2g ${f(hv, 3)}`, { 'font-size': 13, 'text-anchor': 'end' });
+    };
+    bar(x1, 0, r.hp1, r.hv1, 'section 1'); bar(x2, dz, r.hp2, r.hv2, 'section 2');
+    el('line', { x1: 40, x2: 620, y1: Y(r.H), y2: Y(r.H), class: 'st-ink', 'stroke-width': 1.5 }, s); text(s, 620, Y(r.H) - 6, `total head ${f(r.H, 3)} m`, { 'font-size': 13, 'text-anchor': 'end', class: 'svg-ink' });
+    el('line', { x1: x1, x2: x2, y1: Y(r.hp1), y2: Y(dz + r.hp2), class: 'st-water', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }, s);
+    text(s, (x1 + x2) / 2, Math.max(Y(r.hp1), Y(dz + r.hp2)) + 22, 'hydraulic grade line (p/γ + z)', { 'font-size': 13, class: 'fl-water', 'text-anchor': 'middle' });
+  }
+  $$('[data-p]').forEach((b) => b.addEventListener('click', () => { const v = PPRE[b.dataset.p]; FM.setVals(v); heads(); }));
+  onInputs('#pFields', heads); heads();
+
+  /* rates */
+  function rates() {
+    const q = num('#rQ') * num('#rU'), sg = num('#rSg'); if (!(q >= 0 && sg > 0)) return;
+    $('#rQo').textContent = `${f(q, 4)} m³/s = ${f(q / 1.6667e-5, 4)} L/min = ${f(q / 0.0283168, 4)} ft³/s`;
+    $('#rWo').textContent = `${f(q * sg * 9810, 4)} N/s = ${f(q / 0.0283168 * sg * 62.4, 4)} lb/s`;
+    $('#rMo').textContent = `${f(q * sg * 1000, 4)} kg/s = ${f(q / 0.0283168 * sg * 1.94, 4)} slugs/s`;
+  }
+  onInputs('#rFields', rates); rates();
+
+  /* continuity */
+  function cont() {
+    const A = (d) => C.circA(num(d) / 1000), Q1 = A('#cD1') * num('#cV1'), Q2 = A('#cD2') * num('#cV2'), Q3 = Q1 - Q2, v3 = Q3 / A('#cD3');
+    $('#cQ1').textContent = `${f(Q1 * 1000, 4)} L/s`; $('#cQ2').textContent = `${f(Q2 * 1000, 4)} L/s`;
+    $('#cV3').textContent = isFinite(v3) ? `${f(v3, 4)} m/s` : '—';
+    $('#cNote').textContent = Q3 < 0 ? 'Negative: branch 3 would have to flow inward to supply branch 2.' : `Q3 = ${f(Q3 * 1000, 4)} L/s leaves through branch 3.`;
+  }
+  onInputs('#cFields', cont); cont();
+
+  /* draining tank */
+  const TPRE = { mott: { tDt: 1.5, tDj: 50, tH1: 3.0, tH2: 0.5, tP: 0, tK: '1' }, tub: { tDt: 1.1563, tDj: 40, tH1: 0.30, tH2: 0, tP: 0, tK: '1' } };
+  function tank() {
+    const Dt = num('#tDt'), Dj = num('#tDj') / 1000, h1 = num('#tH1'), h2 = num('#tH2'), pa = num('#tP') * 1000 / 9810, k = num('#tK');
+    if (!(Dt > 0 && Dj > 0 && h1 > 0 && h2 >= 0 && h2 < h1 && Dj < Dt)) { $('#tNote').textContent = 'Need h₁ > h₂ ≥ 0 and an outlet smaller than the tank.'; return; }
+    const At = C.circA(Dt), Aj = k * C.circA(Dj);
+    // pressurized: constant air pressure adds pa to the head (Mott 6.10.1)
+    const t = C.drainTime({ At, Aj, h1: h1 + pa, h2: h2 + pa }), v = C.torricelli(h1 + pa);
+    $('#tV').textContent = `${f(v, 3)} m/s`; $('#tQ').textContent = `${f(v * Aj * 1000, 3)} L/s`;
+    $('#tT').textContent = `${f(t, 4)} s = ${Math.floor(t / 60)} min ${Math.round(t % 60)} s`;
+    const tEnd = C.drainTime({ At, Aj, h1: h1 + pa, h2: pa }), pts = [];
+    for (let i = 0; i <= 120; i++) { const tt = tEnd * i / 120, sq = Math.sqrt(h1 + pa) - tt * Math.sqrt(2 * 9.81) / (2 * At / Aj); pts.push([tt, Math.max(0, sq * sq - pa)]); }
+    const p = FM.plot($('#tPlot'), { W: 380, H: 230, m: { l: 52, r: 12, t: 12, b: 42 }, x: { min: 0, max: tEnd, label: 'time (s)' }, y: { min: 0, max: h1 * 1.05, label: 'depth h (m)' } });
+    FM.line(p, pts);
+    el('line', { x1: p.sx(t), x2: p.sx(t), y1: p.sy(0), y2: p.sy(h2), class: 'st-dye', 'stroke-dasharray': '4 3' }, p.g);
+    el('line', { x1: p.sx(0), x2: p.sx(t), y1: p.sy(h2), y2: p.sy(h2), class: 'st-dye', 'stroke-dasharray': '4 3' }, p.g);
+    FM.dot(p, t, h2);
+    $('#tNote').textContent = `A_t/A_j = ${f(At / Aj, 4)}.` + (pa > 0 ? ` Air pressure adds p/γ = ${f(pa, 3)} m of head (held constant, as in Mott §6.10.1).` : ' Draining all the way to h = 0 takes ' + f(tEnd, 3) + ' s: the last part is the slowest.');
+  }
+  $$('[data-t]').forEach((b) => b.addEventListener('click', () => { FM.setVals(TPRE[b.dataset.t]); tank(); }));
+  onInputs('#tFields', tank); tank();
+
+  /* siphon */
+  const SPRE = { ex: { sC: 1.2, sF: 3.0, sDp: 40, sDn: 25 }, tall: { sC: 8, sF: 3.0, sDp: 40, sDn: 25 } };
+  function siph() {
+    const hc = num('#sC'), hf = num('#sF'), Dp = num('#sDp') / 1000, Dn = num('#sDn') / 1000; $('#sCv').textContent = hc; $('#sFv').textContent = hf;
+    if (!(Dp > 0 && Dn > 0)) return;
+    const r = C.siphon({ zs: 0, zOut: -hf, Dn, Dp, points: [{ n: 'A', z: 0, still: true }, { n: 'B', z: 0 }, { n: 'C', z: hc }, { n: 'D', z: 0 }, { n: 'E', z: -hf }, { n: 'F', z: -hf, v: C.torricelli(hf) }] });
+    $('#sQ').textContent = `${f(r.Q * 1000, 4)} L/s`; $('#sV').textContent = `${f(r.vn, 3)} / ${f(r.vp, 3)} m/s`;
+    const tb = $('#sTbl tbody'); tb.innerHTML = r.pts.map((q) => `<tr><td>${q.n}</td><td>${f(q.z, 3)}</td><td>${f(Math.abs(q.p) < 1e-6 ? 0 : q.p / 1000, 4)}</td></tr>`).join('');
+    const pC = r.pts[2].p, pabsC = pC + 101325, pv = 2340;
+    $('#sNote').innerHTML = pabsC < pv ? `<b>The siphon breaks.</b> The calculated crest pressure is ${f(pabsC / 1000, 3)} kPa absolute, below water's vapor pressure (about 2.3 kPa at 20 °C). The water boils at C and the flow stops. With no losses, the crest can be at most about ${f((101325 - pv) / 9810 - r.hvp, 3)} m above the surface here.` : `Lowest pressure at the crest C: ${f(pC / 1000, 4)} kPa gauge (${f(pabsC / 1000, 3)} kPa absolute). Raise the crest and only this number changes.`;
+    const s = $('#sSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const top = Math.max(hc, 0.5), bot = -hf, sc = 230 / (top - bot + 1.2), Y = (z) => 30 + (top + 0.3 - z) * sc;
+    el('rect', { x: 20, y: Y(0), width: 130, height: Y(-1.8) - Y(0), class: 'fl-water', 'fill-opacity': 0.25 }, s);
+    el('path', { d: `M20,${Y(0.6)} L20,${Y(-1.8)} L150,${Y(-1.8)} L150,${Y(0.6)}`, fill: 'none', class: 'st-ink', 'stroke-width': 2 }, s);
+    el('line', { x1: 20, x2: 150, y1: Y(0), y2: Y(0), class: 'st-water', 'stroke-width': 2 }, s);
+    const tw = Math.max(5, Math.min(12, Dp * 250));
+    const path = `M120,${Y(-1.2)} L120,${Y(hc)} Q120,${Y(hc) - 18} 140,${Y(hc) - 18} L165,${Y(hc) - 18} Q185,${Y(hc) - 18} 185,${Y(hc)} L300,${Y(-hf)} L330,${Y(-hf)}`;
+    el('path', { d: path, fill: 'none', class: 'st-water', 'stroke-width': tw, 'stroke-linejoin': 'round', opacity: 0.55 }, s);
+    el('path', { d: path, fill: 'none', class: 'st-ink2', 'stroke-width': 1 }, s);
+    el('line', { x1: 150, x2: 350, y1: Y(0), y2: Y(0), class: 'st-rule', 'stroke-dasharray': '4 4' }, s);
+    const lab = (x, z, n) => { el('circle', { cx: x, cy: Y(z), r: 4, class: 'fl-dye' }, s); text(s, x + 6, Y(z) - 6, n, { 'font-size': 12, class: 'svg-ink' }); };
+    lab(70, 0, 'A'); lab(120, 0, 'B'); lab(152, hc + 18 / sc, 'C'); const xD = 185 + (300 - 185) * (hc / (hc + hf)); lab(xD, 0, 'D'); lab(300, -hf, 'E'); lab(338, -hf, 'F');
+  }
+  $$('[data-s]').forEach((b) => b.addEventListener('click', () => { FM.setVals(SPRE[b.dataset.s]); siph(); }));
+  onInputs('#sFields', siph); siph();
+
+  /* meters */
+  let mtype = 'pitot';
+  function meter() {
+    $$('.mpit').forEach((e) => (e.hidden = mtype !== 'pitot')); $$('.mven').forEach((e) => (e.hidden = mtype !== 'venturi'));
+    if (mtype === 'pitot') {
+      const v = C.pitot({ dp: num('#mDp'), rho: num('#mRho') });
+      $('#mOutL').textContent = 'Velocity'; $('#mOut').textContent = `${f(v, 4)} m/s`; $('#mOut2L').textContent = 'In other units'; $('#mOut2').textContent = `${f(v * 3.6, 4)} km/h = ${f(v * 3.281, 4)} ft/s`;
+      $('#mNote').textContent = 'Default: air (1.2 kg/m³) with 600 Pa between total and static pressure, about a 113 km/h car.';
+    } else {
+      const D1 = num('#mD1') / 1000, D2 = num('#mD2') / 1000, h = num('#mH'), R = num('#mR');
+      if (!(D1 > D2 && D2 > 0 && h >= 0 && R > 1)) { $('#mOut').textContent = '—'; $('#mNote').textContent = 'Need D₁ > D₂ and a gauge fluid denser than the flowing fluid.'; return; }
+      const r = C.venturiManometer({ D1, D2, h, sgRatio: R });
+      $('#mOutL').textContent = 'Inlet velocity v₁'; $('#mOut').textContent = `${f(r.vA, 4)} m/s`; $('#mOut2L').textContent = 'Flow rate Q'; $('#mOut2').textContent = `${f(r.Q, 4)} m³/s`;
+      $('#mNote').textContent = `h(γg/γ − 1) = ${f(r.dh, 4)} m of velocity-head difference; area ratio ${f(r.r, 4)}. Default is Mott Ex 6.11 (γg/γ = 12.26/9.65).`;
+    }
+  }
+  segmented($('#mType'), (v) => { mtype = v; meter(); });
+  onInputs('#mFields', meter); meter();
+})();
+</script>
+
+<footer>
+  <div class="pager"><a href="ch05-buoyancy.html">← Ch 5 Buoyancy</a><a href="ch07-energy.html">Ch 7 Energy equation →</a></div>
+  <p>Lecture companion for ENGR/EGTG 4254 Fluid Mechanics (FDU), keyed to the instructor's slide numbers and to Mott &amp; Untener, <i>Applied Fluid Mechanics</i>, 8th ed. (Pearson, 2022). Usable as in-class lecture material (press Present for projector-sized type) and as a study guide afterward. Figures are drawn for this site. Check numbers against your textbook's tables on graded work.</p>
+</footer>
+</div>
+</body>
+</html>

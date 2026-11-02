@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Drag and Lift (Ch 17)</title>
+<meta name="description" content="Lecture companion for Mott Chapter 17: boundary layers and separation, friction and pressure drag, drag coefficients, the drag crisis and terminal velocity of spheres, and lift and drag of an airfoil, with live calculators.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=JetBrains+Mono:wght@400..600&display=swap">
+<link rel="stylesheet" href="assets/fm.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],packages:{'[+]':['html']}},svg:{fontCache:'global'},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script defer src="assets/mathjax/tex-svg-full.js"></script>
+<script src="assets/fm-core.js"></script>
+<script src="assets/fm-ui.js"></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a class="home" href="index.html">Fluid Mechanics · ENGR 4254</a>
+  <span class="pn"><a href="ch16-momentum.html">← Ch 16 Momentum</a><a href="review.html">Final review →</a><button type="button" class="themebtn presbtn" aria-pressed="false" title="Larger type for projecting in lecture">Present</button><button type="button" class="themebtn" id="themebtn" aria-label="Color theme">Auto</button></span>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Week 14 · Mott Chapter 17 (Drag and Lift) · Slide deck CH 17</p>
+  <h1>Drag <em>and</em> Lift</h1>
+  <p class="lede">A body moving through a fluid is pushed backward (drag) and, if it's shaped or tilted right, sideways (lift). Both scale the same way: a coefficient times the dynamic pressure \(\rho V^2/2\) times an area. Shape sets the coefficient, and the boundary layer, whether it stays attached, sets the shape's effect.</p>
+  <nav class="toc-inline" aria-label="Sections">
+    <a href="#regimes">Low vs high Re</a><a href="#bl">Boundary layers</a><a href="#cd">Drag coefficient</a><a href="#sphere">Spheres &amp; terminal velocity</a><a href="#lift">Lift</a><a href="#examples">Examples</a><a href="#check">Check yourself</a><a href="#sheet">Formula sheet</a>
+  </nav>
+  <div class="panel">
+    <div class="panel-h"><h3>Same frontal area, different shapes (slides 7–8)</h3><div class="seg" role="group" aria-label="Fluid" id="hF"><button type="button" data-v="air" aria-pressed="true">Air</button><button type="button" data-v="water" aria-pressed="false">Water</button></div></div>
+    <div class="panel-b">
+      <svg id="hSvg" style="width:100%;display:block" role="img" aria-label="Bar chart of drag force for each shape at the chosen speed and area."></svg>
+      <div class="fields" id="hFields">
+        <div class="field"><label for="hV">Speed <span class="unit">m/s</span> <span class="mono" id="hVV"></span></label><input id="hV" type="range" min="1" max="60" step="0.5" value="25"></div>
+        <div class="field"><label for="hA">Frontal area <span class="unit">m²</span></label><input id="hA" type="text" inputmode="decimal" value="0.1"></div>
+      </div>
+      <p class="small" id="hNote" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <p class="eyebrow">Contents</p>
+    <ol><li><a href="#regimes">Low vs high Reynolds number</a></li><li><a href="#bl">Boundary layers &amp; separation</a></li><li><a href="#cd">Drag coefficient</a></li><li><a href="#sphere">Spheres &amp; terminal velocity</a></li><li><a href="#lift">Lift on an airfoil</a></li><li><a href="#examples">Slide examples</a></li><li><a href="#check">Check yourself</a></li><li><a href="#sheet">Formula sheet</a></li></ol>
+  </nav>
+  <main>
+
+<section id="regimes">
+  <div class="sec-head"><p class="eyebrow">Slide 2 · Mott §17.5</p><h2>Low vs high Reynolds number</h2></div>
+  <div class="two">
+    <div class="card"><h4>Stokes flow (N<sub>R</sub> ≪ 1)</h4><p>Bacteria, fine dust, the coins sinking in honey from the lab. Viscosity dominates and drag is proportional to V¹. For a sphere, Stokes' law gives \(F_D = 3\pi\eta Vd\), which is the same as \(C_D = 24/N_R\). The course skips this regime except here.</p></div>
+    <div class="card"><h4>High N<sub>R</sub> (most engineering)</h4><p>Cars, balls, buildings, wings. Drag is proportional to V², and the useful idea is the <b>boundary layer</b>: the thin layer near the surface where the flow is slowed by viscosity.</p></div>
+  </div>
+</section>
+
+<section id="bl">
+  <div class="sec-head"><p class="eyebrow">Slides 3–6, 13–14 · Mott §17.3–17.4</p><h2>Boundary layers, separation, and two kinds of drag</h2></div>
+  <div class="two">
+    <div class="read">
+      <ul>
+        <li><b>Skin (friction) drag</b>: shear stress in the boundary layer, summed over the wetted surface. It grows with surface area, and with a turbulent boundary layer it too scales with V² (slide 6).</li>
+        <li><b>Form (pressure) drag</b>: if the boundary layer can't follow the surface around the back, it <b>separates</b>, leaving a low-pressure wake. High pressure in front, low behind: a net backward push.</li>
+      </ul>
+      <p><b>Why a turbulent boundary layer resists separation</b> (slide 13): turbulent mixing keeps feeding fast outer fluid down to the wall. That near-wall fluid has more momentum to push against the rising pressure at the back of a body, so it stays attached longer and the wake is narrower.</p>
+      <p><b>Roughness</b> (slide 14): dimples on a golf ball trip the boundary layer to turbulent at a lower speed. Friction drag rises a little, but the wake shrinks so much that total drag drops sharply. Mott says a perfectly smooth golf ball could be driven only about 100 yards.</p>
+    </div>
+    <figure class="panel" style="padding:12px">
+      <svg viewBox="0 0 340 230" style="width:100%;display:block" role="img" aria-label="Two spheres in a flow from the left. Top: laminar boundary layer separating early with a wide wake. Bottom: turbulent boundary layer separating later with a narrow wake.">
+        <g><circle cx="110" cy="62" r="34" class="fl-amber" fill-opacity=".6" stroke="var(--ink-2)"/><path d="M110,28 C135,28 142,40 141,50 M110,96 C135,96 142,84 141,74" fill="none" class="st-water" stroke-width="2"/><path d="M141,50 C190,30 260,25 330,22 M141,74 C190,94 260,99 330,102" fill="none" class="st-dye" stroke-dasharray="4 3"/><text x="190" y="66" font-size="12" class="svg-ink">wide wake</text><text x="8" y="16" font-size="12" class="svg-ink">laminar layer: separates near 80°</text></g>
+        <g><circle cx="110" cy="172" r="34" class="fl-amber" fill-opacity=".6" stroke="var(--ink-2)"/><path d="M110,138 C150,140 152,165 140,190 M110,206 C130,206 141,200 140,190" fill="none" class="st-water" stroke-width="2"/><path d="M134,148 C180,150 250,158 330,160 M134,196 C180,194 250,186 330,184" fill="none" class="st-dye" stroke-dasharray="4 3"/><text x="190" y="176" font-size="12" class="svg-ink">narrow wake</text><text x="8" y="128" font-size="12" class="svg-ink">turbulent layer: stays on longer</text></g>
+      </svg>
+      <figcaption>Schematic only. The narrower wake is why C<sub>D</sub> of a sphere drops suddenly (the drag crisis) near N<sub>R</sub> ≈ 2–3 × 10⁵.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="cd">
+  <div class="sec-head"><p class="eyebrow">Slides 7–8 · Mott §17.2, Table 17.1</p><h2>The drag coefficient</h2></div>
+  <div class="two">
+    <div class="read">
+      <div class="boxed">\[ F_D = C_D\,\frac{\rho V^2}{2}\,A \]</div>
+      <ul>
+        <li>\(C_D\) depends heavily on shape and weakly on N<sub>R</sub> (except for rounded bodies, where the separation point moves: next section).</li>
+        <li>A is the <b>frontal</b> (projected) area for blunt bodies, but the <b>planform</b> area (seen from above) for wings (slide 7).</li>
+        <li>Typical values (slide 8): cars about 0.25 at best, trucks up to 0.75, aircraft 0.1–0.2.</li>
+      </ul>
+      <p><b>Streamlining</b> trades pressure drag for friction drag: a long tapered tail keeps the flow attached but adds wetted area. At moderate to high N<sub>R</sub>, pressure drag usually dominates, so streamlining pays. Compare the streamlined body (0.04) with the sphere (0.47) in the chart at the top: the same frontal area, a twelfth of the drag.</p>
+    </div>
+    <div class="scroll-x"><table class="tbl"><thead><tr><th>Shape (slide 7)</th><th class="num">C<sub>D</sub></th></tr></thead><tbody>
+      <tr><td>Sphere</td><td class="num">0.47</td></tr><tr><td>Half-sphere, flat side back</td><td class="num">0.42</td></tr><tr><td>Cone, point first</td><td class="num">0.50</td></tr><tr><td>Cube, face on</td><td class="num">1.05</td></tr><tr><td>Cube, edge on</td><td class="num">0.80</td></tr><tr><td>Long cylinder, axis along flow</td><td class="num">0.82</td></tr><tr><td>Short cylinder, axis along flow</td><td class="num">1.15</td></tr><tr><td>Streamlined body</td><td class="num">0.04</td></tr><tr><td>Streamlined half-body on a wall</td><td class="num">0.09</td></tr>
+    </tbody></table></div>
+  </div>
+</section>
+
+<section id="sphere">
+  <div class="sec-head"><p class="eyebrow">Slides 10–12 · Mott §17.4, Fig. 17.4</p><h2>Spheres: the drag crisis and terminal velocity</h2></div>
+  <div class="two">
+    <div class="read">
+      <p>For a smooth sphere, \(C_D\) falls steeply through the Stokes range, levels off near 0.4–0.5, then <b>drops suddenly</b> to about 0.2 around \(N_R \approx 2\)–\(3\times10^5\) when the boundary layer turns turbulent (slide 10). A rough sphere makes the drop earlier and shallower.</p>
+      <p><b>Terminal velocity</b> (slide 12): falling at constant speed, weight = buoyancy + drag:</p>
+      \[ (\rho_s - \rho_f)\,g\,\frac{\pi d^3}{6} = C_D\,\frac{\rho_f V^2}{2}\,\frac{\pi d^2}{4} \]
+      <p>But \(C_D\) depends on \(N_R\), which depends on V. So: guess \(C_D\), solve for V, compute \(N_R\), read a new \(C_D\), repeat. The calculator does that loop with an approximate smooth-sphere curve.</p>
+      <p class="small muted">The sphere curve here is a rough log-log interpolation through typical values with the shape of Mott Fig. 17.4; near the drag crisis it can be off by 20 % or more. Use the textbook chart on graded work.</p>
+    </div>
+    <div class="panel"><div class="panel-b">
+      <div class="fields" id="tFields">
+        <div class="field"><label for="tD">Sphere diameter <span class="unit">mm</span></label><input id="tD" type="text" inputmode="decimal" value="75"></div>
+        <div class="field"><label for="tS">Sphere density <span class="unit">kg/m³</span></label><input id="tS" type="text" inputmode="decimal" value="2711.5"></div>
+        <div class="field"><label for="tF">Fluid</label><select id="tF"><option value="1.204,1.81e-5">Air, 20 °C</option><option value="997,8.91e-4">Water, 25 °C</option><option value="960,0.651">Castor oil, 25 °C</option><option value="1258,0.96">Glycerin, 25 °C</option></select></div>
+        <div class="field"><label for="tC">C<sub>D</sub></label><select id="tC"><option value="">From the sphere curve (iterate)</option><option value="0.1">Fixed 0.1 (slide 12's first guess)</option><option value="0.2">Fixed 0.2</option><option value="0.47">Fixed 0.47</option></select></div>
+      </div>
+      <svg id="tPlot" style="width:100%;display:block" role="img" aria-label="Sphere drag coefficient against Reynolds number on log scales, with the solution marked."></svg>
+      <div class="out"><div class="stat hot"><span class="lbl">Terminal velocity</span><span class="val" id="tV"></span></div><div class="stat"><span class="lbl">N<sub>R</sub>, C<sub>D</sub></span><span class="val" id="tR" style="font-size:16px"></span></div></div>
+      <p class="small muted" id="tNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="lift">
+  <div class="sec-head"><p class="eyebrow">Slides 15–21 · Mott §17.8–17.9</p><h2>Lift on an airfoil</h2></div>
+  <div class="two">
+    <div class="read">
+      \[ F_L = C_L\,\frac{\rho V^2}{2}\,A,\qquad F_D = C_D\,\frac{\rho V^2}{2}\,A \]
+      <p>with A the <b>planform</b> area, chord × span (slide 18). Why does a wing lift? Slide 16's point: "it's not that simple." The wing turns the passing air downward (the Coanda effect helps the flow follow the upper surface), so by momentum the air pushes the wing up; equivalently, the flow over the top is faster and at lower pressure. A crude turning model (slide 17) gives \(F_L \propto \sin\alpha\) and \(F_D \propto 1 - \cos\alpha\): not precise, but the right trend.</p>
+      <ul>
+        <li>C<sub>L</sub> rises almost linearly with angle of attack α until the <b>stall</b>, where the flow separates from the upper surface and lift collapses.</li>
+        <li><b>Cruise</b>: low α, best \(F_L/F_D\). <b>Takeoff and landing</b>: high α (and flaps) for maximum C<sub>L</sub> at low speed.</li>
+      </ul>
+      <div class="trap note"><span class="tag">Data</span><p>The curves in this tool are illustrative, set to agree with the slide answers at 15° (C<sub>L</sub> = 1.25, C<sub>D</sub> = 0.10) and 2°. On the exam use the chart you're given (Mott Fig. 17.11).</p></div>
+    </div>
+    <div class="panel"><div class="panel-h"><h3>Wing calculator</h3><div class="chips"><button type="button" class="chip" data-w="p1728">17.28 race-car wing</button><button type="button" class="chip" data-w="p1732">17.32 takeoff</button><button type="button" class="chip" data-w="cruise">17.32 cruise at 250 km/h</button></div></div><div class="panel-b">
+      <div class="fields" id="wFields">
+        <div class="field"><label for="wA">Angle of attack α <span class="mono" id="wAV"></span></label><input id="wA" type="range" min="-4" max="28" step="0.25" value="15"></div>
+        <div class="field"><label for="wV">Speed <span class="unit">km/h</span></label><input id="wV" type="text" inputmode="decimal" value="90"></div>
+        <div class="field"><label for="wC">Chord <span class="unit">m</span></label><input id="wC" type="text" inputmode="decimal" value="0.78"></div>
+        <div class="field"><label for="wS">Span <span class="unit">m</span></label><input id="wS" type="text" inputmode="decimal" value="1.46"></div>
+        <div class="field"><label for="wR">Air density <span class="unit">kg/m³</span></label><input id="wR" type="text" inputmode="decimal" value="1.2"></div>
+      </div>
+      <svg id="wPlot" style="width:100%;display:block" role="img" aria-label="Lift and drag coefficients against angle of attack, with the chosen angle marked."></svg>
+      <div class="out"><div class="stat"><span class="lbl">C<sub>L</sub>, C<sub>D</sub></span><span class="val" id="wCo" style="font-size:16px"></span></div><div class="stat hot"><span class="lbl">Lift F<sub>L</sub></span><span class="val" id="wL"></span></div><div class="stat"><span class="lbl">Drag F<sub>D</sub></span><span class="val" id="wD"></span></div><div class="stat"><span class="lbl">F<sub>L</sub>/F<sub>D</sub></span><span class="val" id="wLD"></span></div></div>
+      <p class="small muted" id="wNote"></p>
+    </div></div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="sec-head"><p class="eyebrow">Worked problems from the CH 17 slides</p><h2>Slide examples, solved</h2></div>
+  <div class="dlist">
+    <details><summary><span class="t"><span class="src sl">s9</span>Mobile home overturned by wind (Mott 17.12)</span><span class="s">50 kN; body 2.5 m tall on a 0.5 m chassis; tires 2 m apart, each 300 mm wide; treat as a square cylinder; air at 0 °C</span><span class="ans">≈ 31 m/s (10 m long)</span></summary><div class="dbody"><p class="given">Assumptions: drag acts at mid-height of the body, 0.5 + 1.25 = 1.75 m above the ground; the home tips about the outer edge of the downwind tire, 1.0 + 0.15 = 1.15 m from the centerline (tire centers 2 m apart); C<sub>D</sub> ≈ 2.05, the high-N<sub>R</sub> end of Mott's square-cylinder curve (Fig. 17.4b); ρ = 1.292 kg/m³ at 0 °C.</p><ol><li>Tipping when \(F_D(1.75) = (50\,000)(1.15)\): \(F_D = 32.9\) kN.</li><li>\(F_D = C_D\tfrac12\rho V^2 A\) with \(A = L \times 2.5\) m. For Mott's L = 10 m: \(V^2 = 32\,900/(2.05 \times 0.646 \times 25) = 992\), V ≈ 31 m/s (113 km/h).</li></ol><p class="note">Slide 9 gives the length as 15 m. With 15 m the side area is 37.5 m² and V drops to about 26 m/s. The slide's ~33 m/s is close to the 10 m result (the small difference comes from the tipping point, C<sub>D</sub> and density chosen), so the 15 m looks like a slip. Check which length your instructor means.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s11</span>Weather ball (Mott 17.2)</span><span class="s">2 m sphere in 0 °C air; winds 15 to 160 km/h</span><span class="ans">≈ 10 N at 5 m/s</span></summary><div class="dbody"><ol><li>At 15 km/h (4.2 m/s) to 18 km/h (5 m/s): \(N_R = Vd/\nu \approx (5)(2)/1.5\times10^{-5} \approx 7\times10^5\), past the drag crisis, so \(C_D \approx 0.2\) (slide).</li><li>\(F_D = 0.2 \times \tfrac12(1.29)(5)^2 \times \pi(1)^2 = 10\) N.</li><li>For the higher speeds \(N_R\) grows past 10⁶; C<sub>D</sub> stays near 0.2 on Mott's chart and the force grows with V²: roughly 4× per doubling of speed.</li></ol><p class="note">At 15 km/h exactly, N<sub>R</sub> ≈ 5.6 × 10⁵ with ν = 1.5 × 10⁻⁵ m²/s (Mott lists ν ≈ 1.33 × 10⁻⁵ at 0 °C, which gives 6.3 × 10⁵); either way it's just past the crisis, which is where reading C<sub>D</sub> is least certain.</p></div></details>
+    <details><summary><span class="t"><span class="src sl">s12</span>Terminal velocity of an aluminum sphere (Mott 17.3c)</span><span class="s">75 mm, 26.6 kN/m³, falling in air at 20 °C</span><span class="ans">≈ 105 m/s</span></summary><div class="dbody"><ol><li>Net weight: \((26\,600 - 11.8)\,\pi(0.075)^3/6 = 5.87\) N (buoyancy in air is negligible).</li><li>Guess \(C_D = 0.1\): \(V = \sqrt{5.87/(0.1 \times 0.602 \times 4.42\times10^{-3})} = 149\) m/s, \(N_R \approx 7.4\times10^5\).</li><li>At that N<sub>R</sub> the chart gives \(C_D \approx 0.2\): V = 105 m/s, \(N_R \approx 5.2\times10^5\), still about 0.2. Converged (slide). The calculator's rough curve gives 109 m/s.</li><li>Parts (a) and (b), same sphere: in water, C<sub>D</sub> ≈ 0.45 and V ≈ 1.9 m/s; in castor oil (η = 0.651 Pa·s), \(N_R \approx 150\) and V ≈ 1.4 m/s. Try them in the calculator.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s19</span>Exercise 17.28 · inverted wing on a race car</span><span class="s">α = 15°, 25 m/s, chord 780 mm, span 1460 mm, ρ = 1.2 kg/m³</span><span class="ans">534 N down; 43 N drag</span></summary><div class="dbody"><ol><li>\(A = 0.78 \times 1.46 = 1.139\) m², \(\tfrac12\rho V^2 = 375\) Pa.</li><li>From the chart at 15°: \(C_L = 1.25\), so \(F_L = 1.25 \times 375 \times 1.139 = 534\) N, pushing <b>down</b> (the wing is upside down).</li><li>\(C_D = 0.10\): \(F_D = 43\) N. The book asks for the drag too.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s20</span>Exercise 17.32 · heaviest plane that can take off</span><span class="s">α = 15°, 125 km/h, chord 1.4 m, span 6.8 m</span><span class="ans">8.6 kN; 689 N drag</span></summary><div class="dbody"><ol><li>V = 34.7 m/s, \(\tfrac12\rho V^2 = 723\) Pa, A = 9.52 m².</li><li>\(F_L = 1.25 \times 723 \times 9.52 = 8.61\) kN: the weight the wing can lift.</li><li>\(F_D = 0.10 \times 723 \times 9.52 = 689\) N.</li></ol></div></details>
+    <details><summary><span class="t"><span class="src sl">s21</span>Exercise 17.32 extended · cruising at 250 km/h</span><span class="s">Same plane and weight</span><span class="ans">α ≈ 2°; drag ≈ 300 N</span></summary><div class="dbody"><ol><li>Lift must still equal 8.61 kN, but \(\tfrac12\rho V^2\) is 4× larger (2,894 Pa), so \(C_L = 8610/(2894 \times 9.52) = 0.31\).</li><li>On the chart, \(C_L = 0.31\) at about 2°. There \(C_D \approx 0.011\), so \(F_D \approx 0.011 \times 2894 \times 9.52 \approx 300\) N: less drag at twice the speed, because the wing flies at a much more efficient angle.</li></ol></div></details>
+  </div>
+</section>
+
+<section id="check">
+  <div class="sec-head"><p class="eyebrow">Self-test</p><h2>Check yourself</h2></div>
+  <div class="quiz">
+    <div class="q" data-answer="c"><p class="qt">1. At high Reynolds number, doubling a car's speed multiplies its aerodynamic drag by about</p><div class="opts"><button class="opt" data-k="a">2</button><button class="opt" data-k="b">8</button><button class="opt" data-k="c">4</button><button class="opt" data-k="d">√2</button></div><p class="fb" hidden>F_D ∝ V². The power to overcome it, F_D·V, goes up 8×.</p></div>
+    <div class="q" data-answer="a"><p class="qt">2. Dimples reduce a golf ball's drag because they</p><div class="opts"><button class="opt" data-k="a">make the boundary layer turbulent, so separation moves back and the wake narrows</button><button class="opt" data-k="b">reduce friction drag</button><button class="opt" data-k="c">reduce the frontal area</button></div><p class="fb" hidden>Friction drag actually rises a bit; pressure drag falls a lot.</p></div>
+    <div class="q" data-answer="b"><p class="qt">3. The area used with C<sub>L</sub> and C<sub>D</sub> for a wing is</p><div class="opts"><button class="opt" data-k="a">the frontal area</button><button class="opt" data-k="b">chord × span (planform)</button><button class="opt" data-k="c">the wetted area</button></div><p class="fb" hidden>Planform area, seen from above (slide 18).</p></div>
+    <div class="q" data-answer="d"><p class="qt">4. Past the stall angle, a wing's</p><div class="opts"><button class="opt" data-k="a">lift keeps rising</button><button class="opt" data-k="b">drag falls</button><button class="opt" data-k="c">lift-to-drag ratio peaks</button><button class="opt" data-k="d">lift drops and drag rises sharply</button></div><p class="fb" hidden>The flow separates from the upper surface.</p></div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="sec-head"><p class="eyebrow">For the exam</p><h2>Formula sheet</h2></div>
+  <div class="sheet">
+    <div><span class="nm">Drag</span>\[ F_D = C_D\frac{\rho V^2}{2}A \]<span class="wh">A: frontal area (blunt body) or planform (wing).</span></div>
+    <div><span class="nm">Lift</span>\[ F_L = C_L\frac{\rho V^2}{2}A \]<span class="wh">C<sub>L</sub> from the airfoil chart at α.</span></div>
+    <div><span class="nm">Stokes drag (N<sub>R</sub> &lt; 1)</span>\[ F_D = 3\pi\eta Vd,\ C_D = 24/N_R \]<span class="wh">Drag ∝ V.</span></div>
+    <div><span class="nm">Terminal velocity</span>\[ (\rho_s - \rho_f)gV_{ol} = C_D\frac{\rho_f V^2}{2}A \]<span class="wh">Iterate: C<sub>D</sub> depends on N<sub>R</sub>.</span></div>
+    <div><span class="nm">Overturning</span>\[ F_D\,h = W\,b \]<span class="wh">Moments about the tipping edge.</span></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const C = FMC, { $, $$, num, onInputs, segmented, el, text } = FM;
+  const f = C.fmt;
+
+  /* ---------- hero: shapes ---------- */
+  const SHAPES = [['Sphere', 0.47], ['Half-sphere', 0.42], ['Cone', 0.50], ['Cube', 1.05], ['Angled cube', 0.80], ['Long cylinder', 0.82], ['Short cylinder', 1.15], ['Streamlined body', 0.04], ['Streamlined half-body', 0.09]];
+  let fluid = 'air';
+  function hero() {
+    const V = num('#hV'), A = num('#hA'), rho = fluid === 'air' ? 1.204 : 998; $('#hVV').textContent = V;
+    if (!(A > 0)) return;
+    const Fs = SHAPES.map(([n, cd]) => [n, cd, C.dragForce({ CD: cd, rho, V, A })]), mx = Math.max(...Fs.map((x) => x[2]));
+    const svg = $('#hSvg'), W = 460, H = 24 + 26 * Fs.length; svg.setAttribute('viewBox', `0 0 ${W} ${H}`); while (svg.firstChild) svg.removeChild(svg.firstChild);
+    Fs.forEach(([n, cd, F], i) => { const y = 10 + i * 26, w = (W - 250) * F / mx; text(svg, 128, y + 14, n.replace('Streamlined half-body', 'Streamlined ½-body'), { 'text-anchor': 'end', 'font-size': 13, class: 'svg-ink' }); el('rect', { x: 134, y, width: Math.max(1, w), height: 19, class: cd < 0.1 ? 'fl-green' : 'fl-water', 'fill-opacity': 0.75 }, svg); text(svg, 140 + w, y + 14, `${f(F, 3)} N`, { 'font-size': 13 }); });
+    const q = 0.5 * rho * V * V;
+    $('#hNote').textContent = `Dynamic pressure ρV²/2 = ${f(q, 4)} Pa. ` + (fluid === 'water' ? 'Water is about 830 times denser than air, so the same shape at the same speed feels 830 times the force.' : 'Double the speed and every bar grows 4×.');
+  }
+  segmented($('#hF'), (v) => { fluid = v; if (v === 'water') $('#hV').value = 3; hero(); });
+  onInputs('#hFields', hero); hero();
+
+  /* ---------- terminal velocity ---------- */
+  function term() {
+    const d = num('#tD') / 1000, rhoS = num('#tS'), [rhoF, mu] = $('#tF').value.split(',').map(Number), CDf = $('#tC').value ? +$('#tC').value : undefined;
+    if (!(d > 0 && rhoS > 0)) return;
+    const r = C.terminalSphere({ d, rhoS, rhoF, mu, CDfixed: CDf });
+    const p = FM.plot($('#tPlot'), { W: 380, H: 240, m: { l: 50, r: 12, t: 12, b: 42 }, x: { min: 0.1, max: 1e7, log: true, label: 'Reynolds number', fmt: (v) => v >= 1e3 ? `10${['', '', '', '³', '⁴', '⁵', '⁶', '⁷'][Math.round(Math.log10(v))]}` : String(v) }, y: { min: 0.05, max: 300, log: true, label: 'C_D', fmt: (v) => String(v) } });
+    const pts = []; for (let e = -1; e <= 7; e += 0.02) pts.push([Math.pow(10, e), C.sphereCD(Math.pow(10, e))]);
+    FM.line(p, pts, { class: 'st-water', 'stroke-width': 2 });
+    if (r.V > 0 && r.Re > 0.1) FM.dot(p, Math.min(1e7, r.Re), r.CD);
+    if (r.V <= 0) { $('#tV').textContent = 'floats'; $('#tR').textContent = '—'; $('#tNote').textContent = 'The sphere is lighter than the fluid: it rises instead.'; return; }
+    $('#tV').textContent = `${f(r.V, 3)} m/s`; $('#tR').textContent = `${f(r.Re, 3)}, ${f(r.CD, 3)}`;
+    $('#tNote').textContent = `Net weight ${f(r.net, 4)} N. ` + (r.Re < 1 ? `Stokes regime: V = (ρs − ρf)g d²/(18η) = ${f(r.stokes, 3)} m/s applies.` : CDf ? `C_D held at ${CDf}: at the resulting N_R the sphere curve says ${f(C.sphereCD(r.Re), 3)}, so iterate.` : 'Converged: C_D on the curve matches the N_R it produces.');
+  }
+  onInputs('#tFields', term); term();
+
+  /* ---------- wing ---------- */
+  const WPRE = { p1728: { wA: 15, wV: 90, wC: 0.78, wS: 1.46, wR: 1.2 }, p1732: { wA: 15, wV: 125, wC: 1.4, wS: 6.8, wR: 1.2 }, cruise: { wA: 2.25, wV: 250, wC: 1.4, wS: 6.8, wR: 1.2 } };
+  function wing() {
+    const a = num('#wA'), V = num('#wV') / 3.6, c = num('#wC'), sp = num('#wS'), rho = num('#wR'); $('#wAV').textContent = `${a}°`;
+    if (!(V > 0 && c > 0 && sp > 0 && rho > 0)) return;
+    const k = C.foil(a), q = 0.5 * rho * V * V, A = c * sp, L = k.CL * q * A, D = k.CD * q * A;
+    $('#wCo').textContent = `${f(k.CL, 3)}, ${f(k.CD, 3)}`; $('#wL').textContent = `${f(L, 4)} N`; $('#wD').textContent = `${f(D, 4)} N`; $('#wLD').textContent = f(L / D, 3);
+    $('#wNote').textContent = `A = ${f(A, 4)} m², ρV²/2 = ${f(q, 4)} Pa.` + (a > 19.5 ? ' Past the stall angle (19.5° here).' : '');
+    const p = FM.plot($('#wPlot'), { W: 380, H: 240, m: { l: 48, r: 48, t: 12, b: 42 }, x: { min: -5, max: 30, label: 'angle of attack α (°)', ticks: [-5, 0, 5, 10, 15, 20, 25, 30], fmt: (v) => String(v) }, y: { min: -0.25, max: 2, label: 'C_L', ticks: [0, 0.5, 1, 1.5, 2] } });
+    const cl = [], cd = []; for (let x = -5; x <= 30; x += 0.25) { const k2 = C.foil(x); cl.push([x, k2.CL]); cd.push([x, k2.CD * 5]); }
+    FM.line(p, cl, { class: 'st-water', 'stroke-width': 2.4 }); FM.line(p, cd, { class: 'st-dye', 'stroke-width': 2 });
+    [0, 0.1, 0.2, 0.3, 0.4].forEach((v) => text(p.axes, 380 - 44, p.sy(v * 5) + 4, f(v, 2), { 'font-size': 11, class: 'fl-dye' }));
+    text(p.g, p.sx(6), p.sy(0.75), 'C_L', { 'font-size': 12, class: 'fl-water' }); text(p.g, p.sx(23.5), p.sy(1.9), 'C_D (right axis)', { 'font-size': 11.5, class: 'fl-dye', 'text-anchor': 'end' });
+    FM.dot(p, a, k.CL, { class: 'fl-water' }); FM.dot(p, a, k.CD * 5);
+  }
+  $$('[data-w]').forEach((b) => b.addEventListener('click', () => { FM.setVals(WPRE[b.dataset.w]); wing(); }));
+  onInputs('#wFields', wing); wing();
+  document.addEventListener('fm-theme', () => { hero(); term(); wing(); });
+})();
+</script>
+
+<footer>
+  <div class="pager"><a href="ch16-momentum.html">← Ch 16 Momentum</a><a href="review.html">Final review →</a></div>
+  <p>Lecture companion for ENGR/EGTG 4254 Fluid Mechanics (FDU), keyed to the instructor's slide numbers and to Mott &amp; Untener, <i>Applied Fluid Mechanics</i>, 8th ed. (Pearson, 2022). Usable as in-class lecture material (press Present for projector-sized type) and as a study guide afterward. Figures are drawn for this site. Check numbers against your textbook's tables on graded work.</p>
+</footer>
+</div>
+</body>
+</html>
